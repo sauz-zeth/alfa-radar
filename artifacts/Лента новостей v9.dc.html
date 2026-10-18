@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./vendor/chart.umd.min.js"></script>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -475,19 +476,23 @@ button,textarea,input{font-family:inherit}
           <sc-for list="{{ g.rows }}" as="p" hint-placeholder-count="3"><div class="profile-row"><span style="color:#A3A5AB;">{{ p.k }}</span><span>{{ p.v }}</span></div></sc-for>
         </details>
       </sc-for>
-      <details class="profile-section">
+      <details class="profile-section factor-settings" open="{{ true }}">
         <summary><span class="profile-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M4 17h16"></path><circle cx="9" cy="7" r="3" fill="#303137"></circle><circle cx="15" cy="17" r="3" fill="#303137"></circle></svg></span><span style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:16px;font-weight:500;">Настройка ленты</span><span style="font-size:12px;color:#A3A5AB;">Факторы влияния · {{ fxMeta }}</span></span></summary>
       <div style="display:flex;flex-direction:column;gap:12px;padding:4px 12px 14px;">
-        <div style="font-size:13px;line-height:1.5;color:#A3A5AB;padding:0 4px;">Укажите, какие события важны для бизнеса. Нажмите на фактор, чтобы изменить его вес.</div>
-        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:0 4px;">
-          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8C8E93;">Факторы влияния</span>
-          <span style="font-size:12px;color:#6E7076;">{{ fxMeta }}</span>
+        <div style="position:relative;width:204px;height:204px;margin:4px auto;">
+          <canvas ref="{{ factorChartRef }}" role="img" aria-label="{{ fxChartLabel }}">Количество факторов по степени влияния. Выберите группу кнопками ниже.</canvas>
+          <div style="position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><span style="font-size:36px;font-weight:600;letter-spacing:-.04em;">{{ fxActive }}</span><span style="font-size:12px;color:#A3A5AB;">активных факторов</span></div>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px 12px;padding:0 4px;">
-          <sc-for list="{{ fxLegend }}" as="l" hint-placeholder-count="4">
-            <span style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#A3A5AB;"><span style="width:10px;height:10px;border-radius:3px;background:{{ l.bg }};box-shadow:{{ l.ring }};"></span>{{ l.v }} · {{ l.t }}</span>
+        <div style="font-size:12px;line-height:1.5;color:#A3A5AB;text-align:center;">Размер сектора — число факторов, не доля бизнеса.<br>Нажмите на сектор или выберите группу.</div>
+        <div style="display:flex;gap:6px;">
+          <sc-for list="{{ fxGroups }}" as="g" hint-placeholder-count="3">
+            <button onClick="{{ g.pick }}" aria-pressed="{{ g.selected }}" style="flex:1;min-width:0;min-height:74px;padding:10px 4px;border:1px solid {{ g.border }};border-radius:12px;background:{{ g.bg }};color:#F2F2F3;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;"><span style="font-size:20px;font-weight:600;color:{{ g.color }};">{{ g.count }}</span><span style="font-size:12px;">{{ g.label }}</span></button>
           </sc-for>
         </div>
+        <button onClick="{{ fxPickInactive }}" aria-pressed="{{ fxInactiveSelected }}" style="min-height:44px;border-radius:12px;border:1px solid {{ fxInactiveBorder }};background:transparent;color:#A3A5AB;font-size:13px;cursor:pointer;">Не влияют · {{ fxInactive }}</button>
+        <sc-if value="{{ fxHasSelection }}"><div style="font-size:14px;font-weight:600;padding:4px;">{{ fxSelectedLabel }}</div></sc-if>
+        <sc-if value="{{ fxGroupEmpty }}"><div style="font-size:13px;color:#A3A5AB;padding:4px;">В этой группе пока нет факторов.</div></sc-if>
+        <sc-if value="{{ fxHasSelection }}">
         <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;">
           <sc-for list="{{ fx }}" as="f" hint-placeholder-count="8">
             <div style="border-top:{{ f.sep }};">
@@ -509,7 +514,7 @@ button,textarea,input{font-family:inherit}
                   </sc-for>
                   <div style="display:flex;align-items:center;gap:10px;padding:6px 2px 0;">
                     <span style="flex:none;font-size:12.5px;color:#A3A5AB;">Точно</span>
-                    <input type="range" min="0" max="1" step="0.05" value="{{ f.raw }}" onChange="{{ f.onRange }}" style="flex:1;accent-color:{{ f.accent }};">
+                    <input type="range" aria-label="{{ f.name }}" min="0" max="1" step="0.05" value="{{ f.raw }}" onChange="{{ f.onRange }}" style="flex:1;accent-color:{{ f.accent }};">
                     <span style="flex:none;width:34px;text-align:right;font-size:13px;font-weight:700;font-feature-settings:'tnum' 1;">{{ f.w }}</span>
                   </div>
                 </div>
@@ -517,7 +522,7 @@ button,textarea,input{font-family:inherit}
             </div>
           </sc-for>
         </div>
-        <button onClick="{{ fxToggleAll }}" style="height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:none;color:#F2F2F3;font-size:13.5px;font-weight:600;cursor:pointer;">{{ fxAllText }}</button>
+        </sc-if>
       </div>
       </details>
       <button onClick="{{ logout }}" style="width:100%;min-height:48px;margin-top:8px;border-radius:14px;border:none;background:transparent;font-size:15px;color:#E77D74;cursor:pointer;">Выйти из аккаунта</button>
@@ -578,11 +583,22 @@ button,textarea,input{font-family:inherit}
       <div style="display:flex;align-items:center;padding:8px 12px;gap:8px;"><button class="search-trigger" onClick="{{ closeSearch }}" aria-label="Закрыть поиск" style="font-size:24px;">←</button><div style="font-size:22px;font-weight:700;">Поиск</div></div>
       <div class="search-field" style="display:flex;align-items:center;margin:0 16px 12px;background:#25262B;border-radius:14px;padding-left:14px;">
         <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex:none;color:#A3A5AB;"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"></circle><path d="m16 16 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
-        <input ref="{{ searchInputRef }}" value="{{ searchQ }}" onChange="{{ onSearch }}" aria-label="Новости и компании" placeholder="Новости и компании" type="text" role="searchbox" enterkeyhint="search" style="min-width:0;flex:1;height:48px;border:0;background:transparent;color:#F2F2F3;font-size:16px;padding:0 10px;">
+        <input ref="{{ searchInputRef }}" value="{{ searchQ }}" onChange="{{ onSearch }}" onKeyDown="{{ onSearchKey }}" aria-label="Новости и компании" placeholder="Новости и компании" type="text" role="searchbox" enterkeyhint="search" style="min-width:0;flex:1;height:48px;border:0;background:transparent;color:#F2F2F3;font-size:16px;padding:0 10px;">
         <sc-if value="{{ searchHasQuery }}"><button class="search-trigger" onClick="{{ clearSearch }}" aria-label="Очистить поиск" style="font-size:24px;">×</button></sc-if>
       </div>
       <div style="overflow-y:auto;flex:1;padding:4px 16px 34px;display:flex;flex-direction:column;gap:12px;">
-        <sc-if value="{{ searchInitial }}"><div style="color:#A3A5AB;font-size:14px;line-height:1.5;margin-bottom:8px;">Ищите по всем новостям, источникам и темам — включая скрытые и архивные.</div><div style="font-size:16px;font-weight:600;">Компании из вашего профиля</div></sc-if>
+        <sc-if value="{{ searchHistoryEmpty }}"><div style="color:#A3A5AB;font-size:14px;line-height:1.5;margin:12px 4px;">Найдите новость, тему или компанию.<br>Здесь появятся ваши недавние запросы.</div></sc-if>
+        <sc-if value="{{ searchHistoryVisible }}">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;"><span style="font-size:16px;font-weight:600;">Недавние запросы</span><button onClick="{{ clearSearchHistory }}" style="min-height:44px;padding:0 4px;background:none;border:none;color:#C9CBD0;font-size:13px;cursor:pointer;">Очистить историю</button></div>
+          <div style="display:flex;flex-direction:column;">
+            <sc-for list="{{ searchHistoryRows }}" as="h">
+              <div style="display:flex;align-items:center;gap:4px;border-bottom:1px solid rgba(255,255,255,.06);">
+                <button onClick="{{ h.pick }}" style="flex:1;min-width:0;min-height:52px;display:flex;align-items:center;gap:12px;padding:10px 4px;border:none;background:none;color:#F2F2F3;text-align:left;font-size:15px;cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A3A5AB" stroke-width="1.6" stroke-linecap="round" aria-hidden="true" style="flex:none;"><circle cx="12" cy="12" r="8"></circle><path d="M12 7v5l3 2"></path></svg><span style="overflow-wrap:anywhere;">{{ h.query }}</span></button>
+                <button class="search-trigger" onClick="{{ h.remove }}" aria-label="{{ h.removeLabel }}" style="font-size:22px;color:#A3A5AB;">×</button>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
         <sc-if value="{{ searchHasQuery }}"><div role="status" aria-live="polite" style="font-size:14px;color:#A3A5AB;">{{ searchSummary }}</div></sc-if>
         <sc-for list="{{ searchCompanies }}" as="co"><button class="search-card" onClick="{{ co.onClick }}" style="flex-direction:row;align-items:center;gap:12px;"><span style="width:40px;height:40px;flex:none;background:#35363D;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;">{{ co.initials }}</span><span style="flex:1;display:flex;flex-direction:column;gap:5px;"><span style="font-size:16px;font-weight:600;">{{ co.name }}</span><span style="font-size:13px;color:#A3A5AB;">{{ co.role }}</span></span><span aria-hidden="true">→</span></button></sc-for>
         <sc-if value="{{ searchHasNews }}"><div style="font-size:16px;font-weight:600;margin-top:8px;">Новости · {{ searchNewsCount }}</div></sc-if>
@@ -1672,7 +1688,9 @@ const FACTORS = [
   ['Цены на нефть', 0], ['Сельское хозяйство', 0], ['Розничный спрос', 0], ['Курс евро', 0], ['Цифровое регулирование', 0], ['Фондовый рынок', 0], ['Недвижимость', 0], ['Туризм и транспорт', 0], ['Климат и погода', 0],
 ];
 const FX_LV = [{ v: 1, t: 'Прямо в выручке или себестоимости' }, { v: 0.6, t: 'Заметно косвенно' }, { v: 0.3, t: 'Фоном' }, { v: 0, t: 'Не влияет' }];
-const fxLevel = w => (w >= 0.8 ? FX_LV[0].t : w >= 0.45 ? FX_LV[1].t : w > 0 ? FX_LV[2].t : FX_LV[3].t);
+const fxGroup = w => w >= 0.8 ? 0 : w >= 0.45 ? 1 : w > 0 ? 2 : 3;
+const fxLevel = w => FX_LV[fxGroup(w)].t;
+const FX_GROUPS = [{ label: 'Прямое', color: '#E65357' }, { label: 'Косвенное', color: '#E89A56' }, { label: 'Фоновое', color: '#E2C777' }];
 const fxPaint = w => w <= 0
   ? { bg: 'transparent', co: '#8C8E93', ring: 'inset 0 0 0 1px rgba(255,255,255,.16)', bar: '#3A3B40', accent: '#8C8E93' }
   : { bg: `oklch(${(0.42 + 0.2 * w).toFixed(3)} ${(0.04 + 0.17 * w).toFixed(3)} ${Math.round(70 - 43 * w)})`, co: w >= 0.45 ? '#fff' : '#F2F2F3', ring: 'none', bar: `oklch(${(0.5 + 0.16 * w).toFixed(3)} ${(0.06 + 0.15 * w).toFixed(3)} ${Math.round(70 - 43 * w)})`, accent: `oklch(0.62 0.2 ${Math.round(70 - 43 * w)})` };
@@ -1704,8 +1722,43 @@ const sw = on => ({ tbg: on ? '#F2F2F3' : '#3A3B40', tj: on ? 'flex-end' : 'flex
 
 // shortcut: прямые упоминания размечены в демоданных; при подключении API использовать связи с компаниями.
 const FEED_TAGS = [IMPORTANT_MENTION, ...new Set(NEWS.flatMap(n => n.cats).filter(t => t !== IMPORTANT_MENTION))];
+const SEARCH_HISTORY_KEY = 'alfa-news-search-history-v1';
 
 class Component extends DCLogic {
+  factorData() {
+    const all = FACTORS.map((f, i) => ({ f, i, w: (this.state.fxW || {})[i] ?? f[1] })).sort((a, b) => b.w - a.w || a.i - b.i);
+    const counts = [0, 0, 0, 0];
+    all.forEach(({ w }) => counts[fxGroup(w)]++);
+    return { all, counts, active: all.length - counts[3] };
+  }
+  pickFactorGroup(group) { this.setState({ fxGroup: this.state.fxGroup === group ? null : group, fxOpen: null }); }
+  factorChartRef = canvas => {
+    if (this.factorChart?.canvas === canvas) return;
+    this.factorChart?.destroy();
+    this.factorChart = null;
+    if (!canvas) return;
+    this.factorChart = new window.Chart(canvas, {
+      type: 'doughnut',
+      data: { labels: FX_GROUPS.map(g => g.label), datasets: [{ data: [], backgroundColor: FX_GROUPS.map(g => g.color), borderColor: '#1C1D21', borderWidth: 3, borderRadius: 5, hoverOffset: 5 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '76%',
+        animation: false, layout: { padding: 8 },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.label}: ${this.factorData().active ? ctx.raw : 0} ${pl(this.factorData().active ? ctx.raw : 0, 'фактор', 'фактора', 'факторов')}` } } },
+        onClick: (_, elements) => { if (elements.length && this.factorData().active) this.pickFactorGroup(elements[0].index); },
+      },
+    });
+    this.updateFactorChart();
+  };
+  updateFactorChart() {
+    if (!this.factorChart) return;
+    const { counts, active } = this.factorData(), chart = this.factorChart;
+    chart.data.labels = active ? FX_GROUPS.map(g => g.label) : ['Нет активных факторов'];
+    chart.data.datasets[0].data = active ? counts.slice(0, 3) : [1];
+    chart.data.datasets[0].backgroundColor = active ? FX_GROUPS.map(g => g.color) : ['#3A3B40'];
+    chart.data.datasets[0].offset = active ? FX_GROUPS.map((_, i) => this.state.fxGroup === i ? 5 : 0) : 0;
+    chart.update('none');
+  }
+  componentDidUpdate() { this.updateFactorChart(); }
   tabsRef = el => this.bindScrollStrip(el, 'tabs');
   tagsRef = el => this.bindScrollStrip(el, 'tags');
   bindScrollStrip(el, key) {
@@ -1763,6 +1816,31 @@ class Component extends DCLogic {
     this.stripCleanup[key] = () => { resize.disconnect(); Object.entries(events).forEach(([name, fn]) => el.removeEventListener(name, fn, name === 'click')); };
   }
   searchInputRef = el => { if (el && this.searchInput !== el) el.focus(); this.searchInput = el; };
+  loadSearchHistory() {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(SEARCH_HISTORY_KEY) || '[]');
+      if (!Array.isArray(stored)) return [];
+      const history = [], seen = new Set();
+      for (const item of stored) {
+        if (typeof item !== 'string') continue;
+        const query = item.trim().replace(/\s+/g, ' '), key = query.toLowerCase();
+        if (!query || seen.has(key)) continue;
+        seen.add(key); history.push(query);
+        if (history.length === 10) break;
+      }
+      return history;
+    } catch { return []; }
+  }
+  saveSearchHistory(history) {
+    this.setState({ searchHistory: history });
+    // При недоступном localStorage история продолжает работать в текущем сеансе.
+    try { window.localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history)); } catch {}
+  }
+  rememberSearch(value = this.state.searchQ || '') {
+    const query = value.trim().replace(/\s+/g, ' ');
+    if (!query) return;
+    this.saveSearchHistory([query, ...this.state.searchHistory.filter(item => item.toLowerCase() !== query.toLowerCase())].slice(0, 10));
+  }
   searchVals() {
     const s = this.state;
     const norm = text => text.toLowerCase().replace(/ё/g, 'е').trim();
@@ -1783,25 +1861,31 @@ class Component extends DCLogic {
     ];
     const selected = companies.find(c => c.name === s.searchCompany);
     const found = q ? rows.filter(n => selected ? selected.ids.includes(n.id) : matches(`${n.text || `${n.title} ${n.summary} ${n.meta}`} ${companies.filter(c => c.ids.includes(n.id)).map(c => `${c.name} ${c.aliases}`).join(' ')}`)) : [];
-    const companyRows = selected ? [] : companies.filter(c => !q || matches(`${c.name} ${c.aliases}`));
+    const companyRows = selected || !q ? [] : companies.filter(c => matches(`${c.name} ${c.aliases}`));
     return {
       searchOpen: !!s.searchOpen, searchVisible: !!s.searchOpen && !s.news,
       openSearch: e => { this.searchTrigger = e.currentTarget; this.setState({ searchOpen: true, searchQ: '', searchCompany: null, searchBrief: null }); },
       closeSearch: () => { this.setState({ searchOpen: false, searchBrief: null }); this.searchTrigger?.focus(); },
       searchInputRef: this.searchInputRef, searchQ: s.searchQ || '',
       onSearch: e => this.setState({ searchQ: e.target.value, searchCompany: null, searchBrief: null }),
+      onSearchKey: e => { if (e.key === 'Enter' && !e.isComposing && !e.nativeEvent?.isComposing) { e.preventDefault(); this.rememberSearch(); } },
       clearSearch: () => { this.setState({ searchQ: '', searchCompany: null, searchBrief: null }); this.searchInput?.focus(); },
+      searchHistoryVisible: !q && s.searchHistory.length > 0, searchHistoryEmpty: !q && !s.searchHistory.length,
+      searchHistoryRows: s.searchHistory.map(query => ({ query, removeLabel: `Удалить запрос «${query}»`,
+        pick: () => { this.setState({ searchQ: query, searchCompany: null, searchBrief: null }); this.rememberSearch(query); this.searchInput?.focus(); },
+        remove: () => this.saveSearchHistory(this.state.searchHistory.filter(item => item !== query)) })),
+      clearSearchHistory: () => this.saveSearchHistory([]),
       searchInitial: !q, searchHasQuery: !!q, searchEmpty: !!q && !found.length && !companyRows.length,
       searchSummary: selected ? `${selected.name} · связанных новостей: ${found.length}` : `Новостей: ${found.length} · компаний: ${companyRows.length}`,
-      searchCompanies: companyRows.map(c => ({ ...c, initials: initials(c.name.replace(/П?АО|[«»]/g, '').trim()), onClick: () => this.setState({ searchQ: c.name, searchCompany: c.name }) })),
-      searchNews: found.map(n => ({ ...n, onClick: () => n.id ? this.openNews(n.id) : this.setState({ searchBrief: n }) })),
+      searchCompanies: companyRows.map(c => ({ ...c, initials: initials(c.name.replace(/П?АО|[«»]/g, '').trim()), onClick: () => { this.rememberSearch(); this.setState({ searchQ: c.name, searchCompany: c.name }); } })),
+      searchNews: found.map(n => ({ ...n, onClick: () => { this.rememberSearch(); n.id ? this.openNews(n.id) : this.setState({ searchBrief: n }); } })),
       searchHasNews: found.length > 0, searchNewsCount: found.length,
       searchBrief: s.searchBrief || {}, searchBriefOpen: !!s.searchBrief,
       closeSearchBrief: () => this.setState({ searchBrief: null }),
     };
   }
   state = { queue: NEWS.map(n => n.id), interesting: ['n2', 'n1', 'n3'], skipped: [], reasons: {}, tab: 'feed', dx: 0, dragging: false, flying: 0, noAnim: false, opened: {}, toast: null,
-    news: null, ntab: 'analysis', follow: {}, horizon: {}, assum: {}, drafts: {}, sel: {}, sent: {}, kib: {}, ask: {}, askDraft: {}, compose: false,
+    news: null, ntab: 'analysis', follow: {}, horizon: {}, assum: {}, drafts: {}, sel: {}, sent: {}, kib: {}, ask: {}, askDraft: {}, compose: false, searchHistory: this.loadSearchHistory(),
     reasonFor: null, hidden: false, intFilter: 'all', alfa: true, srcQ: '', srcOn: {}, offOff: {}, srcMore: false, tags: [], scoreFor: null, manualVal: '', extra: [], trig: { 0: true, 1: true, 2: true, 3: false } };
 
   componentDidMount() {
@@ -1824,7 +1908,7 @@ class Component extends DCLogic {
     };
     window.addEventListener('keydown', this.onKey);
   }
-  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); clearTimeout(this.tt); Object.values(this.stripCleanup || {}).forEach(cleanup => cleanup()); }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); clearTimeout(this.tt); Object.values(this.stripCleanup || {}).forEach(cleanup => cleanup()); this.factorChart?.destroy(); }
 
   byId(id) { return NEWS.find(n => n.id === id); }
   canSkip(id) { return true; }
@@ -2327,18 +2411,22 @@ class Component extends DCLogic {
       searchBg: s.tab === 'feed' ? '#1f1f22' : 'rgb(14, 15, 18)',
       tabs: [tab('feed', 'Лента', String(Math.max(0, vq.length - (s.cur || 0) - 1))), tab('int', 'Отслеживаемое', s.interesting.length ? String(s.interesting.length) : ''), tab('src', 'Источники', ''), tab('profile', 'Профиль', '')],
       ...(() => {
-        const W = s.fxW || {}, wOf = (f, i) => W[i] ?? f[1], fmtW = w => w.toFixed(w * 10 % 1 ? 2 : 1).replace('.', ',');
+        const fmtW = w => w.toFixed(w * 10 % 1 ? 2 : 1).replace('.', ',');
         const set = (i, v) => this.setState(st => ({ fxW: { ...(st.fxW || {}), [i]: Math.round(v * 100) / 100 } }));
-        const all = FACTORS.map((f, i) => ({ f, i, w: wOf(f, i) })).sort((a, b) => b.w - a.w || a.i - b.i);
-        const shown = s.fxAll ? all : all.filter(x => x.w > 0 || s.fxOpen === x.i), active = all.filter(x => x.w > 0).length;
+        const { all, counts, active } = this.factorData();
+        const shown = all.filter(x => s.fxGroup != null && (fxGroup(x.w) === s.fxGroup || s.fxOpen === x.i));
         return {
           fxMeta: `${active} из ${FACTORS.length} влияют`,
-          fxLegend: FX_LV.map(l => ({ v: fmtW(l.v), t: l.t, ...fxPaint(l.v) })),
+          factorChartRef: this.factorChartRef, fxActive: active,
+          fxChartLabel: `Факторы влияния: прямое — ${counts[0]}, косвенное — ${counts[1]}, фоновое — ${counts[2]}. Всего активных: ${active}.`,
+          fxGroups: FX_GROUPS.map((g, i) => ({ ...g, count: counts[i], selected: s.fxGroup === i, border: s.fxGroup === i ? g.color : '#3A3B40', bg: s.fxGroup === i ? '#303137' : 'transparent', pick: () => this.pickFactorGroup(i) })),
+          fxInactive: counts[3], fxInactiveSelected: s.fxGroup === 3, fxInactiveBorder: s.fxGroup === 3 ? '#A3A5AB' : '#3A3B40', fxPickInactive: () => this.pickFactorGroup(3),
+          fxHasSelection: s.fxGroup != null, fxGroupEmpty: s.fxGroup != null && !shown.length,
+          fxSelectedLabel: s.fxGroup === 3 ? 'Не влияют на компанию' : s.fxGroup != null ? `${FX_GROUPS[s.fxGroup].label} влияние` : '',
           fx: shown.map(({ f, i, w }, j) => { const p = fxPaint(w), open = s.fxOpen === i;
             return { name: f[0], w: fmtW(w), raw: String(w), level: fxLevel(w), nameCo: w > 0 ? '#F2F2F3' : '#8C8E93', sep: j ? '1px solid rgba(255,255,255,.06)' : 'none', ...p, open,
               toggle: () => this.setState({ fxOpen: open ? null : i }), onRange: e => set(i, parseFloat(e.target.value)),
               opts: FX_LV.map(l => { const q = fxPaint(l.v), on = Math.abs(l.v - w) < 0.001; return { v: fmtW(l.v), t: l.t, bg: q.bg, co: q.co, ring: q.ring, border: on ? '#F2F2F3' : 'rgba(255,255,255,.08)', selBg: on ? '#2C2D32' : 'transparent', pick: () => set(i, l.v) }; }) }; }),
-          fxAllText: s.fxAll ? 'Показать только влияющие' : `Показать все ${FACTORS.length}`, fxToggleAll: () => this.setState({ fxAll: !s.fxAll }),
         };
       })(),
       tabFeed: s.tab === 'feed', tabInt: s.tab === 'int', tabSrc: s.tab === 'src', tabProfile: s.tab === 'profile',

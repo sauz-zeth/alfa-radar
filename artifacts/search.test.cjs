@@ -10,6 +10,15 @@ const app = runInNewContext(`${script}; new Component()`, {
   },
 });
 assert.equal(typeof app.searchVals, 'function', 'Global search must be available');
+assert.equal(typeof app.factorData, 'function', 'Factor chart needs grouped counts');
+assert.deepEqual(Array.from(app.factorData().counts), [6, 8, 7, 9]);
+assert.equal(app.factorData().active, 21);
+app.state.fxW = { 0: 0.6, 6: 0, 14: 0.8 };
+assert.deepEqual(Array.from(app.factorData().counts), [6, 8, 6, 10]);
+app.state.fxW = Object.fromEntries(Array.from({ length: 30 }, (_, i) => [i, 0]));
+assert.equal(app.factorData().active, 0);
+assert.deepEqual(Array.from(app.factorData().counts), [0, 0, 0, 30]);
+app.state.fxW = {};
 const search = q => { app.state.searchQ = q; return app.searchVals(); };
 assert.equal(search('  рЖд  ').searchNews[0].id, 'n3');
 assert.equal(search('РЖД').searchCompanies[0].name, 'РЖД');
