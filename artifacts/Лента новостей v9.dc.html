@@ -200,7 +200,7 @@ button,textarea,input{font-family:inherit}
                 </sc-for>
               </div>
             </div>
-            <button onClick="{{ ex.like }}" style="height:50px;border-radius:14px;border:none;background:{{ ex.likeBg }};color:{{ ex.likeCo }};font-size:15px;font-weight:600;cursor:pointer;">{{ ex.likeText }}</button>
+            <button onClick="{{ ex.like }}" style="flex:none;height:50px;border-radius:14px;border:none;background:{{ ex.likeBg }};color:{{ ex.likeCo }};font-size:15px;font-weight:600;cursor:pointer;">{{ ex.likeText }}</button>
           </div>
         </div>
       </sc-if>
@@ -2485,11 +2485,11 @@ class Component extends DCLogic {
       srcMeta: `${mineAll.length} ${plural(mineAll.length, 'канал', 'канала', 'каналов')} · ${offOn} ${plural(offOn, 'официальный источник', 'официальных источника', 'официальных источников')}`,
       srcQ: s.srcQ, srcQChange: e => this.setState({ srcQ: e.target.value }), srcQClear: () => this.setState({ srcQ: '' }),
       searching: !!s.srcQ.trim(), notSearching: !s.srcQ.trim(), hasRes: res.length > 0,
-      results: res.map((c, i) => { const on = isOn(c[0]), p = pav(c[0]); return { name: c[0], topics: c[1], initials: initials(c[0].replace('@', '')) || '@', bg: p.bg, fg: p.fg, sep: i ? '1px solid rgba(255,255,255,.08)' : 'none', btn: on ? 'Подписан' : 'Подписаться', bbg: on ? '#1C1D21' : '#F2F2F3', bco: on ? '#F2F2F3' : '#F2F2F3', bbd: on ? '#3A3B40' : '#F2F2F3', toggle: () => toggleCh(c[0], on) }; }),
+      results: res.map((c, i) => { const on = isOn(c[0]), p = pav(c[0]); return { name: c[0], topics: c[1], initials: initials(c[0].replace('@', '')) || '@', bg: p.bg, fg: p.fg, sep: i ? '1px solid rgba(255,255,255,.08)' : 'none', btn: on ? 'Подписан' : 'Подписаться', bbg: on ? '#1C1D21' : '#F2F2F3', bco: on ? '#F2F2F3' : '#16171A', bbd: on ? '#3A3B40' : '#F2F2F3', toggle: () => toggleCh(c[0], on) }; }),
       resLabel: res.length ? `Найдено в каталоге: ${res.length}` : 'В каталоге не найдено',
       handle: handle || '', canAdd: !!handle && !(s.extra.includes(handle) && isOn(handle)), addHandle: () => handle && addCh(handle),
       addHint: handle ? (s.extra.includes(handle) && isOn(handle) ? `${handle} уже в ваших каналах` : 'Подключим канал по тегу и загрузим посты за последние 7 дней') : 'Вставьте в поиск ссылку t.me/… или @тег',
-      official: OFFICIAL.map(([code, name, desc], i) => { const on = !s.offOff[name]; return { code, name, desc, sep: i ? '1px solid rgba(255,255,255,.08)' : 'none', op: on ? 1 : 0.55, cbg: on ? '#F2F2F3' : '#1C1D21', cco: on ? '#F2F2F3' : 'transparent', toggle: () => { this.setState(st => ({ offOff: { ...st.offOff, [name]: on } })); this.showToast(on ? `«${name}» скрыт из ленты, но проверяет факты` : `«${name}» снова в ленте`); } }; }),
+      official: OFFICIAL.map(([code, name, desc], i) => { const on = !s.offOff[name]; return { code, name, desc, sep: i ? '1px solid rgba(255,255,255,.08)' : 'none', op: on ? 1 : 0.55, cbg: on ? '#F2F2F3' : '#1C1D21', cco: on ? '#16171A' : 'transparent', toggle: () => { this.setState(st => ({ offOff: { ...st.offOff, [name]: on } })); this.showToast(on ? `«${name}» скрыт из ленты, но проверяет факты` : `«${name}» снова в ленте`); } }; }),
       mineCount: String(mineAll.length), hasMine: mineAll.length > 0, noMine: mineAll.length === 0,
       mine: mineShown.map((c, i) => { const p = pav(c.name); return { name: c.name, topics: c.topics, chip: c.chip, chipBg: c.own ? 'oklch(0.32 0.06 150)' : '#2C2D32', chipCo: c.own ? 'oklch(0.8 0.13 150)' : '#A3A5AB', initials: initials(c.name.replace('@', '')) || '@', bg: p.bg, fg: p.fg, sep: i ? '1px solid rgba(255,255,255,.08)' : 'none', toggle: () => toggleCh(c.name, true) }; }),
       hasMore: mineAll.length > 7, moreLabel: s.srcMore ? 'Свернуть' : `Показать ещё ${mineAll.length - 7}`, toggleMore: () => this.setState({ srcMore: !s.srcMore }),
