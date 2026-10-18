@@ -15,6 +15,28 @@
 html,body{margin:0;background:#050506;color:#F2F2F3;font-family:'Golos Text',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 a{color:#F2F2F3;text-decoration:none}a:hover{color:#C8291F}
 button,textarea,input{font-family:inherit}
+.search-trigger{flex:none;width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;background:none;border:0;color:inherit;cursor:pointer}
+.search-card{width:100%;box-sizing:border-box;text-align:left;border:1px solid #303137;border-radius:16px;background:#1C1D21;color:#F2F2F3;padding:16px;display:flex;flex-direction:column;gap:8px;cursor:pointer}
+.search-card:hover{background:#26272C}
+.search-screen button:focus-visible,.search-trigger:focus-visible{outline:2px solid #F2F2F3;outline-offset:2px}
+.search-field:focus-within{box-shadow:inset 0 0 0 1px #73757D}
+.search-field input{outline:none}
+.top-tabs,.feed-tags{display:flex;flex:1;min-width:0;gap:10px;padding:0 14px;overflow-x:auto;scrollbar-width:none;touch-action:pan-x;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scroll-padding-inline:14px}
+.top-tabs{mask-image:linear-gradient(to right,transparent,#000 var(--fade-left,0px),#000 calc(100% - var(--fade-right,0px)),transparent)}
+.feed-edge-fades{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(to bottom,#0E0F12 0,rgba(14,15,18,.88) 36px,rgba(14,15,18,.45) 92px,transparent 180px),linear-gradient(to top,#0E0F12 0,rgba(14,15,18,.8) 16px,transparent 44px)}
+.top-tabs>button,.feed-tags>button{flex:none;scroll-snap-align:start}
+.profile-page{flex:1;min-height:0;overflow-y:auto;padding:22px 16px 30px}
+.profile-hero{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:24px}
+.profile-avatar{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#E6574C,#9F2826);color:#fff;font-size:30px;font-weight:600;margin-bottom:8px}
+.profile-section{background:#1C1D21;border:1px solid rgba(255,255,255,.07);border-radius:18px;margin-bottom:12px;overflow:hidden}
+.profile-section summary{list-style:none;min-height:68px;box-sizing:border-box;display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer}
+.profile-section summary::-webkit-details-marker{display:none}
+.profile-section summary::after{content:'';width:7px;height:7px;flex:none;border-right:1.5px solid #A3A5AB;border-bottom:1.5px solid #A3A5AB;transform:rotate(-45deg);margin-left:auto}
+.profile-section[open] summary::after{transform:rotate(45deg)}
+.profile-icon{width:36px;height:36px;flex:none;display:grid;place-items:center;border-radius:10px;background:#303137;color:#E0E1E4;font-size:19px}
+.profile-section summary:focus-visible,.profile-page button:focus-visible{outline:2px solid #B9BBC1;outline-offset:-3px}
+.profile-row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:13px 16px;border-top:1px solid rgba(255,255,255,.06);font-size:14px;line-height:1.45}
+.profile-row>span:last-child{max-width:58%;text-align:right;overflow-wrap:anywhere;font-weight:500}
 </style>
 </helmet>
 <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;box-sizing:border-box;">
@@ -28,12 +50,15 @@ button,textarea,input{font-family:inherit}
     </div>
   </div>
 
-  <div style="flex:none;display:flex;align-items:stretch;padding:0 14px;gap:12px;border-bottom:1px solid rgba(255,255,255,.08);">
+  <div role="navigation" aria-label="Разделы" style="position:relative;z-index:41;flex:none;display:flex;align-items:stretch;padding-left:14px;border-bottom:1px solid rgba(255,255,255,.08);">
+    <button class="search-trigger" onClick="{{ openSearch }}" aria-label="Поиск по всем новостям и компаниям"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"></circle><path d="m16 16 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></button>
+    <div class="top-tabs" ref="{{ tabsRef }}">
     <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
-      <button onClick="{{ t.onClick }}" style="background:none;border:none;padding:14px 0 6px;margin:0 0 -1px;cursor:pointer;display:flex;align-items:baseline;gap:4px;font-size:14px;font-weight:700;color:{{ t.color }};border-bottom:2px solid {{ t.bar }};white-space:nowrap;">
+      <button onClick="{{ t.onClick }}" style="background:none;border:none;padding:6px 0;margin:0;height:44px;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:4px;font-size:14px;font-weight:700;color:{{ t.color }};border-bottom:2px solid {{ t.bar }};white-space:nowrap;">
         <span>{{ t.label }}</span><span style="font-size:12.5px;font-weight:600;color:{{ t.countColor }};">{{ t.count }}</span>
       </button>
     </sc-for>
+    </div>
   </div>
 
   <sc-if value="{{ tabFeed }}" hint-placeholder-val="{{ true }}">
@@ -45,7 +70,7 @@ button,textarea,input{font-family:inherit}
               <div ref="{{ r.carRef }}" onScroll="{{ r.onCar }}" style="position:absolute;inset:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;">
                 <sc-for list="{{ r.slides }}" as="sl" hint-placeholder-count="3">
                   <div style="position:relative;flex:none;width:100%;height:100%;scroll-snap-align:start;background:#26282D;">
-                    <image-slot id="{{ sl.imgId }}" shape="rect" placeholder="{{ sl.hint }}"></image-slot>
+                    <image-slot id="{{ sl.imgId }}" shape="rect" src="{{ sl.photo.src }}" role="img" aria-label="{{ sl.photo.alt }}" credit="{{ sl.photo.credit }}" credit-href="{{ sl.photo.url }}" placeholder="{{ sl.hint }}"></image-slot>
                     <div style="position:absolute;left:16px;top:150px;display:flex;align-items:center;gap:8px;height:30px;padding:0 11px 0 4px;border-radius:999px;background:rgba(14,15,18,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;">
                       <span style="width:22px;height:22px;border-radius:50%;background:{{ sl.bg }};color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ sl.initials }}</span>
                       <span style="font-size:12px;font-weight:600;color:#fff;">{{ sl.name }}</span>
@@ -124,13 +149,9 @@ button,textarea,input{font-family:inherit}
           <button onClick="{{ clearTags }}" style="margin-top:8px;height:44px;padding:0 20px;border-radius:12px;border:none;background:#fff;font-size:14px;font-weight:600;color:#16171A;cursor:pointer;">Сбросить фильтр</button>
         </div>
       </sc-if>
-      <div style="position:absolute;left:0;right:0;top:47px;display:flex;flex-direction:column;gap:8px;pointer-events:none;">
-        <div style="display:flex;gap:12px;padding:8px 14px 0;pointer-events:auto;">
-          <sc-for list="{{ tabsDark }}" as="t" hint-placeholder-count="4">
-            <button onClick="{{ t.onClick }}" style="background:none;border:none;padding:6px 0;cursor:pointer;font-size:14px;font-weight:700;color:{{ t.color }};border-bottom:2px solid {{ t.bar }};white-space:nowrap;display:flex;align-items:baseline;gap:4px;"><span>{{ t.label }}</span><span style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,.65);">{{ t.count }}</span></button>
-          </sc-for>
-        </div>
-        <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 16px;pointer-events:auto;">
+      <div class="feed-edge-fades" aria-hidden="true"></div>
+      <div class="feed-tags-shell" style="position:absolute;left:0;right:0;top:100px;z-index:2;display:flex;flex-direction:column;gap:8px;pointer-events:none;">
+        <div class="feed-tags" ref="{{ tagsRef }}" role="group" aria-label="Темы новостей" style="flex:none;gap:6px;padding:0 16px;scroll-padding-inline:16px;pointer-events:auto;">
           <button onClick="{{ openHidden }}" style="flex:none;height:30px;padding:0 12px;border-radius:999px;border:none;background:rgba(255,255,255,.14);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.3);color:#fff;font-size:12.5px;font-weight:600;white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 20 20"><path d="M2.5 10s2.8-5 7.5-5 7.5 5 7.5 5-2.8 5-7.5 5-7.5-5-7.5-5z" stroke="currentColor" stroke-width="1.6" fill="none"></path><path d="M3 17L17 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>{{ hiddenCount }}</button>
           <sc-for list="{{ tagChipsDark }}" as="t" hint-placeholder-count="5">
             <button onClick="{{ t.onClick }}" style="flex:none;height:30px;padding:0 13px;border-radius:999px;border:none;background:{{ t.bg }};color:{{ t.co }};backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.3);font-size:12.5px;font-weight:600;white-space:nowrap;cursor:pointer;">{{ t.label }}</button>
@@ -315,7 +336,7 @@ button,textarea,input{font-family:inherit}
         <span style="font-size:13.5px;color:#A3A5AB;">{{ srcMeta }}</span>
       </div>
 
-      <div style="display:flex;align-items:center;gap:10px;height:50px;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:0 8px 0 16px;">
+      <div style="flex:none;display:flex;align-items:center;gap:10px;height:50px;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:0 8px 0 16px;">
         <svg width="18" height="18" viewBox="0 0 20 20" style="flex:none;"><circle cx="8.5" cy="8.5" r="6" stroke="#F2F2F3" stroke-width="2" fill="none"></circle><path d="M13 13l5 5" stroke="#F2F2F3" stroke-width="2" stroke-linecap="round"></path></svg>
         <input value="{{ srcQ }}" onChange="{{ srcQChange }}" placeholder="Найти канал или вставить ссылку" style="flex:1;min-width:0;height:100%;border:none;outline:none;background:transparent;font-size:15px;color:#F2F2F3;">
         <sc-if value="{{ searching }}" hint-placeholder-val="{{ false }}">
@@ -430,16 +451,34 @@ button,textarea,input{font-family:inherit}
 
 
   <sc-if value="{{ tabProfile }}" hint-placeholder-val="{{ false }}">
-    <div style="flex:1;min-height:0;overflow-y:auto;padding:18px 16px 20px;display:flex;flex-direction:column;gap:16px;">
-      <div style="display:flex;align-items:center;gap:14px;padding:0 4px;">
-        <div style="width:52px;height:52px;border-radius:50%;background:#F2F2F3;color:#16171A;font-size:18px;font-weight:600;display:flex;align-items:center;justify-content:center;">АВ</div>
-        <div style="display:flex;flex-direction:column;gap:3px;">
-          <span style="font-size:17px;font-weight:600;">Андрей Волков</span>
-          <span style="font-size:13px;color:#A3A5AB;">Генеральный директор · АО «ТрансМеталл»</span>
+    <div class="profile-page">
+      <div class="profile-hero">
+        <div class="profile-avatar" aria-hidden="true">АВ</div>
+        <h1 style="margin:0;font-size:24px;line-height:1.25;font-weight:600;letter-spacing:-.02em;">Андрей Волков</h1>
+        <span style="font-size:14px;color:#A3A5AB;">Генеральный директор</span>
+        <span style="font-size:13px;color:#C9CBD0;margin-top:2px;">a.volkov@transmetall.ru</span>
+      </div>
+      <div class="profile-section" style="padding:16px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="profile-icon" style="width:44px;height:44px;background:#392422;color:#F19B93;font-size:14px;font-weight:700;">ТМ</div>
+          <div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:17px;font-weight:600;">АО «ТрансМеталл»</span><span style="font-size:13px;color:#A3A5AB;">Металлургия · прокат</span></div>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08);">
+          <div style="flex:1;display:flex;flex-direction:column;gap:5px;"><span style="font-size:22px;font-weight:600;letter-spacing:-.02em;">52 млрд ₽</span><span style="font-size:12px;color:#A3A5AB;">Выручка за 2025 год</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:5px;border-left:1px solid rgba(255,255,255,.08);padding-left:16px;"><span style="font-size:22px;font-weight:600;letter-spacing:-.02em;">38%</span><span style="font-size:12px;color:#A3A5AB;">Доля экспорта</span></div>
         </div>
       </div>
-      <div style="font-size:13px;line-height:1.45;color:#A3A5AB;padding:0 4px;text-wrap:pretty;">По этим данным сервис оценивает, как новость влияет на компанию. Обновлено 1 октября.</div>
-      <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:12px;line-height:1.5;color:#A3A5AB;padding:0 12px;margin:0 0 22px;">Данные компании определяют влияние новостей.<br>Обновлено 1 октября.</div>
+      <sc-for list="{{ profile }}" as="g" hint-placeholder-count="2">
+        <details class="profile-section">
+          <summary><span class="profile-icon" aria-hidden="true">{{ g.icon }}</span><span style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:16px;font-weight:500;">{{ g.title }}</span><span style="font-size:12px;color:#A3A5AB;">{{ g.sub }}</span></span></summary>
+          <sc-for list="{{ g.rows }}" as="p" hint-placeholder-count="3"><div class="profile-row"><span style="color:#A3A5AB;">{{ p.k }}</span><span>{{ p.v }}</span></div></sc-for>
+        </details>
+      </sc-for>
+      <details class="profile-section">
+        <summary><span class="profile-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M4 17h16"></path><circle cx="9" cy="7" r="3" fill="#303137"></circle><circle cx="15" cy="17" r="3" fill="#303137"></circle></svg></span><span style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:16px;font-weight:500;">Настройка ленты</span><span style="font-size:12px;color:#A3A5AB;">Факторы влияния · {{ fxMeta }}</span></span></summary>
+      <div style="display:flex;flex-direction:column;gap:12px;padding:4px 12px 14px;">
+        <div style="font-size:13px;line-height:1.5;color:#A3A5AB;padding:0 4px;">Укажите, какие события важны для бизнеса. Нажмите на фактор, чтобы изменить его вес.</div>
         <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:0 4px;">
           <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8C8E93;">Факторы влияния</span>
           <span style="font-size:12px;color:#6E7076;">{{ fxMeta }}</span>
@@ -480,21 +519,8 @@ button,textarea,input{font-family:inherit}
         </div>
         <button onClick="{{ fxToggleAll }}" style="height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:none;color:#F2F2F3;font-size:13.5px;font-weight:600;cursor:pointer;">{{ fxAllText }}</button>
       </div>
-      <sc-for list="{{ profile }}" as="g" hint-placeholder-count="4">
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8C8E93;padding:0 4px;">{{ g.title }}</span>
-          <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;display:flex;flex-direction:column;">
-            <sc-for list="{{ g.rows }}" as="p" hint-placeholder-count="2">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-top:{{ p.sep }};">
-                <span style="font-size:14px;color:#A3A5AB;">{{ p.k }}</span>
-                <span style="font-size:14px;font-weight:600;text-align:right;">{{ p.v }}</span>
-              </div>
-            </sc-for>
-          </div>
-        </div>
-      </sc-for>
-      
-      <button onClick="{{ logout }}" style="flex:none;height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:#1C1D21;font-size:15px;font-weight:600;color:#D92B21;cursor:pointer;">Выйти</button>
+      </details>
+      <button onClick="{{ logout }}" style="width:100%;min-height:48px;margin-top:8px;border-radius:14px;border:none;background:transparent;font-size:15px;color:#E77D74;cursor:pointer;">Выйти из аккаунта</button>
     </div>
   </sc-if>
 
@@ -545,6 +571,26 @@ button,textarea,input{font-family:inherit}
         </div>
       </div>
     </div>
+  </sc-if>
+
+  <sc-if value="{{ searchVisible }}" hint-placeholder-val="{{ false }}">
+    <section class="search-screen" aria-label="Поиск" style="position:absolute;inset:0;padding-top:47px;box-sizing:border-box;z-index:48;background:{{ searchBg }};display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;padding:8px 12px;gap:8px;"><button class="search-trigger" onClick="{{ closeSearch }}" aria-label="Закрыть поиск" style="font-size:24px;">←</button><div style="font-size:22px;font-weight:700;">Поиск</div></div>
+      <div class="search-field" style="display:flex;align-items:center;margin:0 16px 12px;background:#25262B;border-radius:14px;padding-left:14px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex:none;color:#A3A5AB;"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"></circle><path d="m16 16 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
+        <input ref="{{ searchInputRef }}" value="{{ searchQ }}" onChange="{{ onSearch }}" aria-label="Новости и компании" placeholder="Новости и компании" type="text" role="searchbox" enterkeyhint="search" style="min-width:0;flex:1;height:48px;border:0;background:transparent;color:#F2F2F3;font-size:16px;padding:0 10px;">
+        <sc-if value="{{ searchHasQuery }}"><button class="search-trigger" onClick="{{ clearSearch }}" aria-label="Очистить поиск" style="font-size:24px;">×</button></sc-if>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:4px 16px 34px;display:flex;flex-direction:column;gap:12px;">
+        <sc-if value="{{ searchInitial }}"><div style="color:#A3A5AB;font-size:14px;line-height:1.5;margin-bottom:8px;">Ищите по всем новостям, источникам и темам — включая скрытые и архивные.</div><div style="font-size:16px;font-weight:600;">Компании из вашего профиля</div></sc-if>
+        <sc-if value="{{ searchHasQuery }}"><div role="status" aria-live="polite" style="font-size:14px;color:#A3A5AB;">{{ searchSummary }}</div></sc-if>
+        <sc-for list="{{ searchCompanies }}" as="co"><button class="search-card" onClick="{{ co.onClick }}" style="flex-direction:row;align-items:center;gap:12px;"><span style="width:40px;height:40px;flex:none;background:#35363D;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;">{{ co.initials }}</span><span style="flex:1;display:flex;flex-direction:column;gap:5px;"><span style="font-size:16px;font-weight:600;">{{ co.name }}</span><span style="font-size:13px;color:#A3A5AB;">{{ co.role }}</span></span><span aria-hidden="true">→</span></button></sc-for>
+        <sc-if value="{{ searchHasNews }}"><div style="font-size:16px;font-weight:600;margin-top:8px;">Новости · {{ searchNewsCount }}</div></sc-if>
+        <sc-for list="{{ searchNews }}" as="sn"><button class="search-card" onClick="{{ sn.onClick }}"><span style="font-size:12px;color:#A3A5AB;">{{ sn.meta }}</span><span style="font-size:16px;line-height:1.4;font-weight:600;">{{ sn.title }}</span><span style="font-size:14px;line-height:1.45;color:#B9BBC1;">{{ sn.summary }}</span><span style="font-size:13px;">Открыть →</span></button></sc-for>
+        <sc-if value="{{ searchEmpty }}"><div style="text-align:center;padding:56px 16px;"><div style="font-size:20px;font-weight:600;">Ничего не найдено</div><div style="font-size:14px;line-height:1.5;color:#A3A5AB;margin-top:10px;">Попробуйте другую тему, название компании или более короткий запрос.</div></div></sc-if>
+        <sc-if value="{{ searchBriefOpen }}"><div style="position:absolute;inset:47px 0 0;background:{{ searchBg }};padding:16px;overflow-y:auto;"><button class="search-trigger" onClick="{{ closeSearchBrief }}" aria-label="Назад к результатам">←</button><div style="color:#A3A5AB;font-size:13px;margin:16px 0;">{{ searchBrief.meta }}</div><h2 style="font-size:22px;line-height:1.4;">{{ searchBrief.title }}</h2><p style="font-size:16px;line-height:1.5;">{{ searchBrief.summary }}</p><p style="font-size:14px;color:#A3A5AB;">В макете сохранена только краткая карточка этой новости.</p></div></sc-if>
+      </div>
+    </section>
   </sc-if>
 
   <sc-if value="{{ newsOpen }}" hint-placeholder-val="{{ false }}">
@@ -1380,6 +1426,7 @@ const P = {
   belova: { person: 'Анна Белова', role: 'руководитель закупок', email: 'a.belova@transmetall.ru', dept: 'Закупки' },
   grishin: { person: 'Павел Гришин', role: 'технический директор', email: 'p.grishin@transmetall.ru', dept: 'Производство' },
 };
+const IMPORTANT_MENTION = 'Важное упоминание';
 const NEWS = [
   { id: 'n1', impact: 'crit', title: 'Экспортная пошлина 7% на металлопрокат с 1 ноября',
     facts: [{ num: '−1,2 млрд ₽', text: 'EBITDA в год при доле экспорта 38%' }, { num: '4,6 млрд ₽', text: 'контрактов IV квартала попадают под пошлину' }],
@@ -1421,7 +1468,7 @@ const NEWS = [
   { id: 'n3', impact: 'pos', title: 'РЖД снижает тариф на перевозку металлов на восток на 12%',
     facts: [{ num: '≈250 млн ₽', text: 'экономии на логистике в год' }, { num: '68 тыс. т', text: 'ваш квартальный объём — выше порога скидки' }],
     why: 'Скидка действует с декабря для грузов от 50 тыс. т в квартал.',
-    cats: ['Логистика', 'Ж/д тарифы', 'Экспорт в Азию'],
+    cats: [IMPORTANT_MENTION, 'Логистика', 'Ж/д тарифы', 'Экспорт в Азию'],
     conf: 4, confText: 'Решение правления РЖД подтверждают 6 источников. Не до конца ясна дата начала действия.',
     chain: { factor: 'Ж/д тариф на восток −12% с 1 декабря', process: 'Логистика экспорта в Азию — 2,1 млрд ₽ в год', effect: '≈ +250 млн ₽ экономии в год', question: 'Удержим ли объём выше 50 тыс. т в каждом квартале?' },
     timeline: [{ d: '25 сен', t: 'Металлурги попросили скидку на восточном направлении' }, { d: '13 окт', t: 'Правление РЖД одобрило понижающий коэффициент 0,88', now: 1 }, { d: '1 дек', t: 'Начало действия скидки', future: 1 }],
@@ -1604,6 +1651,13 @@ const REASONS = ['Не касается компании', 'Уже знаю', '�
 const initials = n => n.split(/\s+/).filter(w => /[А-ЯA-Zа-яa-z]/.test(w[0])).slice(0, 2).map(w => w[0].toUpperCase()).join('');
 const avBg = n => { let h = 0; for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) % 360; return `oklch(0.48 0.035 ${h})`; };
 const IMG_HINT = { n1: 'Фото: металлопрокат в порту', n2: 'Фото: здание Банка России', n3: 'Фото: грузовой состав', n4: 'Фото: промышленное оборудование', n5: 'Фото: рулоны стали на складе' };
+const NEWS_PHOTOS = {
+  n1: { src: './images/steel-export.jpg', alt: 'Рулон стали, закреплённый для перевозки на грузовой платформе', credit: 'Иллюстрация · Fumikas Sagisavas · CC0', url: 'https://commons.wikimedia.org/wiki/File:Steel_coils_loaded_on_truck_deck.jpg' },
+  n2: { src: './images/central-bank.jpg', alt: 'Здание Банка России на Неглинной улице в Москве', credit: 'Иллюстрация · NVO · CC BY 2.5', url: 'https://commons.wikimedia.org/wiki/File:Moscow,_Neglinnaya_12,_Central_Bank.jpg' },
+  n3: { src: './images/freight-train.jpg', alt: 'Грузовой тепловоз РЖД 2М62У на железнодорожных путях', credit: 'Иллюстрация · Artem Svetlov · CC BY 2.0', url: 'https://commons.wikimedia.org/wiki/File:RZD_2M62U-0045_(15621345153).jpg' },
+  n4: { src: './images/cnc-machine.jpg', alt: 'Обработка металлической заготовки на фрезерном станке с ЧПУ', credit: 'Иллюстрация · Zjw0558 · CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Double_side_horizontal_cnc_milling_machine_6.jpg' },
+  n5: { src: './images/steel-coils.jpg', alt: 'Рулоны стали с цветным покрытием на производстве в Китае', credit: 'Иллюстрация · Fumikas Sagisavas · CC0', url: 'https://commons.wikimedia.org/wiki/File:Colored_steel_coils.jpg' },
+};
 const SCORE = {
   n1: { m: 5, d: 1, u: 0.9, share: '38% выручки', mWhy: 'Экспорт проката 19,8 млрд ₽ из 52 млрд ₽ выручки — корзина >30%', dWhy: 'Пошлина взимается с самой компании как экспортёра', uWhy: 'Вступает 1 ноября — через 2 недели', why: 'Прямой удар по экспортной выручке с 1 ноября' },
   n2: { m: 2, d: 1, u: 1, share: '2,6% затрат', mWhy: 'Проценты по плавающему долгу 8,4 млрд ₽ — 1,2 млрд ₽ из 46 млрд ₽ затрат, корзина 1–5%', dWhy: 'Ставка напрямую входит в кредиты компании', uWhy: 'Решение уже действует', why: 'Растут процентные расходы по кредитному портфелю' },
@@ -1648,7 +1702,104 @@ const fmt = v => {
 const now = () => { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const sw = on => ({ tbg: on ? '#F2F2F3' : '#3A3B40', tj: on ? 'flex-end' : 'flex-start' });
 
+// shortcut: прямые упоминания размечены в демоданных; при подключении API использовать связи с компаниями.
+const FEED_TAGS = [IMPORTANT_MENTION, ...new Set(NEWS.flatMap(n => n.cats).filter(t => t !== IMPORTANT_MENTION))];
+
 class Component extends DCLogic {
+  tabsRef = el => this.bindScrollStrip(el, 'tabs');
+  tagsRef = el => this.bindScrollStrip(el, 'tags');
+  bindScrollStrip(el, key) {
+    this.stripCleanup?.[key]?.();
+    if (!el) return;
+    const fade = () => {
+      el.style.setProperty('--fade-left', el.scrollLeft > 1 ? '18px' : '0px');
+      el.style.setProperty('--fade-right', el.scrollWidth - el.clientWidth - el.scrollLeft > 1 ? '18px' : '0px');
+      if (key === 'tags') {
+        // Маска на самом теге сохраняет backdrop-filter; маска на родителе изолирует фон от блюра.
+        const bounds = el.getBoundingClientRect();
+        Array.from(el.children).forEach(button => {
+          const rect = button.getBoundingClientRect();
+          const left = el.scrollLeft > 1 ? Math.max(0, bounds.left + 18 - rect.left) : 0;
+          const right = el.scrollWidth - el.clientWidth - el.scrollLeft > 1 ? Math.max(0, rect.right - bounds.right + 18) : 0;
+          button.style.maskImage = left || right ? `linear-gradient(to right, transparent ${Math.max(0, left - 18)}px, #000 ${left}px, #000 calc(100% - ${right}px), transparent calc(100% - ${Math.max(0, right - 18)}px))` : 'none';
+        });
+      }
+    };
+    const resize = new ResizeObserver(fade);
+    resize.observe(el);
+    Array.from(el.children).forEach(child => resize.observe(child));
+    fade();
+    let start = null, moved = false;
+    const wheel = e => {
+      if (e.ctrlKey || el.scrollWidth <= el.clientWidth) return;
+      e.preventDefault();
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      el.scrollBy({ left: delta * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.clientWidth : 1), behavior: 'smooth' });
+    };
+    const down = e => {
+      moved = false;
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      start = { x: e.clientX, scroll: el.scrollLeft };
+    };
+    const move = e => {
+      if (!start) return;
+      const dx = e.clientX - start.x;
+      if (!moved && Math.abs(dx) < 4) return;
+      moved = true;
+      el.setPointerCapture(e.pointerId);
+      el.style.scrollSnapType = 'none';
+      el.style.userSelect = 'none';
+      el.scrollLeft = start.scroll - dx;
+      e.preventDefault();
+    };
+    const end = () => { start = null; el.style.scrollSnapType = ''; el.style.userSelect = ''; };
+    const click = e => {
+      if (moved) { e.preventDefault(); e.stopPropagation(); return; }
+      e.target.closest('button')?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+    };
+    const events = { scroll: fade, wheel, pointerdown: down, pointermove: move, pointerup: end, pointercancel: end, lostpointercapture: end, click };
+    Object.entries(events).forEach(([name, fn]) => el.addEventListener(name, fn, { passive: false, capture: name === 'click' }));
+    this.stripCleanup ||= {};
+    this.stripCleanup[key] = () => { resize.disconnect(); Object.entries(events).forEach(([name, fn]) => el.removeEventListener(name, fn, name === 'click')); };
+  }
+  searchInputRef = el => { if (el && this.searchInput !== el) el.focus(); this.searchInput = el; };
+  searchVals() {
+    const s = this.state;
+    const norm = text => text.toLowerCase().replace(/ё/g, 'е').trim();
+    const q = norm(s.searchQ || ''), words = q.split(/\s+/).filter(Boolean);
+    const matches = text => words.every(w => norm(text).includes(w));
+    // shortcut: связи компаний заданы для демоданных; заменить связями API при подключении сервера.
+    const companies = [
+      { name: 'АО «ТрансМеталл»', role: 'Ваша компания', aliases: 'трансметалл transmetall', ids: NEWS.map(n => n.id) },
+      { name: 'РЖД', role: 'Контрагент · перевозчик', aliases: 'ржд российские железные дороги', ids: ['n3'] },
+      { name: 'ПАО «Уралруда»', role: 'Контрагент · поставщик сырья', aliases: 'уралруда', ids: [] },
+      { name: 'Vietnam Steel Trading', role: 'Контрагент · покупатель', aliases: 'vietnam steel trading', ids: ['n5'] },
+    ];
+    const rows = [
+      ...NEWS.map(n => ({ id: n.id, title: n.title, summary: n.why, meta: `${IMPACT[n.impact].label} · ${n.sources.length} ${pl(n.sources.length, 'источник', 'источника', 'источников')}`, text: [n.title, n.why, ...n.cats, ...n.facts.map(f => `${f.num} ${f.text}`), ...n.sources.map(src => `${src.name} ${src.text}`), ...Object.values(n.chain)].join(' ') })),
+      ...NONE.map(n => ({ title: n.title, summary: n.reason, meta: `Скрыто · ${n.meta}` })),
+      ...STALE.map(n => ({ title: n.title, summary: 'Новость из скрытых', meta: 'Устаревшее' })),
+      ...ARCHIVE.map(n => ({ title: n.name, summary: n.last, meta: `Архив · ${n.d}` })),
+    ];
+    const selected = companies.find(c => c.name === s.searchCompany);
+    const found = q ? rows.filter(n => selected ? selected.ids.includes(n.id) : matches(`${n.text || `${n.title} ${n.summary} ${n.meta}`} ${companies.filter(c => c.ids.includes(n.id)).map(c => `${c.name} ${c.aliases}`).join(' ')}`)) : [];
+    const companyRows = selected ? [] : companies.filter(c => !q || matches(`${c.name} ${c.aliases}`));
+    return {
+      searchOpen: !!s.searchOpen, searchVisible: !!s.searchOpen && !s.news,
+      openSearch: e => { this.searchTrigger = e.currentTarget; this.setState({ searchOpen: true, searchQ: '', searchCompany: null, searchBrief: null }); },
+      closeSearch: () => { this.setState({ searchOpen: false, searchBrief: null }); this.searchTrigger?.focus(); },
+      searchInputRef: this.searchInputRef, searchQ: s.searchQ || '',
+      onSearch: e => this.setState({ searchQ: e.target.value, searchCompany: null, searchBrief: null }),
+      clearSearch: () => { this.setState({ searchQ: '', searchCompany: null, searchBrief: null }); this.searchInput?.focus(); },
+      searchInitial: !q, searchHasQuery: !!q, searchEmpty: !!q && !found.length && !companyRows.length,
+      searchSummary: selected ? `${selected.name} · связанных новостей: ${found.length}` : `Новостей: ${found.length} · компаний: ${companyRows.length}`,
+      searchCompanies: companyRows.map(c => ({ ...c, initials: initials(c.name.replace(/П?АО|[«»]/g, '').trim()), onClick: () => this.setState({ searchQ: c.name, searchCompany: c.name }) })),
+      searchNews: found.map(n => ({ ...n, onClick: () => n.id ? this.openNews(n.id) : this.setState({ searchBrief: n }) })),
+      searchHasNews: found.length > 0, searchNewsCount: found.length,
+      searchBrief: s.searchBrief || {}, searchBriefOpen: !!s.searchBrief,
+      closeSearchBrief: () => this.setState({ searchBrief: null }),
+    };
+  }
   state = { queue: NEWS.map(n => n.id), interesting: ['n2', 'n1', 'n3'], skipped: [], reasons: {}, tab: 'feed', dx: 0, dragging: false, flying: 0, noAnim: false, opened: {}, toast: null,
     news: null, ntab: 'analysis', follow: {}, horizon: {}, assum: {}, drafts: {}, sel: {}, sent: {}, kib: {}, ask: {}, askDraft: {}, compose: false,
     reasonFor: null, hidden: false, intFilter: 'all', alfa: true, srcQ: '', srcOn: {}, offOff: {}, srcMore: false, tags: [], scoreFor: null, manualVal: '', extra: [], trig: { 0: true, 1: true, 2: true, 3: false } };
@@ -1656,6 +1807,14 @@ class Component extends DCLogic {
   componentDidMount() {
     this.onKey = e => {
       const s = this.state;
+      if (s.searchOpen) {
+        if (e.key === 'Escape') {
+          if (s.news) this.setState({ news: null, compose: false });
+          else if (s.searchBrief) this.setState({ searchBrief: null });
+          else this.searchVals().closeSearch();
+        }
+        return;
+      }
       if (s.tab !== 'feed' || s.news || s.hidden || s.exp || !this.feedEl) return;
       const el = this.feedEl, k = Math.round(el.scrollTop / el.clientHeight), id = this.vq()[k], car = this.car[id];
       if (e.key === 'ArrowDown') { e.preventDefault(); el.scrollTo({ top: (k + 1) * el.clientHeight, behavior: 'smooth' }); }
@@ -1665,7 +1824,7 @@ class Component extends DCLogic {
     };
     window.addEventListener('keydown', this.onKey);
   }
-  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); clearTimeout(this.tt); }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); clearTimeout(this.tt); Object.values(this.stripCleanup || {}).forEach(cleanup => cleanup()); }
 
   byId(id) { return NEWS.find(n => n.id === id); }
   canSkip(id) { return true; }
@@ -1875,7 +2034,13 @@ class Component extends DCLogic {
     };
   }
 
-  vq() { const t = this.state.tags; return t.length ? this.state.queue.filter(id => this.byId(id).cats.some(c => t.includes(c))) : this.state.queue; }
+  vq() {
+    const tags = this.state.tags, topics = tags.filter(t => t !== IMPORTANT_MENTION);
+    return this.state.queue.filter(id => {
+      const cats = this.byId(id).cats;
+      return (!tags.includes(IMPORTANT_MENTION) || cats.includes(IMPORTANT_MENTION)) && (!topics.length || topics.some(t => cats.includes(t)));
+    });
+  }
   commit(dir) {
     const id = this.vq()[0];
     if (!id || this.state.flying) return;
@@ -1975,7 +2140,7 @@ class Component extends DCLogic {
     const liked = s.interesting.includes(n.id), K = this.kindOf(n);
     return {
       title: n.title, meaning: n.why || (SCORE[n.id] || {}).why, score: String(v), color: K.color, label: K.label, isRisk: K.risk, isOpp: K.opp, isNeu: !K.risk && !K.opp,
-      slides: n.sources.map((x, i) => ({ imgId: 'reel-' + n.id + '-' + i, hint: 'Фото из «' + x.name + '»', name: x.name, time: x.time, initials: initials(x.name), bg: avBg(x.name) })),
+      slides: n.sources.map((x, i) => ({ imgId: 'reel-' + n.id + '-' + i, photo: NEWS_PHOTOS[n.id], hint: IMG_HINT[n.id], name: x.name, time: x.time, initials: initials(x.name), bg: avBg(x.name) })),
       avs: n.sources.slice(0, 2).map((x, i) => ({ initials: initials(x.name), bg: avBg(x.name), ml: i ? '-7px' : '0px' })),
       toneCo: K.risk ? 'oklch(0.74 0.16 27)' : K.opp ? 'oklch(0.8 0.15 150)' : 'rgba(255,255,255,.85)',
       toneBg: K.risk ? 'oklch(0.6 0.2 27 / .9)' : K.opp ? 'oklch(0.6 0.14 150 / .9)' : 'rgba(255,255,255,.16)',
@@ -2156,6 +2321,10 @@ class Component extends DCLogic {
     const mail = nn && s.compose ? this.mailVals(nn) : { to: '', subject: '', body: '', file: '' };
     const overlay = s.news || s.hidden || s.compose;
     return {
+      ...this.searchVals(),
+      tabsRef: this.tabsRef,
+      tagsRef: this.tagsRef,
+      searchBg: s.tab === 'feed' ? '#1f1f22' : 'rgb(14, 15, 18)',
       tabs: [tab('feed', 'Лента', String(Math.max(0, vq.length - (s.cur || 0) - 1))), tab('int', 'Отслеживаемое', s.interesting.length ? String(s.interesting.length) : ''), tab('src', 'Источники', ''), tab('profile', 'Профиль', '')],
       ...(() => {
         const W = s.fxW || {}, wOf = (f, i) => W[i] ?? f[1], fmtW = w => w.toFixed(w * 10 % 1 ? 2 : 1).replace('.', ',');
@@ -2182,7 +2351,7 @@ class Component extends DCLogic {
           tags: [{ k: 'Тип', v: risk ? 'Риск' : n.impact === 'pos' ? 'Возможность' : 'Нейтрально', color: risk ? '#D92B21' : n.impact === 'pos' ? 'oklch(0.72 0.14 150)' : '#A3A5AB' }, { k: 'Затронуто', v: x.share, color: '#F2F2F3' }],
           formula: `I = 20 × Масштаб × Прямота × Срочность = ${scoreFormula(x)} = ${v}` }; })(),
       feedMeta: vq.length ? `Сегодня · осталось ${vq.length}` : 'Сегодня',
-      tagChips: [{ label: 'Все', on: !s.tags.length, onClick: () => this.setState({ tags: [] }) }, ...[...new Set(NEWS.flatMap(n => n.cats))].map(t => ({ label: t, on: s.tags.includes(t), onClick: () => this.setState(st => ({ tags: st.tags.includes(t) ? st.tags.filter(x => x !== t) : [...st.tags, t] })) }))]
+      tagChips: [{ label: 'Все', on: !s.tags.length, onClick: () => this.setState({ tags: [] }) }, ...FEED_TAGS.map(t => ({ label: t, on: s.tags.includes(t), onClick: () => this.setState(st => ({ tags: st.tags.includes(t) ? st.tags.filter(x => x !== t) : [...st.tags, t] })) }))]
         .map(c => ({ ...c, bg: c.on ? '#F2F2F3' : '#1C1D21', co: c.on ? '#F2F2F3' : '#F2F2F3', bd: c.on ? '#F2F2F3' : '#3A3B40' })),
       tagEmpty: s.queue.length > 0 && vq.length === 0, queueLeft: String(s.queue.length), clearTags: () => this.setState({ tags: [] }),
       ...this.hiddenVals(),
@@ -2196,10 +2365,9 @@ class Component extends DCLogic {
       feedEmpty: s.queue.length === 0, feedHas: vq.length > 0, stack,
       reels: vq.map(id => this.reel(this.byId(id))), feedRef: this.feedRef,
       sb: (s.compose && s.comp) || s.olFlow ? '#1B1C1F' : '#fff', sbBd: (s.compose && s.comp) || s.olFlow ? 'rgba(27,28,31,.4)' : 'rgba(255,255,255,.5)',
-      tabsDark: [['feed', 'Лента'], ['int', 'Отслеживаемое'], ['src', 'Источники'], ['profile', 'Профиль']].map(([k, label]) => ({ label, count: k === 'feed' ? String(Math.max(0, vq.length - (s.cur || 0) - 1)) : k === 'int' && s.interesting.length ? String(s.interesting.length) : '', color: s.tab === k ? '#fff' : 'rgba(255,255,255,.6)', bar: s.tab === k ? '#fff' : 'transparent', onClick: () => this.setState({ tab: k }) })),
       onFeedScroll: this.onFeedScroll,
       ...(() => { const left = Math.max(0, vq.length - (s.cur || 0) - 1); const w = left % 10 === 1 && left % 100 !== 11 ? 'новость осталась' : left % 10 >= 2 && left % 10 <= 4 && (left % 100 < 10 || left % 100 >= 20) ? 'новости осталось' : 'новостей осталось'; return { leftNum: String(left), leftWord: w }; })(),
-      tagChipsDark: [{ label: 'Все', on: !s.tags.length, onClick: () => { this.resetFeed(); this.setState({ tags: [], cur: 0 }); } }, ...[...new Set(NEWS.flatMap(n => n.cats))].map(t => ({ label: t, on: s.tags.includes(t), onClick: () => { this.resetFeed(); this.setState(st => ({ cur: 0, tags: st.tags.includes(t) ? st.tags.filter(x => x !== t) : [...st.tags, t] })); } }))].map(c => ({ ...c, bg: c.on ? 'rgba(255,255,255,.94)' : 'rgba(255,255,255,.14)', co: c.on ? '#16171A' : '#fff' })),
+      tagChipsDark: [{ label: 'Все', on: !s.tags.length, onClick: () => { this.resetFeed(); this.setState({ tags: [], cur: 0 }); } }, ...FEED_TAGS.map(t => ({ label: t, on: s.tags.includes(t), onClick: () => { this.resetFeed(); this.setState(st => ({ cur: 0, tags: st.tags.includes(t) ? st.tags.filter(x => x !== t) : [...st.tags, t] })); } }))].map(c => ({ ...c, bg: c.on ? 'rgba(255,255,255,.94)' : 'rgba(255,255,255,.14)', co: c.on ? '#16171A' : '#fff' })),
       expOpen: !!s.exp && s.tab === 'feed', ex: s.exp && this.byId(s.exp) ? this.expVals(this.byId(s.exp)) : { facts: [], sv: { items: [], pills: [] } }, closeExp: () => this.setState({ exp: null }),
       skip: () => this.commit(-1), like: () => this.commit(1), skipLocked: locked,
       skipBg: locked ? '#2C2D32' : '#1C1D21', skipBorder: locked ? '#2C2D32' : '#3A3B40', skipColor: locked ? '#6E7076' : '#F2F2F3', skipCursor: locked ? 'not-allowed' : 'pointer',
@@ -2240,11 +2408,9 @@ class Component extends DCLogic {
       unsubAll: () => { this.setState(st => ({ srcOn: Object.fromEntries([...REC_N, ...st.extra, ...OTHER_N].map(n => [n, false])), srcMore: false })); this.showToast('Вы отписались от всех каналов'); },
       restoreRec: () => { this.setState({ srcOn: {} }); this.showToast('Подборка по профилю восстановлена'); },
       profile: [
-        { title: 'Компания', rows: [['Отрасль', 'Металлургия, прокат'], ['Выручка 2025', '52 млрд ₽'], ['Доля экспорта', '38%']] },
-        { title: 'Валюты выручки', rows: [['USD', '26%'], ['CNY', '12%'], ['RUB', '62%']] },
-        { title: 'Кредиты', rows: [['Плавающая ставка', '8,4 млрд ₽'], ['Фиксированная ставка', '5,1 млрд ₽']] },
-        { title: 'Ключевые контрагенты', rows: [['Перевозчик', 'РЖД'], ['Поставщик сырья', 'ПАО «Уралруда»'], ['Покупатель', 'Vietnam Steel Trading']] },
-      ].map(g => ({ title: g.title, rows: g.rows.map(([k, v], i) => ({ k, v, sep: i ? '1px solid rgba(255,255,255,.08)' : 'none' })) })),
+        { title: 'Контрагенты', icon: '↔', sub: 'Перевозчик, поставщик и покупатель', rows: [['Перевозчик', 'РЖД'], ['Поставщик сырья', 'ПАО «Уралруда»'], ['Покупатель', 'Vietnam Steel Trading']] },
+        { title: 'Финансы', icon: '₽', sub: 'Валюты выручки и кредитный портфель', rows: [['Выручка в USD', '26%'], ['Выручка в CNY', '12%'], ['Выручка в RUB', '62%'], ['Плавающая ставка', '8,4 млрд ₽'], ['Фиксированная ставка', '5,1 млрд ₽']] },
+      ].map(g => ({ ...g, rows: g.rows.map(([k, v]) => ({ k, v })) })),
       triggers: [['Пошлины и квоты на металлы', 'Сразу, push-уведомление'], ['Ключевая ставка ±1 п.п.', 'Сразу'], ['Санкции против контрагентов', 'Сразу, push и почта'], ['Курс USD ±5% за неделю', 'В сводке']].map(([label, sub], i) => ({ label, sub, sep: i ? '1px solid rgba(255,255,255,.08)' : 'none', ...sw(!!s.trig[i]), toggle: () => this.setState(st => ({ trig: { ...st.trig, [i]: !st.trig[i] } })) })),
       logout: () => this.showToast('Выход отключён в прототипе'),
       tgClick: e => { e.preventDefault(); e.stopPropagation(); this.showToast('Пост откроется в Telegram'); },
