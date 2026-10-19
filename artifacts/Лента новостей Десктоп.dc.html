@@ -166,6 +166,67 @@ html,body{height:100%;overflow:hidden}
 .hidden-more{font-size:12.5px;color:#8C8E93;text-align:center}
 @media (max-width:820px){.hidden-card{grid-template-columns:64px minmax(0,1fr);gap:14px}.hidden-card-btn{grid-column:2;justify-self:start}}
 
+/* sources page */
+.src-page{flex:1;min-height:0;overflow-y:auto;padding:24px 28px 36px;box-sizing:border-box;container-type:inline-size}
+.src-inner{width:100%;max-width:1320px;display:flex;flex-direction:column;gap:18px}
+.src-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.src-head-text{display:flex;flex-direction:column;gap:5px}
+.src-title{margin:0;font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.02em}
+.src-meta{font-size:13.5px;color:#A3A5AB}
+.src-search{flex:0 1 460px;min-width:280px;display:flex;align-items:center;gap:10px;height:48px;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:0 8px 0 16px;box-sizing:border-box}
+.src-search:focus-within{border-color:rgba(255,255,255,.22)}
+.src-search input{flex:1;min-width:0;height:100%;border:none;outline:none;background:transparent;font-size:15px;color:#F2F2F3;font-family:inherit}
+.src-search-clear{flex:none;width:30px;height:30px;border-radius:50%;border:none;background:#2C2D32;color:#A3A5AB;font-size:16px;line-height:1;cursor:pointer}
+.src-banner{display:flex;align-items:flex-start;gap:14px;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px 18px}
+.src-banner-icon{flex:none;width:40px;height:40px;border-radius:10px;background:oklch(0.3 0.07 27);display:flex;align-items:center;justify-content:center}
+.src-banner-main{display:flex;flex-direction:column;gap:5px;min-width:0}
+.src-banner-title{font-size:15.5px;font-weight:600}
+.src-banner-text{font-size:13px;line-height:1.45;color:#A3A5AB;max-width:760px;text-wrap:pretty}
+.src-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start}
+@container (min-width:900px){.src-grid{grid-template-columns:minmax(0,1fr) clamp(340px,33%,400px)}.src-aside>.src-section{margin-top:31px}}
+.src-main{display:flex;flex-direction:column;gap:10px;min-width:0}
+.src-aside{display:flex;flex-direction:column;gap:14px;min-width:0}
+.src-section-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:0 2px}
+.src-section-title{font-size:16px;font-weight:600;white-space:nowrap}
+.src-section-count{font-size:13px;color:#8C8E93}
+.src-section-label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8C8E93;padding:0 2px}
+.src-link-danger{align-self:baseline;background:none;border:none;padding:2px 0;cursor:pointer;font-size:13.5px;font-weight:600;color:#D92B21;font-family:inherit}
+.src-channels{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px}
+.src-channel{display:flex;align-items:center;gap:12px;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 12px 12px 14px;min-width:0}
+.src-avatar{flex:none;width:40px;height:40px;border-radius:50%;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.src-channel-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.src-name{display:block;font-size:14.5px;font-weight:600;color:#F2F2F3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src-topics{display:block;font-size:12.5px;color:#A3A5AB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src-channel-meta{display:flex;align-items:center;gap:8px;min-width:0}
+.src-chip{flex:none;height:20px;padding:0 7px;border-radius:5px;font-size:11.5px;font-weight:600;display:flex;align-items:center;white-space:nowrap}
+.src-remove{flex:none;width:34px;height:34px;border-radius:9px;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.src-remove:hover{background:rgba(255,255,255,.08)}
+.src-more{height:42px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:#1C1D21;color:#F2F2F3;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.src-more:hover{background:#232428}
+.src-empty{background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.src-section{background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.src-official-row{display:flex;align-items:center;gap:12px;padding:11px 0}
+.src-official-code{flex:none;width:38px;height:38px;border-radius:10px;background:#22304A;color:#9DB8E0;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.src-official-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.src-official-main .src-topics{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.35}
+.src-check{flex:none;width:40px;height:40px;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.src-check-box{width:22px;height:22px;border-radius:6px;box-sizing:border-box;border:2px solid #F2F2F3;display:flex;align-items:center;justify-content:center}
+.src-footnote{font-size:12.5px;line-height:1.45;color:#A3A5AB;padding:0 2px}
+.src-alfa{display:flex;align-items:center;gap:14px;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-left:4px solid #D92B21;border-radius:4px 16px 16px 4px;padding:14px 16px}
+.src-alfa-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.src-alfa-main .src-topics{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.4}
+.src-switch{flex:none;width:46px;height:28px;border-radius:14px;border:none;padding:3px;cursor:pointer;display:flex}
+.src-switch span{width:22px;height:22px;border-radius:50%;background:#1C1D21;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.src-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}
+.src-result{display:flex;align-items:center;gap:12px;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 12px 12px 14px;min-width:0}
+.src-result-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.src-sub{flex:none;height:34px;padding:0 12px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.src-add{background:#1C1D21;border:1px dashed rgba(255,255,255,.16);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.src-add-title{font-size:14.5px;font-weight:600}
+.src-add-text{font-size:13px;line-height:1.4;color:#A3A5AB}
+.src-add-btn{height:44px;border-radius:12px;border:none;background:#F2F2F3;color:#16171A;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+@media (max-width:900px){.src-head{align-items:flex-start}.src-search{flex:1 1 100%}.src-channels{grid-template-columns:1fr}}
+
 /* overlays sit over the whole window */
 .overlay-fixed{position:fixed;inset:0}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);max-width:min(520px,90vw);background:#F2F2F3;color:#16171A;font-size:13px;line-height:1.4;padding:11px 16px;border-radius:12px;z-index:90;box-shadow:0 8px 28px rgba(0,0,0,.35)}
@@ -496,122 +557,131 @@ html,body{height:100%;overflow:hidden}
   </sc-if>
 
   <sc-if value="{{ tabSrc }}" hint-placeholder-val="{{ false }}">
-    <div style="flex:1;min-height:0;overflow-y:auto;padding:18px 16px 24px;display:flex;flex-direction:column;gap:16px;">
-      <div style="display:flex;flex-direction:column;gap:4px;padding:0 4px;">
-        <span style="font-size:28px;font-weight:700;letter-spacing:-.01em;line-height:1.1;">Источники</span>
-        <span style="font-size:13.5px;color:#A3A5AB;">{{ srcMeta }}</span>
-      </div>
-
-      <div style="flex:none;display:flex;align-items:center;gap:10px;height:50px;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:0 8px 0 16px;">
-        <svg width="18" height="18" viewBox="0 0 20 20" style="flex:none;"><circle cx="8.5" cy="8.5" r="6" stroke="#F2F2F3" stroke-width="2" fill="none"></circle><path d="M13 13l5 5" stroke="#F2F2F3" stroke-width="2" stroke-linecap="round"></path></svg>
-        <input value="{{ srcQ }}" onChange="{{ srcQChange }}" placeholder="Найти канал или вставить ссылку" style="flex:1;min-width:0;height:100%;border:none;outline:none;background:transparent;font-size:15px;color:#F2F2F3;">
-        <sc-if value="{{ searching }}" hint-placeholder-val="{{ false }}">
-          <button onClick="{{ srcQClear }}" style="flex:none;width:30px;height:30px;border-radius:50%;border:none;background:#2C2D32;color:#A3A5AB;font-size:16px;line-height:1;cursor:pointer;">×</button>
-        </sc-if>
-      </div>
-
-      <sc-if value="{{ searching }}" hint-placeholder-val="{{ false }}">
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8C8E93;padding:0 4px;">{{ resLabel }}</span>
-          <sc-if value="{{ hasRes }}" hint-placeholder-val="{{ true }}">
-            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;flex-direction:column;">
-              <sc-for list="{{ results }}" as="ch" hint-placeholder-count="4">
-                <div style="display:flex;align-items:center;gap:14px;padding:12px 12px 12px 16px;border-top:{{ ch.sep }};">
-                  <div style="flex:none;width:42px;height:42px;border-radius:50%;background:{{ ch.bg }};color:{{ ch.fg }};font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ ch.initials }}</div>
-                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
-                    <span style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ ch.name }}</span>
-                    <span style="font-size:12.5px;color:#A3A5AB;">{{ ch.topics }}</span>
-                  </div>
-                  <button onClick="{{ ch.toggle }}" style="flex:none;height:34px;padding:0 12px;border-radius:9px;border:1px solid {{ ch.bbd }};background:{{ ch.bbg }};color:{{ ch.bco }};font-size:13px;font-weight:600;cursor:pointer;">{{ ch.btn }}</button>
-                </div>
-              </sc-for>
-            </div>
-          </sc-if>
-          <div style="background:#1C1D21;border:1px dashed rgba(255,255,255,.16);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
-            <span style="font-size:14.5px;font-weight:600;">Нет нужного канала?</span>
-            <span style="font-size:13px;line-height:1.4;color:#A3A5AB;">{{ addHint }}</span>
-            <sc-if value="{{ canAdd }}" hint-placeholder-val="{{ false }}">
-              <button onClick="{{ addHandle }}" style="height:44px;border-radius:12px;border:none;background:#F2F2F3;color:#16171A;font-size:14px;font-weight:600;cursor:pointer;">Добавить {{ handle }} в мои каналы</button>
+    <div class="src-page">
+      <div class="src-inner">
+        <div class="src-head">
+          <div class="src-head-text">
+            <h1 class="src-title">Источники</h1>
+            <span class="src-meta">{{ srcMeta }}</span>
+          </div>
+          <div class="src-search">
+            <svg width="18" height="18" viewBox="0 0 20 20" style="flex:none;"><circle cx="8.5" cy="8.5" r="6" stroke="#F2F2F3" stroke-width="2" fill="none"></circle><path d="M13 13l5 5" stroke="#F2F2F3" stroke-width="2" stroke-linecap="round"></path></svg>
+            <input value="{{ srcQ }}" onChange="{{ srcQChange }}" placeholder="Найти канал или вставить ссылку">
+            <sc-if value="{{ searching }}" hint-placeholder-val="{{ false }}">
+              <button class="src-search-clear" onClick="{{ srcQClear }}">×</button>
             </sc-if>
           </div>
         </div>
-      </sc-if>
 
-      <sc-if value="{{ notSearching }}" hint-placeholder-val="{{ true }}">
-        <div style="display:flex;flex-direction:column;gap:16px;">
-          <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;display:flex;gap:14px;align-items:flex-start;">
-            <div style="flex:none;width:40px;height:40px;border-radius:10px;background:oklch(0.3 0.07 27);display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z" stroke="#D92B21" stroke-width="1.8" fill="none" stroke-linejoin="round"></path></svg></div>
-            <div style="flex:1;display:flex;flex-direction:column;gap:5px;">
-              <span style="font-size:15.5px;font-weight:600;">Подписали вас на 15 каналов</span>
-              <span style="font-size:13px;line-height:1.45;color:#A3A5AB;text-wrap:pretty;">Подобрали из каталога под профиль «Металлургия, экспорт». Отпишитесь от лишних — лента подстроится.</span>
-            </div>
-          </div>
-
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <div style="display:flex;align-items:center;gap:8px;padding:0 4px;">
-              <svg width="14" height="14" viewBox="0 0 16 16" style="flex:none;"><rect x="3" y="7" width="10" height="7" rx="1.5" stroke="#5E6066" stroke-width="1.5" fill="none"></rect><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="#5E6066" stroke-width="1.5" fill="none"></path></svg>
-              <span style="flex:none;white-space:nowrap;font-size:16px;font-weight:600;">Официальные данные</span>
-              <span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:#8C8E93;">добавлены автоматически</span>
-            </div>
-            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;flex-direction:column;">
-              <sc-for list="{{ official }}" as="o" hint-placeholder-count="3">
-                <div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-top:{{ o.sep }};opacity:{{ o.op }};">
-                  <div style="flex:none;width:42px;height:42px;border-radius:10px;background:#22304A;color:#9DB8E0;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ o.code }}</div>
-                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
-                    <span style="font-size:15px;font-weight:600;">{{ o.name }}</span>
-                    <span style="font-size:12.5px;line-height:1.35;color:#A3A5AB;">{{ o.desc }}</span>
-                  </div>
-                  <button onClick="{{ o.toggle }}" aria-label="Включить источник" style="flex:none;width:44px;height:44px;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;"><span style="width:22px;height:22px;border-radius:6px;box-sizing:border-box;border:2px solid #F2F2F3;background:{{ o.cbg }};display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6.2l2.6 2.6L10 3.4" stroke="{{ o.cco }}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+        <sc-if value="{{ searching }}" hint-placeholder-val="{{ false }}">
+          <div class="src-grid">
+            <div class="src-main">
+              <span class="src-section-label">{{ resLabel }}</span>
+              <sc-if value="{{ hasRes }}" hint-placeholder-val="{{ true }}">
+                <div class="src-results">
+                  <sc-for list="{{ results }}" as="ch" hint-placeholder-count="4">
+                    <div class="src-result">
+                      <div class="src-avatar" style="background:{{ ch.bg }};color:{{ ch.fg }};">{{ ch.initials }}</div>
+                      <div class="src-result-main">
+                        <span class="src-name">{{ ch.name }}</span>
+                        <span class="src-topics">{{ ch.topics }}</span>
+                      </div>
+                      <button class="src-sub" onClick="{{ ch.toggle }}" style="border:1px solid {{ ch.bbd }};background:{{ ch.bbg }};color:{{ ch.bco }};">{{ ch.btn }}</button>
+                    </div>
+                  </sc-for>
                 </div>
-              </sc-for>
-            </div>
-            <span style="font-size:12.5px;line-height:1.45;color:#A3A5AB;padding:0 4px;">Выключенный источник пропадает из ленты, но продолжает проверять факты в карточках.</span>
-          </div>
-
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 4px;">
-              <span style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:16px;font-weight:600;">Мои каналы</span><span style="font-size:13px;color:#8C8E93;">{{ mineCount }}</span></span>
-              <sc-if value="{{ hasMine }}" hint-placeholder-val="{{ true }}">
-                <button onClick="{{ unsubAll }}" style="background:none;border:none;padding:4px 0;cursor:pointer;font-size:13.5px;font-weight:600;color:#D92B21;">Отписаться от всех</button>
               </sc-if>
             </div>
-            <sc-if value="{{ hasMine }}" hint-placeholder-val="{{ true }}">
-              <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;flex-direction:column;">
-                <sc-for list="{{ mine }}" as="ch" hint-placeholder-count="7">
-                  <div style="display:flex;align-items:center;gap:14px;padding:13px 8px 13px 16px;border-top:{{ ch.sep }};">
-                    <div style="flex:none;width:42px;height:42px;border-radius:50%;background:{{ ch.bg }};color:{{ ch.fg }};font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ ch.initials }}</div>
-                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;">
-                      <span style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ ch.name }}</span>
-                      <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                        <span style="flex:none;height:20px;padding:0 7px;border-radius:5px;background:{{ ch.chipBg }};color:{{ ch.chipCo }};font-size:11.5px;font-weight:600;display:flex;align-items:center;">{{ ch.chip }}</span>
-                        <span style="font-size:12.5px;color:#A3A5AB;">{{ ch.topics }}</span>
-                      </span>
-                    </div>
-                    <button onClick="{{ ch.toggle }}" aria-label="Отписаться" style="flex:none;width:40px;height:40px;border-radius:10px;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2l10 10M12 2L2 12" stroke="#5E6066" stroke-width="1.8" stroke-linecap="round"></path></svg></button>
-                  </div>
-                </sc-for>
-                <sc-if value="{{ hasMore }}" hint-placeholder-val="{{ true }}">
-                  <button onClick="{{ toggleMore }}" style="height:52px;border:none;border-top:1px solid rgba(255,255,255,.08);background:none;cursor:pointer;font-size:14px;font-weight:600;color:#F2F2F3;border-radius:0 0 16px 16px;">{{ moreLabel }}</button>
+            <div class="src-aside">
+              <div class="src-add">
+                <span class="src-add-title">Нет нужного канала?</span>
+                <span class="src-add-text">{{ addHint }}</span>
+                <sc-if value="{{ canAdd }}" hint-placeholder-val="{{ false }}">
+                  <button class="src-add-btn" onClick="{{ addHandle }}">Добавить {{ handle }} в мои каналы</button>
                 </sc-if>
               </div>
-            </sc-if>
-            <sc-if value="{{ noMine }}" hint-placeholder-val="{{ false }}">
-              <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px 16px;display:flex;flex-direction:column;gap:12px;">
-                <span style="font-size:14px;line-height:1.45;color:#A3A5AB;">Вы отписались от всех каналов. В ленте останутся только официальные данные.</span>
-                <button onClick="{{ restoreRec }}" style="height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:#1C1D21;font-size:14px;font-weight:600;color:#F2F2F3;cursor:pointer;">Вернуть подборку по профилю</button>
-              </div>
-            </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ notSearching }}" hint-placeholder-val="{{ true }}">
+          <div class="src-banner">
+            <div class="src-banner-icon"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z" stroke="#D92B21" stroke-width="1.8" fill="none" stroke-linejoin="round"></path></svg></div>
+            <div class="src-banner-main">
+              <span class="src-banner-title">Подписали вас на 15 каналов</span>
+              <span class="src-banner-text">Подобрали из каталога под профиль «Металлургия, экспорт». Отпишитесь от лишних — лента подстроится.</span>
+            </div>
           </div>
 
-          <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-left:4px solid #D92B21;border-radius:4px 16px 16px 4px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
-            <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
-              <span style="font-size:15px;font-weight:600;">Аналитика Альфа-Банка</span>
-              <span style="font-size:12.5px;line-height:1.4;color:#A3A5AB;">Мнение аналитиков банка в каждой новости</span>
+          <div class="src-grid">
+            <div class="src-main">
+              <div class="src-section-head">
+                <span style="display:flex;align-items:baseline;gap:8px;"><span class="src-section-title">Мои каналы</span><span class="src-section-count">{{ mineCount }}</span></span>
+                <sc-if value="{{ hasMine }}" hint-placeholder-val="{{ true }}">
+                  <button class="src-link-danger" onClick="{{ unsubAll }}">Отписаться от всех</button>
+                </sc-if>
+              </div>
+              <sc-if value="{{ hasMine }}" hint-placeholder-val="{{ true }}">
+                <div class="src-channels">
+                  <sc-for list="{{ mine }}" as="ch" hint-placeholder-count="7">
+                    <div class="src-channel">
+                      <div class="src-avatar" style="background:{{ ch.bg }};color:{{ ch.fg }};">{{ ch.initials }}</div>
+                      <div class="src-channel-main">
+                        <span class="src-name">{{ ch.name }}</span>
+                        <span class="src-channel-meta">
+                          <span class="src-chip" style="background:{{ ch.chipBg }};color:{{ ch.chipCo }};">{{ ch.chip }}</span>
+                          <span class="src-topics">{{ ch.topics }}</span>
+                        </span>
+                      </div>
+                      <button class="src-remove" onClick="{{ ch.toggle }}" aria-label="Отписаться"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2l10 10M12 2L2 12" stroke="#5E6066" stroke-width="1.8" stroke-linecap="round"></path></svg></button>
+                    </div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ hasMore }}" hint-placeholder-val="{{ true }}">
+                  <button class="src-more" onClick="{{ toggleMore }}">{{ moreLabel }}</button>
+                </sc-if>
+              </sc-if>
+              <sc-if value="{{ noMine }}" hint-placeholder-val="{{ false }}">
+                <div class="src-empty">
+                  <span style="font-size:14px;line-height:1.45;color:#A3A5AB;">Вы отписались от всех каналов. В ленте останутся только официальные данные.</span>
+                  <button onClick="{{ restoreRec }}" style="height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:#1C1D21;font-size:14px;font-weight:600;color:#F2F2F3;cursor:pointer;">Вернуть подборку по профилю</button>
+                </div>
+              </sc-if>
             </div>
-            <button onClick="{{ alfaToggle.onClick }}" style="flex:none;width:46px;height:28px;border-radius:14px;border:none;padding:3px;cursor:pointer;background:{{ alfaToggle.bg }};display:flex;justify-content:{{ alfaToggle.justify }};"><span style="width:22px;height:22px;border-radius:50%;background:#1C1D21;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span></button>
+
+            <div class="src-aside">
+              <div class="src-section">
+                <div style="display:flex;align-items:center;gap:8px;padding:0 2px 2px;">
+                  <svg width="14" height="14" viewBox="0 0 16 16" style="flex:none;"><rect x="3" y="7" width="10" height="7" rx="1.5" stroke="#5E6066" stroke-width="1.5" fill="none"></rect><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="#5E6066" stroke-width="1.5" fill="none"></path></svg>
+                  <span class="src-section-title">Официальные данные</span>
+                  <span style="flex:1;min-width:0;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:#8C8E93;">автоматически</span>
+                </div>
+                <div>
+                  <sc-for list="{{ official }}" as="o" hint-placeholder-count="3">
+                    <div class="src-official-row" style="opacity:{{ o.op }};border-top:{{ o.sep }};">
+                      <div class="src-official-code">{{ o.code }}</div>
+                      <div class="src-official-main">
+                        <span class="src-name">{{ o.name }}</span>
+                        <span class="src-topics">{{ o.desc }}</span>
+                      </div>
+                      <button class="src-check" onClick="{{ o.toggle }}" aria-label="Включить источник"><span class="src-check-box" style="background:{{ o.cbg }};"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6.2l2.6 2.6L10 3.4" stroke="{{ o.cco }}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+                    </div>
+                  </sc-for>
+                </div>
+                <span class="src-footnote">Выключенный источник пропадает из ленты, но продолжает проверять факты в карточках.</span>
+              </div>
+
+              <div class="src-alfa">
+                <div class="src-alfa-main">
+                  <span class="src-name">Аналитика Альфа-Банка</span>
+                  <span class="src-topics">Мнение аналитиков банка в каждой новости</span>
+                </div>
+                <button class="src-switch" onClick="{{ alfaToggle.onClick }}" style="justify-content:{{ alfaToggle.justify }};background:{{ alfaToggle.bg }};"><span></span></button>
+              </div>
+            </div>
           </div>
-        </div>
-      </sc-if>
+        </sc-if>
+      </div>
     </div>
   </sc-if>
 
