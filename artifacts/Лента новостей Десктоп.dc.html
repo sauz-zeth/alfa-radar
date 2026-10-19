@@ -129,6 +129,54 @@ html,body{height:100%;overflow:hidden}
 .analysis-deltas{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px 18px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)}
 .analysis-deltas>div{min-width:0}
 
+/* scenarios tab */
+.scen-controls{background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+.scen-control{display:flex;flex-direction:column;gap:8px;min-width:0}
+.scen-body{display:flex;flex-direction:column;gap:4px;min-width:0}
+@container (min-width:640px){.scen-controls{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto 1fr;gap:10px 16px}.scen-control{display:contents}.scen-control>.scen-label{grid-row:1;align-self:start}.scen-control>.scen-seg,.scen-control>.scen-body{grid-row:2;align-self:start}}
+.scen-label{font-size:12px;line-height:1.35;font-weight:600;letter-spacing:.01em;color:#8C8E93}
+.scen-lever{font-size:13.5px;line-height:1.35;color:#C9CBD0}
+.scen-hint{font-size:12px;line-height:1.4;color:#8C8E93}
+.scen-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#2C2D32;border-radius:10px;padding:3px}
+.scen-seg button{height:34px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.scen-leverstrip{display:flex;flex-direction:column;gap:12px;padding:2px 4px 0}
+.scen-leverstrip-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.scen-leverstrip-scale{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.scen-leverstrip-line{position:absolute;left:16.667%;right:16.667%;top:5px;height:1px;background:linear-gradient(to right,rgba(255,255,255,.04),rgba(255,255,255,.22),rgba(255,255,255,.04))}
+.scen-leverstrip-point{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;text-align:center}
+.scen-leverstrip-dot{width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 4px #0E0F12}
+.scen-leverstrip-name{font-size:11.5px;line-height:1.25;color:#8C8E93}
+.scen-leverstrip-value{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.scen-delta{align-self:flex-start;margin-top:2px;font-size:11px;line-height:1.2;font-weight:600;color:#A3A5AB;background:rgba(255,255,255,.06);border-radius:6px;padding:3px 7px}
+.scen-spark{display:flex;align-items:flex-end;gap:4px;height:36px;margin:2px 0 4px;border-bottom:1px solid rgba(255,255,255,.1)}
+.scen-spark-bar{flex:1;border-radius:3px 3px 0 0;min-height:6px;transition:height .3s}
+.scen-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-items:stretch}
+@container (min-width:620px){.scen-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.scen-compare{background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr)}
+@container (min-width:620px){.scen-compare{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.scen-col{display:flex;flex-direction:column;gap:6px;min-width:0;padding:16px}
+.scen-card{background:#1C1D21;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:6px;min-width:0;min-height:150px}
+.scen-name{font-size:12px;line-height:1.35;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#8C8E93}
+.scen-value{font-size:26px;line-height:1.1;font-weight:700;letter-spacing:-.025em;margin:2px 0 4px}
+.scen-cond{font-size:12.5px;line-height:1.4;color:#A3A5AB;text-wrap:pretty}
+.scen-calc{align-self:flex-start;margin-top:auto;background:none;border:none;padding:4px 0 0;cursor:pointer;font-size:12.5px;font-weight:600;color:#A3A5AB;font-family:inherit}
+.scen-formula{background:#232428;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.4;color:#F2F2F3;font-weight:600;text-wrap:pretty}
+.scen-note{font-size:12px;line-height:1.45;color:#8C8E93;padding:0 4px}
+.scen-bar{height:6px;border-radius:3px;background:#2C2D32;overflow:hidden;margin:2px 0 4px}
+.scen-bar>div{height:100%;border-radius:3px;transition:width .3s}
+.scen-product{display:flex;align-items:center;justify-content:space-between;gap:10px;border:none;border-top:1px dashed rgba(255,255,255,.16);background:none;padding:10px 0 0;margin-top:auto;cursor:pointer;text-align:left;color:#F2F2F3;font-family:inherit}
+.scen-product-label{display:flex;align-items:center;gap:8px;font-size:12.5px}
+.scen-product-badge{flex:none;width:18px;height:18px;border-radius:5px;background:#D92B21;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.scen-product-value{font-size:15px;font-weight:700;white-space:nowrap}
+.scen-setup{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+@container (min-width:700px){.scen-setup{grid-template-columns:minmax(280px,.8fr) minmax(0,1.2fr)}}
+.scen-panel{background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.scen-assumption{display:flex;align-items:flex-start;gap:10px;background:none;border:none;padding:4px 0;cursor:pointer;text-align:left;color:#F2F2F3;font-family:inherit}
+.scen-check{flex:none;width:20px;height:20px;box-sizing:border-box;border-radius:5px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.scen-assumption-main{display:flex;flex-direction:column;gap:2px}
+.scen-assumption-label{font-size:14px;line-height:1.35}
+.scen-assumption-effect{font-size:12px;color:#8C8E93}
+
 /* centered column for list/detail tabs */
 .page-col{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center}
 .page-col-inner{width:100%;max-width:760px;display:flex;flex-direction:column;gap:16px;padding:24px 24px 32px;box-sizing:border-box}
@@ -1154,23 +1202,34 @@ html,body{height:100%;overflow:hidden}
             </div>
           </sc-if>
           <sc-if value="{{ c.hasLevers }}" hint-placeholder-val="{{ false }}">
-            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:14px;">
-              <div style="display:flex;flex-direction:column;gap:8px;">
-                <span style="font-size:14px;font-weight:600;">Горизонт</span>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#2C2D32;border-radius:10px;padding:3px;">
-                  <sc-for list="{{ n.horizons }}" as="hz" hint-placeholder-count="3"><button onClick="{{ hz.onClick }}" style="height:34px;border:none;border-radius:8px;background:{{ hz.bg }};font-size:13.5px;font-weight:600;color:{{ hz.color }};cursor:pointer;">{{ hz.label }}</button></sc-for>
+            <div class="scen-controls">
+              <div class="scen-control">
+                <span class="scen-label">Горизонт</span>
+                <div class="scen-seg">
+                  <sc-for list="{{ n.horizons }}" as="hz" hint-placeholder-count="3"><button onClick="{{ hz.onClick }}" style="background:{{ hz.bg }};color:{{ hz.color }};">{{ hz.label }}</button></sc-for>
                 </div>
               </div>
-              <div style="display:flex;flex-direction:column;gap:4px;">
-                <span style="font-size:14px;font-weight:600;">Рычаг сценариев</span>
-                <span style="font-size:13.5px;color:#C9CBD0;">{{ c.l1Label }}</span>
-                <span style="font-size:12.5px;color:#8C8E93;">Пессимистичный · базовый · оптимистичный: {{ c.l1Vals }}</span>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:8px;">
-                <span style="font-size:13.5px;color:#C9CBD0;">{{ c.l2Label }}</span>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#2C2D32;border-radius:10px;padding:3px;">
-                  <sc-for list="{{ c.l2 }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.onClick }}" style="height:34px;border:none;border-radius:8px;background:{{ o.bg }};font-size:13.5px;font-weight:600;color:{{ o.color }};cursor:pointer;">{{ o.label }}</button></sc-for>
+              <div class="scen-control">
+                <span class="scen-label">{{ c.l2Label }}</span>
+                <div class="scen-seg">
+                  <sc-for list="{{ c.l2 }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.onClick }}" style="background:{{ o.bg }};color:{{ o.color }};">{{ o.label }}</button></sc-for>
                 </div>
+              </div>
+            </div>
+            <div class="scen-leverstrip">
+              <div class="scen-leverstrip-head">
+                <span class="scen-label">Рычаг сценариев</span>
+                <span class="scen-lever">{{ c.l1Label }}</span>
+              </div>
+              <div class="scen-leverstrip-scale">
+                <span class="scen-leverstrip-line"></span>
+                <sc-for list="{{ c.l1Parts }}" as="p" hint-placeholder-count="3">
+                  <div class="scen-leverstrip-point">
+                    <span class="scen-leverstrip-dot" style="background:{{ p.color }};"></span>
+                    <span class="scen-leverstrip-name">{{ p.name }}</span>
+                    <span class="scen-leverstrip-value" style="color:{{ p.color }};">{{ p.value }}</span>
+                  </div>
+                </sc-for>
               </div>
             </div>
             <sc-if value="{{ c.need }}" hint-placeholder-val="{{ false }}">
@@ -1179,18 +1238,22 @@ html,body{height:100%;overflow:hidden}
                 <div style="display:flex;gap:8px;"><input value="{{ c.profDraft }}" onChange="{{ c.onProf }}" placeholder="например, 2100" inputmode="numeric" style="flex:1;min-width:0;height:40px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:#232428;color:#F2F2F3;padding:0 10px;font-size:14px;outline:none;"><button onClick="{{ c.saveProf }}" style="flex:none;height:40px;padding:0 14px;border-radius:9px;border:none;background:#F2F2F3;color:#16171A;font-size:13px;font-weight:600;cursor:pointer;">Сохранить</button></div>
               </div>
             </sc-if>
-            <sc-for list="{{ c.scen }}" as="sc" hint-placeholder-count="3">
-              <div style="background:#1C1D21;border:{{ sc.border }};border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;">
-                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">
-                  <span style="font-size:14px;font-weight:600;">{{ sc.name }}</span>
-                  <span style="font-size:19px;font-weight:700;color:{{ sc.vcolor }};white-space:nowrap;">{{ sc.value }}</span>
+            <div class="scen-compare">
+              <sc-for list="{{ c.scen }}" as="sc" hint-placeholder-count="3">
+                <div class="scen-col">
+                  <span class="scen-name">{{ sc.name }}</span>
+                  <span class="scen-value" style="color:{{ sc.vcolor }};">{{ sc.value }}</span>
+                  <span class="scen-delta">{{ sc.delta }}</span>
+                  <div class="scen-spark">
+                    <sc-for list="{{ sc.bars }}" as="b" hint-placeholder-count="3"><span class="scen-spark-bar" style="height:{{ b.h }};background:{{ b.bg }};"></span></sc-for>
+                  </div>
+                  <span class="scen-cond">При условии «{{ sc.at }}»</span>
+                  <button class="scen-calc" onClick="{{ sc.toggle }}">Как посчитано</button>
+                  <sc-if value="{{ sc.open }}" hint-placeholder-val="{{ false }}"><div class="scen-formula">{{ sc.f }}</div></sc-if>
                 </div>
-                <span style="font-size:12.5px;color:#A3A5AB;">При условии «{{ sc.at }}»</span>
-                <button onClick="{{ sc.toggle }}" style="align-self:flex-start;background:none;border:none;padding:2px 0;cursor:pointer;font-size:12.5px;font-weight:600;color:#A3A5AB;">Как посчитано</button>
-                <sc-if value="{{ sc.open }}" hint-placeholder-val="{{ false }}"><div style="background:#232428;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.4;color:#F2F2F3;font-weight:600;">{{ sc.f }}</div></sc-if>
-              </div>
-            </sc-for>
-            <span style="font-size:12px;line-height:1.45;color:#8C8E93;padding:0 4px;">Эффект на операционную прибыль за выбранный горизонт. Данные — из профиля компании.</span>
+              </sc-for>
+            </div>
+            <span class="scen-note">Эффект на операционную прибыль за выбранный горизонт. Данные — из профиля компании.</span>
           </sc-if>
           <sc-if value="{{ c.hasScenDiffs }}" hint-placeholder-val="{{ false }}">
             <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
@@ -1214,44 +1277,42 @@ html,body{height:100%;overflow:hidden}
             <span style="font-size:12px;color:#8C8E93;padding:0 4px;">{{ c.scenNote }}</span>
           </sc-if>
           <sc-if value="{{ c.scenShow }}" hint-placeholder-val="{{ true }}">
-          <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:14px;">
-            <div style="display:flex;flex-direction:column;gap:8px;">
-              <span style="font-size:14px;font-weight:600;">Горизонт планирования</span>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#2C2D32;border-radius:10px;padding:3px;">
+          <div class="scen-setup">
+            <div class="scen-panel">
+              <span class="scen-label">Горизонт планирования</span>
+              <div class="scen-seg">
                 <sc-for list="{{ n.horizons }}" as="hz" hint-placeholder-count="3">
-                  <button onClick="{{ hz.onClick }}" style="height:34px;border:none;border-radius:8px;background:{{ hz.bg }};box-shadow:{{ hz.shadow }};font-size:13.5px;font-weight:600;color:{{ hz.color }};cursor:pointer;">{{ hz.label }}</button>
+                  <button onClick="{{ hz.onClick }}" style="background:{{ hz.bg }};box-shadow:{{ hz.shadow }};color:{{ hz.color }};">{{ hz.label }}</button>
                 </sc-for>
               </div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:2px;">
-              <span style="font-size:14px;font-weight:600;padding-bottom:4px;">Допущения</span>
+            <div class="scen-panel">
+              <span class="scen-label">Допущения</span>
               <sc-for list="{{ n.assumptions }}" as="as" hint-placeholder-count="2">
-                <button onClick="{{ as.onClick }}" style="display:flex;align-items:flex-start;gap:10px;background:none;border:none;padding:7px 0;cursor:pointer;text-align:left;color:#F2F2F3;">
-                  <span style="flex:none;width:20px;height:20px;box-sizing:border-box;border-radius:5px;border:1.5px solid {{ as.border }};background:{{ as.bg }};display:flex;align-items:center;justify-content:center;margin-top:1px;"><svg width="12" height="12" viewBox="0 0 16 16"><path d="M3 8.5l3 3 7-7" stroke="#fff" stroke-width="2.4" fill="none"></path></svg></span>
-                  <span style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:14px;line-height:1.35;">{{ as.label }}</span><span style="font-size:12px;color:#8C8E93;">{{ as.effect }}</span></span>
+                <button onClick="{{ as.onClick }}" class="scen-assumption">
+                  <span class="scen-check" style="border:1.5px solid {{ as.border }};background:{{ as.bg }};"><svg width="12" height="12" viewBox="0 0 16 16"><path d="M3 8.5l3 3 7-7" stroke="#fff" stroke-width="2.4" fill="none"></path></svg></span>
+                  <span class="scen-assumption-main"><span class="scen-assumption-label">{{ as.label }}</span><span class="scen-assumption-effect">{{ as.effect }}</span></span>
                 </button>
               </sc-for>
             </div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="scen-grid">
             <sc-for list="{{ n.scenarios }}" as="sc" hint-placeholder-count="3">
-              <div style="background:#1C1D21;border:{{ sc.border }};border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
-                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">
-                  <span style="font-size:14px;font-weight:600;">{{ sc.name }}</span>
-                  <span style="font-size:19px;font-weight:700;color:{{ sc.vcolor }};white-space:nowrap;">{{ sc.value }}</span>
-                </div>
-                <div style="height:6px;border-radius:3px;background:#2C2D32;overflow:hidden;"><div style="height:100%;width:{{ sc.w }};background:{{ sc.vcolor }};border-radius:3px;transition:width .3s;"></div></div>
-                <span style="font-size:13px;line-height:1.4;color:#A3A5AB;">{{ sc.note }}</span>
+              <div class="scen-card" style="border:{{ sc.border }};">
+                <span class="scen-name">{{ sc.name }}</span>
+                <span class="scen-value" style="color:{{ sc.vcolor }};">{{ sc.value }}</span>
+                <div class="scen-bar"><div style="width:{{ sc.w }};background:{{ sc.vcolor }};"></div></div>
+                <span class="scen-cond">{{ sc.note }}</span>
                 <sc-if value="{{ sc.withProduct }}" hint-placeholder-val="{{ false }}">
-                  <button onClick="{{ toActions }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;border:none;border-top:1px dashed rgba(255,255,255,.16);background:none;padding:10px 0 0;margin-top:2px;cursor:pointer;text-align:left;color:#F2F2F3;">
-                    <span style="display:flex;align-items:center;gap:8px;font-size:13px;"><span style="flex:none;width:18px;height:18px;border-radius:5px;background:#D92B21;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">А</span>С продуктом банка: {{ sc.productName }}</span>
-                    <span style="font-size:15px;font-weight:700;white-space:nowrap;">{{ sc.withProduct }}</span>
+                  <button onClick="{{ toActions }}" class="scen-product">
+                    <span class="scen-product-label"><span class="scen-product-badge">А</span>С продуктом банка: {{ sc.productName }}</span>
+                    <span class="scen-product-value">{{ sc.withProduct }}</span>
                   </button>
                 </sc-if>
               </div>
             </sc-for>
           </div>
-          <span style="font-size:12px;line-height:1.45;color:#8C8E93;padding:0 4px;">Эффект на операционную прибыль за выбранный период. Расчёт по профилю компании на 1 октября.</span>
+          <span class="scen-note">Эффект на операционную прибыль за выбранный период. Расчёт по профилю компании на 1 октября.</span>
           </sc-if>
         </sc-if>
 
@@ -2267,6 +2328,12 @@ class Component extends DCLogic {
     const changed = k > 0 && !e.same;
     const W = this.waitOf(n), ST = { wait: ['ждём', '#A3A5AB', 'rgba(255,255,255,.08)'], yes: ['подтвердилось', 'oklch(0.8 0.14 150)', 'oklch(0.6 0.14 150 / .2)'], no: ['опровергнуто', 'oklch(0.76 0.16 27)', 'oklch(0.6 0.2 27 / .18)'] };
     const lv = LEVERS[n.id], hz = s.horizon[n.id] || 12, y = lv ? lv.l2.v[(s.l2 || {})[n.id] ?? 0] : 0, need = false, PR = { logEast: 2100, ...(s.prof || {}) };
+    const SCEN_NAMES = ['Пессимистичный', 'Базовый', 'Оптимистичный'];
+    const baseNet = lv ? lv.f(lv.l1.v[1], y, PR.logEast) * H[hz] : 0;
+    const scenVals = lv && !need ? SCEN_NAMES.map((name, i) => { const x = lv.l1.v[i], v = lv.f(x, y, PR.logEast) * H[hz], key = `sc-${n.id}-${i}`, open = !!(s.calcOpen || {})[key];
+      return { name, at: `${lv.l1.label.toLowerCase()}: ${String(x).replace('.', ',')}${lv.l1.u}`, value: fmt(v), vcolor: v < 0 ? RED : v > 0 ? GREEN : '#8C8E93', border: i === 1 ? '1.5px solid #F2F2F3' : '1px solid rgba(255,255,255,.1)',
+        open, toggle: () => this.setState(st => ({ calcOpen: { ...(st.calcOpen || {}), [key]: !open } })), f: `${lv.calc(x, y, PR.logEast)} × ${hz}/12 мес = ${fmt(v)}`, raw: v }; }) : [];
+    const maxAbs = Math.max(1, ...scenVals.map(x => Math.abs(x.raw)));
     return {
       isChain: true, noChain: false, full: false, scenShow: false, name: ch.name,
       hasMore: start > 0, moreText: 'ещё ' + start, openSheet: () => this.setState({ evSheet: true }),
@@ -2289,10 +2356,9 @@ class Component extends DCLogic {
       need, needLabel: 'расходы на ж/д логистику на восток, млн ₽ в год', profDraft: s.profDraft || '', onProf: e2 => this.setState({ profDraft: e2.target.value }),
       saveProf: () => { const v = parseInt(s.profDraft, 10); if (!v) { this.showToast('Введите число'); return; } this.setState(st => ({ prof: { ...(st.prof || {}), logEast: v }, profDraft: '' })); this.showToast('Сохранено в профиле компании'); },
       l1Label: lv ? lv.l1.label : '', l1Vals: lv ? lv.l1.v.map(v => String(v).replace('.', ',') + lv.l1.u).join(' · ') : '',
+      l1Parts: lv ? lv.l1.v.map((v, i) => ({ name: SCEN_NAMES[i], value: String(v).replace('.', ',') + lv.l1.u, color: scenVals[i] ? scenVals[i].vcolor : '#8C8E93' })) : [],
       l2Label: lv ? lv.l2.label : '', l2: lv ? lv.l2.v.map((v, i) => { const on = ((s.l2 || {})[n.id] ?? 0) === i; return { label: v + lv.l2.u, bg: on ? '#48494F' : 'transparent', color: on ? '#F2F2F3' : '#A3A5AB', onClick: () => this.setState(st => ({ l2: { ...(st.l2 || {}), [n.id]: i } })) }; }) : [],
-      scen: lv && !need ? ['Пессимистичный', 'Базовый', 'Оптимистичный'].map((name, i) => { const x = lv.l1.v[i], v = lv.f(x, y, PR.logEast) * H[hz], key = `sc-${n.id}-${i}`, open = !!(s.calcOpen || {})[key];
-        return { name, at: `${lv.l1.label.toLowerCase()}: ${String(x).replace('.', ',')}${lv.l1.u}`, value: fmt(v), vcolor: v < 0 ? RED : v > 0 ? GREEN : '#8C8E93', border: i === 1 ? '1.5px solid #F2F2F3' : '1px solid rgba(255,255,255,.1)',
-          open, toggle: () => this.setState(st => ({ calcOpen: { ...(st.calcOpen || {}), [key]: !open } })), f: `${lv.calc(x, y, PR.logEast)} × ${hz}/12 мес = ${fmt(v)}` }; }) : [],
+      scen: scenVals.map(({ raw, ...x }, i) => ({ ...x, w: Math.round(Math.abs(raw) / maxAbs * 100), delta: i === 1 ? 'Базовый сценарий' : fmt(raw - baseNet) + ' к базовому', bars: scenVals.map((y2, j) => ({ h: Math.max(6, Math.round(Math.abs(y2.raw) / maxAbs * 30)) + 'px', bg: j === i ? x.vcolor : 'rgba(255,255,255,.16)' })) })),
       ...this.actVals(n, ch),
       menuOpen: !!s.chainMenu, toggleMenu: () => this.setState(st => ({ chainMenu: !st.chainMenu })), closeMenu: () => this.setState({ chainMenu: false }),
       forward: () => { this.setState({ chainMenu: false }); this.openMail(n, 'forward'); },
