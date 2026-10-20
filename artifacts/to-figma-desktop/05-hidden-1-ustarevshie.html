@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html style="height: auto; overflow: visible;"><head><style>
+    .sc-placeholder{background:color-mix(in srgb,currentColor 8%,transparent);
+      border:1px solid color-mix(in srgb,currentColor 50%,transparent);
+      border-radius:2px;box-sizing:border-box;overflow:hidden}
+    @keyframes sc-shine{0%{background-position:100% 50%}100%{background-position:0% 50%}}
+    html.sc-dc-streaming .sc-placeholder,
+    html.sc-dc-streaming .sc-interp.sc-missing{position:relative;
+      background:color-mix(in srgb,currentColor 5%,transparent);
+      border-color:transparent}
+    html.sc-dc-streaming .sc-placeholder::before,
+    html.sc-dc-streaming .sc-interp.sc-missing::before{content:'';
+      position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(90deg,rgba(217,119,87,0) 25%,rgba(247,225,211,.95) 37%,rgba(217,119,87,0) 63%);
+      background-size:400% 100%;animation:sc-shine 1.4s ease infinite}
+    html.sc-dc-streaming .sc-placeholder:nth-child(n+9 of .sc-placeholder)::before,
+    html.sc-dc-streaming .sc-interp.sc-missing:nth-child(n+9 of .sc-interp.sc-missing)::before{animation:none;
+      background:color-mix(in srgb,currentColor 8%,transparent)}
+    .sc-placeholder-error{padding:4px 8px;font:11px/1.4 ui-monospace,monospace;
+      color:color-mix(in srgb,currentColor 70%,transparent);word-break:break-word}
+    .sc-interp.sc-missing{display:inline-block;width:2em;height:1em;overflow:hidden;
+      vertical-align:text-bottom;background:rgba(255,255,255,.3);border:1px solid rgba(0,0,0,.5);
+      border-radius:2px;box-sizing:border-box;color:transparent;
+      user-select:none}
+    .sc-interp.sc-unresolved{font-family:ui-monospace,monospace;font-size:.85em;
+      color:color-mix(in srgb,currentColor 50%,transparent);
+      background:color-mix(in srgb,currentColor 10%,transparent);border-radius:3px;
+      padding:0 3px}
+    .sc-host.sc-has-error{position:relative}
+    .sc-logic-error{position:absolute;top:8px;left:8px;z-index:2147483647;max-width:60ch;
+      padding:6px 10px;background:#b00020;color:#fff;font:12px/1.4 ui-monospace,monospace;
+      border-radius:4px;white-space:pre-wrap;pointer-events:none}
+    /* Mirrors PRINT_BASELINE_CSS in apps/web deck-stage-export.ts — keep both
+       in sync until dc-runtime regains a build step. */
+    @media print {
+      @page { margin: 0.5cm; }
+      figure, table { break-inside: avoid; }
+      #dc-root, #dc-root > .sc-host { height: auto; }
+      *, *::before, *::after {
+        print-color-adjust: exact; -webkit-print-color-adjust: exact;
+        backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+        animation-delay: -99s !important; animation-duration: .001s !important;
+        animation-iteration-count: 1 !important; animation-fill-mode: both !important;
+        animation-play-state: running !important; transition-duration: 0s !important;
+      }
+    }
+  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>x-dc{display:none!important}</style>
+<style></style><style>html,body{height:100%;margin:0}#dc-root,#dc-root>.sc-host{height:100%}</style><link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&amp;display=swap" rel="stylesheet" data-dc-tpl="2"><style data-dc-tpl="4">
+html,body{margin:0;background:#050506;color:#F2F2F3;font-family:'Golos Text',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#F2F2F3;text-decoration:none}a:hover{color:#C8291F}
+button,textarea,input{font-family:inherit}
+.search-trigger{flex:none;width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;background:none;border:0;color:inherit;cursor:pointer}
+.search-card{width:100%;box-sizing:border-box;text-align:left;border:1px solid #303137;border-radius:16px;background:#1C1D21;color:#F2F2F3;padding:16px;display:flex;flex-direction:column;gap:8px;cursor:pointer}
+.search-card:hover{background:#26272C}
+.search-screen button:focus-visible,.search-trigger:focus-visible{outline:2px solid #F2F2F3;outline-offset:2px}
+.search-field:focus-within{box-shadow:inset 0 0 0 1px #73757D}
+.search-field input{outline:none}
+.top-tabs,.feed-tags{display:flex;flex:1;min-width:0;gap:10px;padding:0 14px;overflow-x:auto;scrollbar-width:none;touch-action:pan-x;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scroll-padding-inline:14px}
+.top-tabs{mask-image:linear-gradient(to right,transparent,#000 var(--fade-left,0px),#000 calc(100% - var(--fade-right,0px)),transparent)}
+.feed-edge-fades{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(to bottom,#0E0F12 0,rgba(14,15,18,.88) 36px,rgba(14,15,18,.45) 92px,transparent 180px),linear-gradient(to top,#0E0F12 0,rgba(14,15,18,.8) 16px,transparent 44px)}
+.top-tabs>button,.feed-tags>button{flex:none;scroll-snap-align:start}
+.profile-page{flex:1;min-height:0;display:flex;gap:28px;padding:28px 28px 30px;box-sizing:border-box;overflow:hidden}
+.profile-aside{flex:none;width:344px;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding-right:6px}
+.profile-aside>*{flex:none}
+.profile-main{flex:1;min-width:0;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-right:4px}
+.profile-main>*{flex:none}
+.profile-hero{display:flex;align-items:center;gap:16px;margin:0}
+.profile-avatar{flex:none;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#E6574C,#9F2826);color:#fff;font-size:23px;font-weight:600}
+.profile-section{background:#1C1D21;border:1px solid rgba(255,255,255,.07);border-radius:18px;overflow:hidden}
+.profile-head{min-height:60px;box-sizing:border-box;display:flex;align-items:center;gap:12px;padding:14px 16px}
+.profile-icon{width:36px;height:36px;flex:none;display:grid;place-items:center;border-radius:10px;background:#303137;color:#E0E1E4;font-size:19px}
+.profile-page button:focus-visible{outline:2px solid #B9BBC1;outline-offset:-3px}
+.profile-row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:13px 16px;border-top:1px solid rgba(255,255,255,.06);font-size:14px;line-height:1.45}
+.profile-row>span:last-child{max-width:58%;text-align:right;overflow-wrap:anywhere;font-weight:500}
+
+/* desktop 3-column profile */
+.profile-desktop{flex:1;min-height:0;display:grid;grid-template-columns:minmax(280px,320px) minmax(0,1fr) minmax(300px,360px);gap:20px;padding:24px 28px 30px;box-sizing:border-box;overflow:hidden;width:100%;max-width:1320px;margin:0 auto}
+.profile-col{min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin}
+.profile-col>*{flex:none}
+.profile-card{background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden}
+.profile-card-head{display:flex;align-items:center;gap:11px;min-height:56px;box-sizing:border-box;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.07)}
+.profile-card-title{font-size:15.5px;font-weight:600;letter-spacing:-.01em}
+.profile-card-sub{font-size:12.5px;line-height:1.35;color:#8C8E93}
+.profile-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:rgba(255,255,255,.08)}
+.profile-stat{background:#1C1D21;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.profile-stat span{font-size:11px;color:#8C8E93}
+.profile-stat b{font-size:15px;line-height:1.2;font-weight:700;white-space:nowrap}
+.profile-group-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.07)}
+.profile-group-name{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#A3A5AB}
+.profile-cat-btn{width:100%;display:flex;align-items:center;gap:10px;padding:11px 14px;border:none;background:none;cursor:pointer;color:#F2F2F3;text-align:left;font-family:inherit}
+.profile-cat-btn:hover{background:rgba(255,255,255,.03)}
+.profile-opt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:0 14px 14px}
+@media (max-width:1100px){.profile-desktop{grid-template-columns:minmax(260px,300px) minmax(0,1fr);overflow-y:auto}.profile-col{overflow:visible}.profile-col-right{grid-column:1/-1}}
+/* ===== Desktop shell ===== */
+html,body{height:100%;overflow:hidden}
+.app{height:100vh;display:flex;background:#0E0F12;color:#F2F2F3;font-feature-settings:'tnum' 1;overflow:hidden}
+.sidebar{flex:none;width:264px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;padding:16px 14px 18px;border-right:1px solid rgba(255,255,255,.08);background:#0A0B0D}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 10px 16px;font-size:16px;font-weight:700;letter-spacing:-.01em}
+.brand-dot{flex:none;width:12px;height:12px;border-radius:4px;background:#D92B21}
+.side-search{display:flex;align-items:center;gap:10px;height:44px;padding:0 12px;margin:0 2px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:#141518;color:#A3A5AB;font-size:14px;cursor:pointer;font-family:inherit;text-align:left}
+.side-search:hover{background:#1C1D21;color:#F2F2F3}
+.side-search kbd{margin-left:auto;font-size:11px;color:#6E7076;border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:2px 6px;font-family:inherit}
+.side-nav{display:flex;flex-direction:column;gap:2px}
+.side-item{display:flex;align-items:center;gap:10px;width:100%;height:42px;padding:0 12px;border:none;border-radius:10px;background:transparent;font-size:14.5px;font-weight:500;cursor:pointer;text-align:left;font-family:inherit}
+.side-item:hover{background:rgba(255,255,255,.06)}
+.side-count{margin-left:auto;font-size:12px;font-weight:600;color:#8C8E93}
+.side-sep{height:1px;background:rgba(255,255,255,.08);margin:10px 8px}
+.side-spacer{flex:1;min-height:8px}
+.side-account{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:#141518}
+.side-account-av{flex:none;width:34px;height:34px;border-radius:50%;background:linear-gradient(145deg,#E6574C,#9F2826);display:grid;place-items:center;font-size:12px;font-weight:600;color:#fff}
+.side-account b{display:block;font-size:13.5px;font-weight:600;color:#F2F2F3}
+.side-account span{font-size:11.5px;color:#8C8E93}
+.main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;position:relative}
+.topbar{flex:none;height:64px;display:flex;align-items:center;gap:16px;padding:0 20px;box-sizing:border-box;border-bottom:1px solid rgba(255,255,255,.08)}
+.topbar-title{flex:none;font-size:17px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.feed-filters{display:flex;gap:8px;min-width:0;flex:1;overflow-x:auto;scrollbar-width:none}
+.feed-filters::-webkit-scrollbar{display:none}
+.tag-chip{flex:none;height:32px;padding:0 14px;border-radius:999px;border:none;background:#1C1D21;color:#F2F2F3;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
+.topbar-actions{margin-left:auto;flex:none;display:flex;gap:8px}
+.tb-btn{height:36px;padding:0 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#1C1D21;color:#F2F2F3;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.tb-btn:hover{background:#26272C}
+
+/* feed: info rail left, scroll stage center, actions rail right */
+/* shortcut: rails are fixed-width (368px/104px) with no breakpoints below ~900px; add responsive collapse if narrow desktop/mobile is needed */
+.feed-layout{flex:1;min-height:0;display:flex;background:#0E0F12;position:relative}
+.feed-info{flex:none;width:460px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;padding:26px 26px 24px;overflow-y:auto}
+.feed-author{display:flex;align-items:center;gap:10px;height:32px;flex:none}
+.feed-author .av{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff}
+.feed-author .nm{font-size:13.5px;font-weight:600}
+.feed-author .tm{font-size:12.5px;color:#8C8E93}
+.feed-info-bottom{display:flex;flex-direction:column;gap:14px}
+.feed-title{font-size:26px;line-height:1.22;font-weight:700;letter-spacing:-.02em;text-wrap:pretty}
+.feed-meaning{display:flex;flex-direction:column;gap:8px}
+.feed-meaning .lbl{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#8C8E93}
+.feed-fact{display:flex;gap:9px;font-size:14px;line-height:1.4;color:rgba(255,255,255,.9);text-wrap:pretty}
+.feed-fact .num{font-size:16px;font-weight:700;white-space:nowrap;color:#fff}
+.tag-row{display:flex;flex-wrap:wrap;gap:6px}
+.tag-pill{height:26px;padding:0 11px;border-radius:999px;font-size:12px;font-weight:600;display:flex;align-items:center;white-space:nowrap}
+.feed-stage{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;background:#0B0C0E;position:relative}
+.feed-stage::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;background:
+  linear-gradient(to bottom,#0E0F12 0,rgba(14,15,18,0) 36px),
+  linear-gradient(to top,#0E0F12 0,rgba(14,15,18,.85) 26px,rgba(14,15,18,0) 140px),
+  linear-gradient(to right,#0E0F12 0,rgba(14,15,18,0) 44px),
+  linear-gradient(to left,#0E0F12 0,rgba(14,15,18,0) 44px)}
+.feed-scroll{flex:1;min-height:0;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;overscroll-behavior:contain;position:relative}
+.feed-scroll::-webkit-scrollbar{display:none}
+.reel{position:relative;height:100%;display:flex;align-items:center;justify-content:center;gap:16px;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden}
+.reel-card{position:relative;flex:none;width:min(34vw,calc((100vh - 166px)*.5924),calc(100% - 108px));height:auto;aspect-ratio:500/844;border-radius:18px;overflow:hidden;background:#050506;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.carousel{position:absolute;inset:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.carousel::-webkit-scrollbar{display:none}
+.slide{position:relative;flex:none;width:100%;height:100%;scroll-snap-align:start;background:#26282D}
+.slide image-slot{display:block;width:100%;height:100%}
+.slide-chip{position:absolute;left:14px;top:14px;display:flex;align-items:center;gap:8px;height:30px;padding:0 12px 0 5px;border-radius:999px;background:rgba(14,15,18,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none}
+.feed-bottom{flex:none;position:relative;z-index:3;display:flex;align-items:center;justify-content:center;gap:10px;height:56px;padding:0 92px 0 0;box-sizing:border-box}
+.feed-dot{border:none;padding:0;height:6px;border-radius:3px;cursor:pointer;transition:width .2s,background .2s}
+.feed-actions{position:relative;flex:none;width:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:3}
+.act{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;padding:0;cursor:pointer;color:#fff;font-family:inherit}
+.act .cap{font-size:10.5px;font-weight:600;color:#A3A5AB;white-space:nowrap}
+.act:active .ringwrap{transform:scale(.92)}
+.ringwrap{transition:transform .12s}
+
+.act .cap{color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.65)}
+
+/* right drawer that pushes the feed (not an overlay) */
+.feed-panel{flex:none;width:440px;box-sizing:border-box;display:flex;flex-direction:column;background:#141518}
+.panel-head{flex:none;display:flex;align-items:center;gap:8px;height:56px;padding:0 14px 0 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+.panel-kicker{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8C8E93}
+.panel-close{margin-left:auto;flex:none;width:32px;height:32px;display:grid;place-items:center;border:none;border-radius:8px;background:transparent;color:#A3A5AB;cursor:pointer}
+.panel-close:hover{background:rgba(255,255,255,.08);color:#F2F2F3}
+.panel-body{flex:1;min-height:0;overflow-y:auto;padding:18px 20px 24px;display:flex;flex-direction:column;gap:16px}
+.panel-title{font-size:19px;line-height:1.25;font-weight:700;letter-spacing:-.015em;text-wrap:pretty}
+.panel-lbl{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8C8E93}
+.panel-src-head{display:flex;align-items:center;gap:8px}
+
+/* desktop news detail */
+.news-detail-scroll{flex:1;min-height:0;overflow-y:auto;padding:20px 24px 28px;box-sizing:border-box;touch-action:pan-y;container-type:inline-size}
+.news-detail-inner{width:100%;max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.analysis-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+@container (min-width:640px){.analysis-grid{grid-template-columns:minmax(0,1fr) clamp(300px,36%,360px)}}
+.analysis-deltas{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px 18px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)}
+.analysis-deltas>div{min-width:0}
+
+/* scenarios tab */
+.scen-controls{background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+.scen-control{display:flex;flex-direction:column;gap:8px;min-width:0}
+.scen-body{display:flex;flex-direction:column;gap:4px;min-width:0}
+@container (min-width:640px){.scen-controls{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto 1fr;gap:10px 16px}.scen-control{display:contents}.scen-control>.scen-label{grid-row:1;align-self:start}.scen-control>.scen-seg,.scen-control>.scen-body{grid-row:2;align-self:start}}
+.scen-label{font-size:12px;line-height:1.35;font-weight:600;letter-spacing:.01em;color:#8C8E93}
+.scen-lever{font-size:13.5px;line-height:1.35;color:#C9CBD0}
+.scen-hint{font-size:12px;line-height:1.4;color:#8C8E93}
+.scen-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#2C2D32;border-radius:10px;padding:3px}
+.scen-seg button{height:34px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.scen-leverstrip{display:flex;flex-direction:column;gap:12px;padding:2px 4px 0}
+.scen-leverstrip-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.scen-leverstrip-scale{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.scen-leverstrip-line{position:absolute;left:16.667%;right:16.667%;top:5px;height:1px;background:linear-gradient(to right,rgba(255,255,255,.04),rgba(255,255,255,.22),rgba(255,255,255,.04))}
+.scen-leverstrip-point{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;text-align:center}
+.scen-leverstrip-dot{width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 4px #0E0F12}
+.scen-leverstrip-name{font-size:11.5px;line-height:1.25;color:#8C8E93}
+.scen-leverstrip-value{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.scen-delta{align-self:flex-start;margin-top:2px;font-size:11px;line-height:1.2;font-weight:600;color:#A3A5AB;background:rgba(255,255,255,.06);border-radius:6px;padding:3px 7px}
+.scen-spark{display:flex;align-items:flex-end;gap:4px;height:36px;margin:2px 0 4px;border-bottom:1px solid rgba(255,255,255,.1)}
+.scen-spark-bar{flex:1;border-radius:3px 3px 0 0;min-height:6px;transition:height .3s}
+.scen-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-items:stretch}
+@container (min-width:620px){.scen-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.scen-compare{background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr)}
+@container (min-width:620px){.scen-compare{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.scen-col{display:flex;flex-direction:column;gap:6px;min-width:0;padding:16px}
+.scen-card{background:#1C1D21;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:6px;min-width:0;min-height:150px}
+.scen-name{font-size:12px;line-height:1.35;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#8C8E93}
+.scen-value{font-size:26px;line-height:1.1;font-weight:700;letter-spacing:-.025em;margin:2px 0 4px}
+.scen-cond{font-size:12.5px;line-height:1.4;color:#A3A5AB;text-wrap:pretty}
+.scen-calc{align-self:flex-start;margin-top:auto;background:none;border:none;padding:4px 0 0;cursor:pointer;font-size:12.5px;font-weight:600;color:#A3A5AB;font-family:inherit}
+.scen-formula{background:#232428;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.4;color:#F2F2F3;font-weight:600;text-wrap:pretty}
+.scen-note{font-size:12px;line-height:1.45;color:#8C8E93;padding:0 4px}
+.scen-bar{height:6px;border-radius:3px;background:#2C2D32;overflow:hidden;margin:2px 0 4px}
+.scen-bar>div{height:100%;border-radius:3px;transition:width .3s}
+.scen-product{display:flex;align-items:center;justify-content:space-between;gap:10px;border:none;border-top:1px dashed rgba(255,255,255,.16);background:none;padding:10px 0 0;margin-top:auto;cursor:pointer;text-align:left;color:#F2F2F3;font-family:inherit}
+.scen-product-label{display:flex;align-items:center;gap:8px;font-size:12.5px}
+.scen-product-badge{flex:none;width:18px;height:18px;border-radius:5px;background:#D92B21;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.scen-product-value{font-size:15px;font-weight:700;white-space:nowrap}
+.scen-setup{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+@container (min-width:700px){.scen-setup{grid-template-columns:minmax(280px,.8fr) minmax(0,1.2fr)}}
+.scen-panel{background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.scen-assumption{display:flex;align-items:flex-start;gap:10px;background:none;border:none;padding:4px 0;cursor:pointer;text-align:left;color:#F2F2F3;font-family:inherit}
+.scen-check{flex:none;width:20px;height:20px;box-sizing:border-box;border-radius:5px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.scen-assumption-main{display:flex;flex-direction:column;gap:2px}
+.scen-assumption-label{font-size:14px;line-height:1.35}
+.scen-assumption-effect{font-size:12px;color:#8C8E93}
+
+/* centered column for list/detail tabs */
+.page-col{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center}
+.page-col-inner{width:100%;max-width:760px;display:flex;flex-direction:column;gap:16px;padding:24px 24px 32px;box-sizing:border-box}
+
+/* hidden page */
+.hidden-page{position:absolute;inset:0;z-index:45;background:#0E0F12;display:flex;flex-direction:column;overflow:hidden}
+.hidden-scroll{flex:1;min-height:0;overflow-y:auto;padding:24px 28px 36px;box-sizing:border-box}
+.hidden-inner{width:100%;max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.hidden-head{display:flex;flex-direction:column;gap:8px}
+.hidden-back{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;background:none;border:none;padding:3px 0;cursor:pointer;font-size:13.5px;font-weight:600;color:#A3A5AB;font-family:inherit}
+.hidden-back:hover{color:#F2F2F3}
+.hidden-title-row{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.hidden-title{margin:0;font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.02em}
+.hidden-count{font-size:13.5px;color:#8C8E93}
+.hidden-desc{margin:0;font-size:13.5px;line-height:1.45;color:#A3A5AB;max-width:820px;text-wrap:pretty}
+.hidden-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-top:2px}
+.hidden-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.hidden-tab{height:36px;padding:0 14px;border-radius:10px;border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
+.hidden-tab:hover{background:rgba(255,255,255,.06)}
+.hidden-tab-count{font-size:12px;font-weight:600}
+.hidden-note{display:flex;align-items:center;gap:7px;font-size:12.5px;color:#8C8E93}
+.hidden-empty{background:#1C1D21;border:1px dashed rgba(255,255,255,.16);border-radius:14px;padding:32px 20px;text-align:center;font-size:14px;color:#A3A5AB}
+.hidden-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:12px;align-items:start}
+.hidden-card{position:relative;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px 16px 16px 18px;display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:16px;align-items:center;overflow:hidden;transition:background .15s,border-color .15s}
+.hidden-card:hover{background:#202126;border-color:rgba(255,255,255,.14)}
+.hidden-score{display:flex;flex-direction:column;align-items:center;justify-content:center;align-self:stretch;gap:3px;padding-right:16px;border-right:1px solid rgba(255,255,255,.08)}
+.hidden-score b{font-size:32px;line-height:1;font-weight:700;letter-spacing:-.03em}
+.hidden-score-label{font-size:10.5px;color:#8C8E93}
+.hidden-card-main{display:flex;flex-direction:column;gap:5px;min-width:0}
+.hidden-card-title{font-size:15px;line-height:1.35;font-weight:600;color:#F2F2F3;text-wrap:pretty}
+.hidden-card-reason{font-size:12.5px;line-height:1.4;color:#A3A5AB;text-wrap:pretty}
+.hidden-card-meta{display:flex;flex-wrap:wrap;gap:3px 8px;font-size:12px;color:#8C8E93}
+.hidden-card-btn{height:34px;padding:0 14px;border-radius:9px;border:1px solid rgba(255,255,255,.16);background:#232428;color:#F2F2F3;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit}
+.hidden-card-btn:hover{background:#2C2D32;border-color:rgba(255,255,255,.24)}
+.hidden-more{font-size:12.5px;color:#8C8E93;text-align:center}
+@media (max-width:820px){.hidden-card{grid-template-columns:64px minmax(0,1fr);gap:14px}.hidden-card-btn{grid-column:2;justify-self:start}}
+
+/* sources page */
+.src-page{flex:1;min-height:0;overflow-y:auto;padding:24px 28px 36px;box-sizing:border-box;container-type:inline-size}
+.src-inner{width:100%;max-width:1320px;display:flex;flex-direction:column;gap:18px}
+.src-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.src-head-text{display:flex;flex-direction:column;gap:5px}
+.src-title{margin:0;font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.02em}
+.src-meta{font-size:13.5px;color:#A3A5AB}
+.src-search{flex:0 1 460px;min-width:280px;display:flex;align-items:center;gap:10px;height:48px;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:0 8px 0 16px;box-sizing:border-box}
+.src-search:focus-within{border-color:rgba(255,255,255,.22)}
+.src-search input{flex:1;min-width:0;height:100%;border:none;outline:none;background:transparent;font-size:15px;color:#F2F2F3;font-family:inherit}
+.src-search-clear{flex:none;width:30px;height:30px;border-radius:50%;border:none;background:#2C2D32;color:#A3A5AB;font-size:16px;line-height:1;cursor:pointer}
+.src-banner{display:flex;align-items:flex-start;gap:14px;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px 18px}
+.src-banner-icon{flex:none;width:40px;height:40px;border-radius:10px;background:oklch(0.3 0.07 27);display:flex;align-items:center;justify-content:center}
+.src-banner-main{display:flex;flex-direction:column;gap:5px;min-width:0}
+.src-banner-title{font-size:15.5px;font-weight:600}
+.src-banner-text{font-size:13px;line-height:1.45;color:#A3A5AB;max-width:760px;text-wrap:pretty}
+.src-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start}
+@container (min-width:900px){.src-grid{grid-template-columns:minmax(0,1fr) clamp(340px,33%,400px)}.src-aside>.src-section{margin-top:31px}}
+.src-main{display:flex;flex-direction:column;gap:10px;min-width:0}
+.src-aside{display:flex;flex-direction:column;gap:14px;min-width:0}
+.src-section-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:0 2px}
+.src-section-title{font-size:16px;font-weight:600;white-space:nowrap}
+.src-section-count{font-size:13px;color:#8C8E93}
+.src-section-label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8C8E93;padding:0 2px}
+.src-link-danger{align-self:baseline;background:none;border:none;padding:2px 0;cursor:pointer;font-size:13.5px;font-weight:600;color:#D92B21;font-family:inherit}
+.src-channels{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px}
+.src-channel{display:flex;align-items:center;gap:12px;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 12px 12px 14px;min-width:0}
+.src-avatar{flex:none;width:40px;height:40px;border-radius:50%;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.src-channel-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.src-name{display:block;font-size:14.5px;font-weight:600;color:#F2F2F3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src-topics{display:block;font-size:12.5px;color:#A3A5AB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src-channel-meta{display:flex;align-items:center;gap:8px;min-width:0}
+.src-chip{flex:none;height:20px;padding:0 7px;border-radius:5px;font-size:11.5px;font-weight:600;display:flex;align-items:center;white-space:nowrap}
+.src-remove{flex:none;width:34px;height:34px;border-radius:9px;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.src-remove:hover{background:rgba(255,255,255,.08)}
+.src-more{height:42px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:#1C1D21;color:#F2F2F3;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.src-more:hover{background:#232428}
+.src-empty{background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.src-section{background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.src-official-row{display:flex;align-items:center;gap:12px;padding:11px 0}
+.src-official-code{flex:none;width:38px;height:38px;border-radius:10px;background:#22304A;color:#9DB8E0;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.src-official-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.src-official-main .src-topics{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.35}
+.src-check{flex:none;width:40px;height:40px;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.src-check-box{width:22px;height:22px;border-radius:6px;box-sizing:border-box;border:2px solid #F2F2F3;display:flex;align-items:center;justify-content:center}
+.src-footnote{font-size:12.5px;line-height:1.45;color:#A3A5AB;padding:0 2px}
+.src-alfa{display:flex;align-items:center;gap:14px;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-left:4px solid #D92B21;border-radius:4px 16px 16px 4px;padding:14px 16px}
+.src-alfa-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.src-alfa-main .src-topics{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.4}
+.src-switch{flex:none;width:46px;height:28px;border-radius:14px;border:none;padding:3px;cursor:pointer;display:flex}
+.src-switch span{width:22px;height:22px;border-radius:50%;background:#1C1D21;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.src-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}
+.src-result{display:flex;align-items:center;gap:12px;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 12px 12px 14px;min-width:0}
+.src-result-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.src-sub{flex:none;height:34px;padding:0 12px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.src-add{background:#1C1D21;border:1px dashed rgba(255,255,255,.16);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.src-add-title{font-size:14.5px;font-weight:600}
+.src-add-text{font-size:13px;line-height:1.4;color:#A3A5AB}
+.src-add-btn{height:44px;border-radius:12px;border:none;background:#F2F2F3;color:#16171A;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+@media (max-width:900px){.src-head{align-items:flex-start}.src-search{flex:1 1 100%}.src-channels{grid-template-columns:1fr}}
+
+/* overlays sit over the whole window */
+.overlay-fixed{position:fixed;inset:0}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);max-width:min(520px,90vw);background:#F2F2F3;color:#16171A;font-size:13px;line-height:1.4;padding:11px 16px;border-radius:12px;z-index:90;box-shadow:0 8px 28px rgba(0,0,0,.35)}
+</style></head>
+<body style="height: auto; overflow: visible;">
+<div id="dc-root"><div class="sc-host" data-sc-name="Лента новостей Десктоп"><div data-dc-tpl="5" class="app" style="height: auto; min-height: 100vh; overflow: visible;">
+  <aside data-dc-tpl="6" class="sidebar" role="navigation" aria-label="Разделы" style="height: auto;">
+    <div data-dc-tpl="7" class="brand"><span data-dc-tpl="8" class="brand-dot"></span>Лента новостей</div>
+    <button data-dc-tpl="9" class="side-search" aria-label="Поиск по всем новостям и компаниям">
+      <svg data-dc-tpl="10" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="flex: 0 0 auto;"><circle data-dc-tpl="11" cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"></circle><path data-dc-tpl="12" d="m16 16 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
+      <span data-dc-tpl="13">Поиск</span><kbd data-dc-tpl="14">Ctrl K</kbd>
+    </button>
+    <nav data-dc-tpl="15" class="side-nav">
+      
+        <button data-dc-tpl="17" class="side-item" style="background: rgba(217, 43, 33, 0.14); color: rgb(242, 242, 243); font-weight: 600;">
+          <span data-dc-tpl="18"><span class="sc-interp">Лента</span></span><span data-dc-tpl="19" class="side-count" style="color: rgb(217, 43, 33);"><span class="sc-interp">4</span></span>
+        </button>
+      
+        <button data-dc-tpl="17" class="side-item" style="background: transparent; color: rgb(201, 203, 208); font-weight: 500;">
+          <span data-dc-tpl="18"><span class="sc-interp">Отслеживаемое</span></span><span data-dc-tpl="19" class="side-count" style="color: rgb(110, 112, 118);"><span class="sc-interp">3</span></span>
+        </button>
+      
+        <button data-dc-tpl="17" class="side-item" style="background: transparent; color: rgb(201, 203, 208); font-weight: 500;">
+          <span data-dc-tpl="18"><span class="sc-interp">Источники</span></span><span data-dc-tpl="19" class="side-count" style="color: rgb(110, 112, 118);"><span class="sc-interp"></span></span>
+        </button>
+      
+        <button data-dc-tpl="17" class="side-item" style="background: transparent; color: rgb(201, 203, 208); font-weight: 500;">
+          <span data-dc-tpl="18"><span class="sc-interp">Профиль</span></span><span data-dc-tpl="19" class="side-count" style="color: rgb(110, 112, 118);"><span class="sc-interp"></span></span>
+        </button>
+      
+    </nav>
+    <div data-dc-tpl="20" class="side-sep"></div>
+    <button data-dc-tpl="21" class="side-item" style="color: rgb(201, 203, 208);"><span data-dc-tpl="22">Скрытые</span><span data-dc-tpl="23" class="side-count"><span class="sc-interp">37</span></span></button>
+    <div data-dc-tpl="24" class="side-spacer"></div>
+    <div data-dc-tpl="25" class="side-account"><span data-dc-tpl="26" class="side-account-av">АВ</span><span data-dc-tpl="27"><b data-dc-tpl="28">Андрей Волков</b><span data-dc-tpl="29">Генеральный директор</span></span></div>
+  </aside>
+  <div data-dc-tpl="30" class="main" style="height: auto; overflow: visible;">
+    <header data-dc-tpl="31" class="topbar">
+      <div data-dc-tpl="32" class="topbar-title"><span class="sc-interp">Лента</span></div>
+      
+        <div data-dc-tpl="34" class="feed-filters" role="group" aria-label="Темы новостей" style="--fade-left: 0px; --fade-right: 18px;">
+          <button data-dc-tpl="35" class="tag-chip" style="background: rgba(255, 255, 255, 0.08); mask-image: none;">
+            <svg data-dc-tpl="36" width="14" height="14" viewBox="0 0 20 20"><path data-dc-tpl="37" d="M2.5 10s2.8-5 7.5-5 7.5 5 7.5 5-2.8 5-7.5 5-7.5-5-7.5-5z" stroke="currentColor" stroke-width="1.6" fill="none"></path><path data-dc-tpl="38" d="M3 17L17 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg><span class="sc-interp">37</span>
+          </button>
+          
+            <button data-dc-tpl="40" class="tag-chip" style="background: rgba(255, 255, 255, 0.94); color: rgb(22, 23, 26); mask-image: none;"><span class="sc-interp">Все</span></button>
+          
+            <button data-dc-tpl="40" class="tag-chip" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255); mask-image: none;"><span class="sc-interp">Важное упоминание</span></button>
+          
+            <button data-dc-tpl="40" class="tag-chip" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255); mask-image: none;"><span class="sc-interp">Экспорт</span></button>
+          
+            <button data-dc-tpl="40" class="tag-chip" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255); mask-image: none;"><span class="sc-interp">Металлургия</span></button>
+          
+            <button data-dc-tpl="40" class="tag-chip" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255); mask-image: none;"><span class="sc-interp">Пошлины</span></button>
+          
+            <button data-dc-tpl="40" class="tag-chip" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255); mask-image: none;"><span class="sc-interp">Ключевая ставка</span></button>
+          
+            <button data-dc-tpl="40" class="tag-chip" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255); mask-image: none;"><span class="sc-interp">Кредитный портфель</span></button>
+          
+            <button data-dc-tpl="40" class="tag-chip" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255); mask-image: none;"><span class="sc-interp">Логистика</span></button>
+          
+            <button data-dc-tpl="40" class="tag-chip" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255); mask-image: linear-gradient(to right, transparent 0px, rgb(0, 0, 0) 0px, rgb(0, 0, 0) calc(100% - 94.1562px), transparent calc(100% - 76.1562px));"><span class="sc-interp">Ж/д тарифы</span></button>
+          
+            <button data-dc-tpl="40" class="tag-chip" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255); mask-image: linear-gradient(to right, transparent 0px, rgb(0, 0, 0) 0px, rgb(0, 0, 0) calc(100% - 231.156px), transparent calc(100% - 213.156px));"><span class="sc-interp">Экспорт в Азию</span></button>
+          
+            <button data-dc-tpl="40" class="tag-chip" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255); mask-image: linear-gradient(to right, transparent 0px, rgb(0, 0, 0) 0px, rgb(0, 0, 0) calc(100% - 361.156px), transparent calc(100% - 343.156px));"><span class="sc-interp">Господдержка</span></button>
+          
+            <button data-dc-tpl="40" class="tag-chip" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255); mask-image: linear-gradient(to right, transparent 0px, rgb(0, 0, 0) 0px, rgb(0, 0, 0) calc(100% - 487.156px), transparent calc(100% - 469.156px));"><span class="sc-interp">Капвложения</span></button>
+          
+            <button data-dc-tpl="40" class="tag-chip" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255); mask-image: linear-gradient(to right, transparent 0px, rgb(0, 0, 0) 0px, rgb(0, 0, 0) calc(100% - 604.156px), transparent calc(100% - 586.156px));"><span class="sc-interp">Конкуренты</span></button>
+          
+            <button data-dc-tpl="40" class="tag-chip" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255); mask-image: linear-gradient(to right, transparent 0px, rgb(0, 0, 0) 0px, rgb(0, 0, 0) calc(100% - 717.156px), transparent calc(100% - 699.156px));"><span class="sc-interp">Рынки Азии</span></button>
+          
+        </div>
+      
+    </header>
+
+  
+    <div data-dc-tpl="42" class="feed-layout">
+      
+        <div data-dc-tpl="44" class="feed-info" aria-label="Информация о текущей новости">
+          <div data-dc-tpl="45" class="feed-author">
+            <span data-dc-tpl="46" class="av" style="background: oklch(0.48 0.035 244);"><span class="sc-interp">СР</span></span>
+            <span data-dc-tpl="47" class="nm"><span class="sc-interp">Сырьевой рынок</span></span>
+            <span data-dc-tpl="48" class="tm"><span class="sc-interp">08:47</span></span>
+          </div>
+          <div data-dc-tpl="49" class="feed-info-bottom">
+            <div data-dc-tpl="50" class="tag-row">
+              
+                <span data-dc-tpl="52" class="tag-pill" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255);">#<span class="sc-interp">Экспорт</span></span>
+              
+                <span data-dc-tpl="52" class="tag-pill" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255);">#<span class="sc-interp">Металлургия</span></span>
+              
+                <span data-dc-tpl="52" class="tag-pill" style="background: rgba(255, 255, 255, 0.14); color: rgb(255, 255, 255);">#<span class="sc-interp">Пошлины</span></span>
+              
+            </div>
+            <div data-dc-tpl="53" class="feed-title"><span class="sc-interp">Экспортная пошлина 7% на металлопрокат с 1 ноября</span></div>
+            <div data-dc-tpl="54" class="feed-meaning">
+              <span data-dc-tpl="55" class="lbl">Что это значит для вас</span>
+              
+                <span data-dc-tpl="57" class="feed-fact"><span data-dc-tpl="58" class="num"><span class="sc-interp">−1,2 млрд ₽</span></span><span data-dc-tpl="59"><span class="sc-interp">EBITDA в год при доле экспорта 38%</span></span></span>
+              
+                <span data-dc-tpl="57" class="feed-fact"><span data-dc-tpl="58" class="num"><span class="sc-interp">4,6 млрд ₽</span></span><span data-dc-tpl="59"><span class="sc-interp">контрактов IV квартала попадают под пошлину</span></span></span>
+              
+            </div>
+          </div>
+        </div>
+        <div data-dc-tpl="60" class="feed-stage">
+          <div data-dc-tpl="61" class="feed-scroll" style="height: 13327px; max-height: none; overflow-y: visible;">
+            
+              <div data-dc-tpl="63" class="reel">
+                <div data-dc-tpl="64" class="reel-card">
+                  <div data-dc-tpl="65" class="carousel">
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n1-0" shape="rect" src="./images/steel-export.jpg" data-filled="" role="img" aria-label="Рулон стали, закреплённый для перевозки на грузовой платформе" credit="Иллюстрация · Fumikas Sagisavas · CC0" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:Steel_coils_loaded_on_truck_deck.jpg" placeholder="Фото: металлопрокат в порту"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 244); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">СР</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Сырьевой рынок</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">08:47</span></span>
+                        </div>
+                      </div>
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n1-1" shape="rect" src="./images/steel-export.jpg" data-filled="" role="img" aria-label="Рулон стали, закреплённый для перевозки на грузовой платформе" credit="Иллюстрация · Fumikas Sagisavas · CC0" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:Steel_coils_loaded_on_truck_deck.jpg" placeholder="Фото: металлопрокат в порту"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 260); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ДВ</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Деловой вестник</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">09:15</span></span>
+                        </div>
+                      </div>
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n1-2" shape="rect" src="./images/steel-export.jpg" data-filled="" role="img" aria-label="Рулон стали, закреплённый для перевозки на грузовой платформе" credit="Иллюстрация · Fumikas Sagisavas · CC0" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:Steel_coils_loaded_on_truck_deck.jpg" placeholder="Фото: металлопрокат в порту"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 326); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">МР</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Минфин России</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">10:02</span></span>
+                        </div>
+                      </div>
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n1-3" shape="rect" src="./images/steel-export.jpg" data-filled="" role="img" aria-label="Рулон стали, закреплённый для перевозки на грузовой платформе" credit="Иллюстрация · Fumikas Sagisavas · CC0" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:Steel_coils_loaded_on_truck_deck.jpg" placeholder="Фото: металлопрокат в порту"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 53); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">М</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Металл-Инсайд</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">10:40</span></span>
+                        </div>
+                      </div>
+                    
+                  </div>
+                </div>
+                <div data-dc-tpl="73" class="feed-actions" aria-label="Действия">
+                    <button data-dc-tpl="74" class="act scp0">
+                      <span data-dc-tpl="75" class="ringwrap" style="width: 52px; height: 52px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset; display: flex; align-items: center; justify-content: center;">
+                        
+                          <span data-dc-tpl="77" style="width: 22px; height: 22px; border-radius: 50%; margin-left: 0px; box-shadow: rgba(40, 42, 48, 0.9) 0px 0px 0px 1.5px; background: oklch(0.48 0.035 244); color: rgb(255, 255, 255); font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">СР</span></span>
+                        
+                          <span data-dc-tpl="77" style="width: 22px; height: 22px; border-radius: 50%; margin-left: -7px; box-shadow: rgba(40, 42, 48, 0.9) 0px 0px 0px 1.5px; background: oklch(0.48 0.035 260); color: rgb(255, 255, 255); font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ДВ</span></span>
+                        
+                      </span>
+                      <span data-dc-tpl="78" class="cap"><span class="sc-interp">4 ист.</span></span>
+                    </button>
+                    <button data-dc-tpl="79" class="act scp0">
+                      <span data-dc-tpl="80" class="ringwrap" style="width: 52px; height: 52px; box-sizing: border-box; border-radius: 50%; background: oklch(0.6 0.21 27); border: 0px; color: rgb(255, 255, 255); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset, oklch(0.6 0.21 27 / 0.55) 0px 4px 14px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; letter-spacing: -0.02em;"><span class="sc-interp">90</span></span>
+                      <span data-dc-tpl="81" class="cap">Важность</span>
+                    </button>
+                    <div data-dc-tpl="82" class="act" style="cursor: default;">
+                      <span data-dc-tpl="83" class="ringwrap" style="width: 52px; height: 52px; border-radius: 50%; background: oklch(0.6 0.2 27 / 0.9); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset; display: flex; align-items: center; justify-content: center; color: rgb(255, 255, 255);">
+                        <svg data-dc-tpl="85" width="22" height="22" viewBox="0 0 20 20"><path data-dc-tpl="86" d="M10 3v11M5 9.5l5 5 5-5" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                        
+                        
+                      </span>
+                      <span data-dc-tpl="93" class="cap"><span class="sc-interp">Риск</span></span>
+                    </div>
+                    <button data-dc-tpl="94" class="act scp0">
+                      <span data-dc-tpl="95" class="ringwrap" style="width: 52px; height: 52px; border-radius: 50%; background: oklch(0.58 0.15 255); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
+                        <svg data-dc-tpl="96" width="24" height="24" viewBox="0 0 24 24"><path data-dc-tpl="97" d="M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.2-6.5 4.2v-16a1 1 0 0 1 1-1z" fill="#fff" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"></path></svg>
+                      </span>
+                      <span data-dc-tpl="98" class="cap"><span class="sc-interp">Отслеживается</span></span>
+                    </button>
+                </div>
+              </div>
+            
+              <div data-dc-tpl="63" class="reel">
+                <div data-dc-tpl="64" class="reel-card">
+                  <div data-dc-tpl="65" class="carousel">
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n2-0" shape="rect" src="./images/central-bank.jpg" data-filled="" role="img" aria-label="Здание Банка России на Неглинной улице в Москве" credit="Иллюстрация · NVO · CC BY 2.5" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:Moscow,_Neglinnaya_12,_Central_Bank.jpg" placeholder="Фото: здание Банка России"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 82); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">БР</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Банк России</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">13:30</span></span>
+                        </div>
+                      </div>
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n2-1" shape="rect" src="./images/central-bank.jpg" data-filled="" role="img" aria-label="Здание Банка России на Неглинной улице в Москве" credit="Иллюстрация · NVO · CC BY 2.5" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:Moscow,_Neglinnaya_12,_Central_Bank.jpg" placeholder="Фото: здание Банка России"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 260); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ДВ</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Деловой вестник</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">13:34</span></span>
+                        </div>
+                      </div>
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n2-2" shape="rect" src="./images/central-bank.jpg" data-filled="" role="img" aria-label="Здание Банка России на Неглинной улице в Москве" credit="Иллюстрация · NVO · CC BY 2.5" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:Moscow,_Neglinnaya_12,_Central_Bank.jpg" placeholder="Фото: здание Банка России"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 167); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ФА</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Финансовый аналитик</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">14:05</span></span>
+                        </div>
+                      </div>
+                    
+                  </div>
+                </div>
+                <div data-dc-tpl="73" class="feed-actions" aria-label="Действия">
+                    <button data-dc-tpl="74" class="act scp0">
+                      <span data-dc-tpl="75" class="ringwrap" style="width: 52px; height: 52px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset; display: flex; align-items: center; justify-content: center;">
+                        
+                          <span data-dc-tpl="77" style="width: 22px; height: 22px; border-radius: 50%; margin-left: 0px; box-shadow: rgba(40, 42, 48, 0.9) 0px 0px 0px 1.5px; background: oklch(0.48 0.035 82); color: rgb(255, 255, 255); font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">БР</span></span>
+                        
+                          <span data-dc-tpl="77" style="width: 22px; height: 22px; border-radius: 50%; margin-left: -7px; box-shadow: rgba(40, 42, 48, 0.9) 0px 0px 0px 1.5px; background: oklch(0.48 0.035 260); color: rgb(255, 255, 255); font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ДВ</span></span>
+                        
+                      </span>
+                      <span data-dc-tpl="78" class="cap"><span class="sc-interp">3 ист.</span></span>
+                    </button>
+                    <button data-dc-tpl="79" class="act scp0">
+                      <span data-dc-tpl="80" class="ringwrap" style="width: 52px; height: 52px; box-sizing: border-box; border-radius: 50%; background: rgba(255, 255, 255, 0.16); border: 0px; color: rgb(255, 255, 255); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset, rgba(0, 0, 0, 0.22) 0px 4px 14px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; letter-spacing: -0.02em;"><span class="sc-interp">40</span></span>
+                      <span data-dc-tpl="81" class="cap">Важность</span>
+                    </button>
+                    <div data-dc-tpl="82" class="act" style="cursor: default;">
+                      <span data-dc-tpl="83" class="ringwrap" style="width: 52px; height: 52px; border-radius: 50%; background: oklch(0.6 0.2 27 / 0.9); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset; display: flex; align-items: center; justify-content: center; color: rgb(255, 255, 255);">
+                        <svg data-dc-tpl="85" width="22" height="22" viewBox="0 0 20 20"><path data-dc-tpl="86" d="M10 3v11M5 9.5l5 5 5-5" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                        
+                        
+                      </span>
+                      <span data-dc-tpl="93" class="cap"><span class="sc-interp">Риск</span></span>
+                    </div>
+                    <button data-dc-tpl="94" class="act scp0">
+                      <span data-dc-tpl="95" class="ringwrap" style="width: 52px; height: 52px; border-radius: 50%; background: oklch(0.58 0.15 255); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
+                        <svg data-dc-tpl="96" width="24" height="24" viewBox="0 0 24 24"><path data-dc-tpl="97" d="M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.2-6.5 4.2v-16a1 1 0 0 1 1-1z" fill="#fff" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"></path></svg>
+                      </span>
+                      <span data-dc-tpl="98" class="cap"><span class="sc-interp">Отслеживается</span></span>
+                    </button>
+                </div>
+              </div>
+            
+              <div data-dc-tpl="63" class="reel">
+                <div data-dc-tpl="64" class="reel-card">
+                  <div data-dc-tpl="65" class="carousel">
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n3-0" shape="rect" src="./images/freight-train.jpg" data-filled="" role="img" aria-label="Грузовой тепловоз РЖД 2М62У на железнодорожных путях" credit="Иллюстрация · Artem Svetlov · CC BY 2.0" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:RZD_2M62U-0045_(15621345153).jpg" placeholder="Фото: грузовой состав"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 284); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ТИ</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Транспорт и логистика</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">07:20</span></span>
+                        </div>
+                      </div>
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n3-1" shape="rect" src="./images/freight-train.jpg" data-filled="" role="img" aria-label="Грузовой тепловоз РЖД 2М62У на железнодорожных путях" credit="Иллюстрация · Artem Svetlov · CC BY 2.0" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:RZD_2M62U-0045_(15621345153).jpg" placeholder="Фото: грузовой состав"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 84); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ГИ</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Грузы и порты</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">07:48</span></span>
+                        </div>
+                      </div>
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n3-2" shape="rect" src="./images/freight-train.jpg" data-filled="" role="img" aria-label="Грузовой тепловоз РЖД 2М62У на железнодорожных путях" credit="Иллюстрация · Artem Svetlov · CC BY 2.0" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:RZD_2M62U-0045_(15621345153).jpg" placeholder="Фото: грузовой состав"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 260); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ДВ</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Деловой вестник</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">08:10</span></span>
+                        </div>
+                      </div>
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n3-3" shape="rect" src="./images/freight-train.jpg" data-filled="" role="img" aria-label="Грузовой тепловоз РЖД 2М62У на железнодорожных путях" credit="Иллюстрация · Artem Svetlov · CC BY 2.0" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:RZD_2M62U-0045_(15621345153).jpg" placeholder="Фото: грузовой состав"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 244); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">СР</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Сырьевой рынок</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">08:32</span></span>
+                        </div>
+                      </div>
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n3-4" shape="rect" src="./images/freight-train.jpg" data-filled="" role="img" aria-label="Грузовой тепловоз РЖД 2М62У на железнодорожных путях" credit="Иллюстрация · Artem Svetlov · CC BY 2.0" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:RZD_2M62U-0045_(15621345153).jpg" placeholder="Фото: грузовой состав"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 151); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ВК</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Восточный коридор</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">09:05</span></span>
+                        </div>
+                      </div>
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n3-5" shape="rect" src="./images/freight-train.jpg" data-filled="" role="img" aria-label="Грузовой тепловоз РЖД 2М62У на железнодорожных путях" credit="Иллюстрация · Artem Svetlov · CC BY 2.0" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:RZD_2M62U-0045_(15621345153).jpg" placeholder="Фото: грузовой состав"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 53); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">М</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Металл-Инсайд</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">11:12</span></span>
+                        </div>
+                      </div>
+                    
+                  </div>
+                </div>
+                <div data-dc-tpl="73" class="feed-actions" aria-label="Действия">
+                    <button data-dc-tpl="74" class="act scp0">
+                      <span data-dc-tpl="75" class="ringwrap" style="width: 52px; height: 52px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset; display: flex; align-items: center; justify-content: center;">
+                        
+                          <span data-dc-tpl="77" style="width: 22px; height: 22px; border-radius: 50%; margin-left: 0px; box-shadow: rgba(40, 42, 48, 0.9) 0px 0px 0px 1.5px; background: oklch(0.48 0.035 284); color: rgb(255, 255, 255); font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ТИ</span></span>
+                        
+                          <span data-dc-tpl="77" style="width: 22px; height: 22px; border-radius: 50%; margin-left: -7px; box-shadow: rgba(40, 42, 48, 0.9) 0px 0px 0px 1.5px; background: oklch(0.48 0.035 84); color: rgb(255, 255, 255); font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ГИ</span></span>
+                        
+                      </span>
+                      <span data-dc-tpl="78" class="cap"><span class="sc-interp">6 ист.</span></span>
+                    </button>
+                    <button data-dc-tpl="79" class="act scp0">
+                      <span data-dc-tpl="80" class="ringwrap" style="width: 52px; height: 52px; box-sizing: border-box; border-radius: 50%; background: rgba(255, 255, 255, 0.16); border: 0px; color: rgb(255, 255, 255); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset, rgba(0, 0, 0, 0.22) 0px 4px 14px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; letter-spacing: -0.02em;"><span class="sc-interp">36</span></span>
+                      <span data-dc-tpl="81" class="cap">Важность</span>
+                    </button>
+                    <div data-dc-tpl="82" class="act" style="cursor: default;">
+                      <span data-dc-tpl="83" class="ringwrap" style="width: 52px; height: 52px; border-radius: 50%; background: oklch(0.6 0.14 150 / 0.9); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset; display: flex; align-items: center; justify-content: center; color: rgb(255, 255, 255);">
+                        
+                        <svg data-dc-tpl="88" width="22" height="22" viewBox="0 0 20 20"><path data-dc-tpl="89" d="M10 17V6M5 10.5l5-5 5 5" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                        
+                      </span>
+                      <span data-dc-tpl="93" class="cap"><span class="sc-interp">Возможность</span></span>
+                    </div>
+                    <button data-dc-tpl="94" class="act scp0">
+                      <span data-dc-tpl="95" class="ringwrap" style="width: 52px; height: 52px; border-radius: 50%; background: oklch(0.58 0.15 255); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
+                        <svg data-dc-tpl="96" width="24" height="24" viewBox="0 0 24 24"><path data-dc-tpl="97" d="M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.2-6.5 4.2v-16a1 1 0 0 1 1-1z" fill="#fff" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"></path></svg>
+                      </span>
+                      <span data-dc-tpl="98" class="cap"><span class="sc-interp">Отслеживается</span></span>
+                    </button>
+                </div>
+              </div>
+            
+              <div data-dc-tpl="63" class="reel">
+                <div data-dc-tpl="64" class="reel-card">
+                  <div data-dc-tpl="65" class="carousel">
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n4-0" shape="rect" src="./images/cnc-machine.jpg" data-filled="" role="img" aria-label="Обработка металлической заготовки на фрезерном станке с ЧПУ" credit="Иллюстрация · Zjw0558 · CC BY-SA 4.0" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:Double_side_horizontal_cnc_milling_machine_6.jpg" placeholder="Фото: промышленное оборудование"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 195); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ПП</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Промышленная политика</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">16:05</span></span>
+                        </div>
+                      </div>
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n4-1" shape="rect" src="./images/cnc-machine.jpg" data-filled="" role="img" aria-label="Обработка металлической заготовки на фрезерном станке с ЧПУ" credit="Иллюстрация · Zjw0558 · CC BY-SA 4.0" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:Double_side_horizontal_cnc_milling_machine_6.jpg" placeholder="Фото: промышленное оборудование"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 260); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ДВ</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Деловой вестник</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">16:40</span></span>
+                        </div>
+                      </div>
+                    
+                  </div>
+                </div>
+                <div data-dc-tpl="73" class="feed-actions" aria-label="Действия">
+                    <button data-dc-tpl="74" class="act scp0">
+                      <span data-dc-tpl="75" class="ringwrap" style="width: 52px; height: 52px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset; display: flex; align-items: center; justify-content: center;">
+                        
+                          <span data-dc-tpl="77" style="width: 22px; height: 22px; border-radius: 50%; margin-left: 0px; box-shadow: rgba(40, 42, 48, 0.9) 0px 0px 0px 1.5px; background: oklch(0.48 0.035 195); color: rgb(255, 255, 255); font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ПП</span></span>
+                        
+                          <span data-dc-tpl="77" style="width: 22px; height: 22px; border-radius: 50%; margin-left: -7px; box-shadow: rgba(40, 42, 48, 0.9) 0px 0px 0px 1.5px; background: oklch(0.48 0.035 260); color: rgb(255, 255, 255); font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ДВ</span></span>
+                        
+                      </span>
+                      <span data-dc-tpl="78" class="cap"><span class="sc-interp">2 ист.</span></span>
+                    </button>
+                    <button data-dc-tpl="79" class="act scp0">
+                      <span data-dc-tpl="80" class="ringwrap" style="width: 52px; height: 52px; box-sizing: border-box; border-radius: 50%; background: rgba(255, 255, 255, 0.16); border: 0px; color: rgb(255, 255, 255); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset, rgba(0, 0, 0, 0.22) 0px 4px 14px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; letter-spacing: -0.02em;"><span class="sc-interp">36</span></span>
+                      <span data-dc-tpl="81" class="cap">Важность</span>
+                    </button>
+                    <div data-dc-tpl="82" class="act" style="cursor: default;">
+                      <span data-dc-tpl="83" class="ringwrap" style="width: 52px; height: 52px; border-radius: 50%; background: oklch(0.6 0.14 150 / 0.9); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset; display: flex; align-items: center; justify-content: center; color: rgb(255, 255, 255);">
+                        
+                        <svg data-dc-tpl="88" width="22" height="22" viewBox="0 0 20 20"><path data-dc-tpl="89" d="M10 17V6M5 10.5l5-5 5 5" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                        
+                      </span>
+                      <span data-dc-tpl="93" class="cap"><span class="sc-interp">Возможность</span></span>
+                    </div>
+                    <button data-dc-tpl="94" class="act scp0">
+                      <span data-dc-tpl="95" class="ringwrap" style="width: 52px; height: 52px; border-radius: 50%; background: rgba(255, 255, 255, 0.16); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
+                        <svg data-dc-tpl="96" width="24" height="24" viewBox="0 0 24 24"><path data-dc-tpl="97" d="M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.2-6.5 4.2v-16a1 1 0 0 1 1-1z" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"></path></svg>
+                      </span>
+                      <span data-dc-tpl="98" class="cap"><span class="sc-interp">Отслеживать</span></span>
+                    </button>
+                </div>
+              </div>
+            
+              <div data-dc-tpl="63" class="reel">
+                <div data-dc-tpl="64" class="reel-card">
+                  <div data-dc-tpl="65" class="carousel">
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n5-0" shape="rect" src="./images/steel-coils.jpg" data-filled="" role="img" aria-label="Рулоны стали с цветным покрытием на производстве в Китае" credit="Иллюстрация · Fumikas Sagisavas · CC0" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:Colored_steel_coils.jpg" placeholder="Фото: рулоны стали на складе"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 53); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">М</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Металл-Инсайд</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">06:40</span></span>
+                        </div>
+                      </div>
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n5-1" shape="rect" src="./images/steel-coils.jpg" data-filled="" role="img" aria-label="Рулоны стали с цветным покрытием на производстве в Китае" credit="Иллюстрация · Fumikas Sagisavas · CC0" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:Colored_steel_coils.jpg" placeholder="Фото: рулоны стали на складе"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 244); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">СР</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Сырьевой рынок</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">07:15</span></span>
+                        </div>
+                      </div>
+                    
+                      <div data-dc-tpl="67" class="slide">
+                        <image-slot data-dc-tpl="68" id="reel-n5-2" shape="rect" src="./images/steel-coils.jpg" data-filled="" role="img" aria-label="Рулоны стали с цветным покрытием на производстве в Китае" credit="Иллюстрация · Fumikas Sagisavas · CC0" data-credit="" credit-href="https://commons.wikimedia.org/wiki/File:Colored_steel_coils.jpg" placeholder="Фото: рулоны стали на складе"></image-slot>
+                        <div data-dc-tpl="69" class="slide-chip">
+                          <span data-dc-tpl="70" style="width: 22px; height: 22px; border-radius: 50%; background: oklch(0.48 0.035 316); color: rgb(255, 255, 255); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">АР</span></span>
+                          <span data-dc-tpl="71" style="font-size: 12px; font-weight: 600; color: rgb(255, 255, 255);"><span class="sc-interp">Азия: рынки</span></span>
+                          <span data-dc-tpl="72" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7);"><span class="sc-interp">08:02</span></span>
+                        </div>
+                      </div>
+                    
+                  </div>
+                </div>
+                <div data-dc-tpl="73" class="feed-actions" aria-label="Действия">
+                    <button data-dc-tpl="74" class="act scp0">
+                      <span data-dc-tpl="75" class="ringwrap" style="width: 52px; height: 52px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset; display: flex; align-items: center; justify-content: center;">
+                        
+                          <span data-dc-tpl="77" style="width: 22px; height: 22px; border-radius: 50%; margin-left: 0px; box-shadow: rgba(40, 42, 48, 0.9) 0px 0px 0px 1.5px; background: oklch(0.48 0.035 53); color: rgb(255, 255, 255); font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">М</span></span>
+                        
+                          <span data-dc-tpl="77" style="width: 22px; height: 22px; border-radius: 50%; margin-left: -7px; box-shadow: rgba(40, 42, 48, 0.9) 0px 0px 0px 1.5px; background: oklch(0.48 0.035 244); color: rgb(255, 255, 255); font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">СР</span></span>
+                        
+                      </span>
+                      <span data-dc-tpl="78" class="cap"><span class="sc-interp">3 ист.</span></span>
+                    </button>
+                    <button data-dc-tpl="79" class="act scp0">
+                      <span data-dc-tpl="80" class="ringwrap" style="width: 52px; height: 52px; box-sizing: border-box; border-radius: 50%; background: rgba(255, 255, 255, 0.16); border: 0px; color: rgb(255, 255, 255); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset, rgba(0, 0, 0, 0.22) 0px 4px 14px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; letter-spacing: -0.02em;"><span class="sc-interp">43</span></span>
+                      <span data-dc-tpl="81" class="cap">Важность</span>
+                    </button>
+                    <div data-dc-tpl="82" class="act" style="cursor: default;">
+                      <span data-dc-tpl="83" class="ringwrap" style="width: 52px; height: 52px; border-radius: 50%; background: oklch(0.6 0.2 27 / 0.9); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset; display: flex; align-items: center; justify-content: center; color: rgb(255, 255, 255);">
+                        <svg data-dc-tpl="85" width="22" height="22" viewBox="0 0 20 20"><path data-dc-tpl="86" d="M10 3v11M5 9.5l5 5 5-5" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                        
+                        
+                      </span>
+                      <span data-dc-tpl="93" class="cap"><span class="sc-interp">Риск</span></span>
+                    </div>
+                    <button data-dc-tpl="94" class="act scp0">
+                      <span data-dc-tpl="95" class="ringwrap" style="width: 52px; height: 52px; border-radius: 50%; background: rgba(255, 255, 255, 0.16); box-shadow: rgba(255, 255, 255, 0.28) 0px 0px 0px 0.5px inset; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
+                        <svg data-dc-tpl="96" width="24" height="24" viewBox="0 0 24 24"><path data-dc-tpl="97" d="M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.2-6.5 4.2v-16a1 1 0 0 1 1-1z" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"></path></svg>
+                      </span>
+                      <span data-dc-tpl="98" class="cap"><span class="sc-interp">Отслеживать</span></span>
+                    </button>
+                </div>
+              </div>
+            
+            <div data-dc-tpl="99" style="height: 100%; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 0px 40px; box-sizing: border-box;">
+              <div data-dc-tpl="100" style="font-size: 20px; font-weight: 700;">Лента просмотрена</div>
+              <div data-dc-tpl="101" style="font-size: 14px; line-height: 1.45; color: rgba(255, 255, 255, 0.7); text-wrap: pretty;">Пропущенные, устаревшие и новости со слабым влиянием — в скрытом</div>
+              <button data-dc-tpl="102" style="margin-top: 8px; height: 46px; padding: 0px 22px; border-radius: 12px; border-width: medium; border-style: none; border-color: currentcolor; border-image: none; background: rgb(255, 255, 255); color: rgb(22, 23, 26); font-size: 14px; font-weight: 600; cursor: pointer;">Посмотреть скрытые · <span class="sc-interp">37</span></button>
+            </div>
+            <div data-dc-tpl="103" style="height: 100%; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: rgba(255, 255, 255, 0.6); font-size: 14px; font-weight: 600;">
+              <svg data-dc-tpl="104" width="22" height="22" viewBox="0 0 20 20"><path data-dc-tpl="105" d="M15.5 8A6 6 0 1 0 16 12M16 3.5V8h-4.5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span data-dc-tpl="106">Лента начинается заново</span>
+            </div>
+          </div>
+          <div data-dc-tpl="107" class="feed-bottom">
+            
+              <button data-dc-tpl="109" class="feed-dot" aria-label="Показать публикацию" style="width: 18px; background: rgb(255, 255, 255);"></button>
+            
+              <button data-dc-tpl="109" class="feed-dot" aria-label="Показать публикацию" style="width: 6px; background: rgba(255, 255, 255, 0.4);"></button>
+            
+              <button data-dc-tpl="109" class="feed-dot" aria-label="Показать публикацию" style="width: 6px; background: rgba(255, 255, 255, 0.4);"></button>
+            
+              <button data-dc-tpl="109" class="feed-dot" aria-label="Показать публикацию" style="width: 6px; background: rgba(255, 255, 255, 0.4);"></button>
+            
+            <span data-dc-tpl="110" style="margin-left: 4px; font-size: 12px; color: rgb(140, 142, 147);"><span class="sc-interp">1/4</span></span>
+          </div>
+        </div>
+      
+      
+      
+        <aside data-dc-tpl="116" class="feed-panel" aria-label="Панель новости">
+          <div data-dc-tpl="117" class="panel-head">
+            <span data-dc-tpl="118" class="panel-kicker"><span class="sc-interp">Источники и важность</span></span>
+            
+          </div>
+          <div data-dc-tpl="123" class="panel-body">
+            
+              <div data-dc-tpl="125" class="panel-title"><span class="sc-interp">Экспортная пошлина 7% на металлопрокат с 1 ноября</span></div>
+              <div data-dc-tpl="126" class="panel-src-head">
+                <span data-dc-tpl="127" class="panel-lbl" style="flex: 1 1 0%;">Что пишут · <span class="sc-interp">1 из 4</span></span>
+                <button data-dc-tpl="128" style="width: 30px; height: 30px; border-radius: 50%; border-width: medium; border-style: none; border-color: currentcolor; border-image: none; background: rgb(44, 45, 50); color: rgb(242, 242, 243); opacity: 0.3; cursor: pointer; display: flex; align-items: center; justify-content: center;"><svg data-dc-tpl="129" width="12" height="12" viewBox="0 0 16 16"><path data-dc-tpl="130" d="M10.5 2.5L5 8l5.5 5.5" stroke="currentColor" stroke-width="2" fill="none"></path></svg></button>
+                <button data-dc-tpl="131" style="width: 30px; height: 30px; border-radius: 50%; border-width: medium; border-style: none; border-color: currentcolor; border-image: none; background: rgb(44, 45, 50); color: rgb(242, 242, 243); opacity: 1; cursor: pointer; display: flex; align-items: center; justify-content: center;"><svg data-dc-tpl="132" width="12" height="12" viewBox="0 0 16 16"><path data-dc-tpl="133" d="M5.5 2.5L11 8l-5.5 5.5" stroke="currentColor" stroke-width="2" fill="none"></path></svg></button>
+              </div>
+              <div data-dc-tpl="134" style="min-width: 0px; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px; touch-action: pan-x; cursor: grab;">
+                
+                  <button data-dc-tpl="136" style="flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; border-width: medium; border-style: none; border-color: currentcolor; border-image: none; background: oklch(0.48 0.035 244); box-shadow: rgb(242, 242, 243) 0px 0px 0px 2px; opacity: 1; color: rgb(255, 255, 255); font-size: 11px; font-weight: 700; cursor: pointer; transition: opacity 0.15s;"><span class="sc-interp">СР</span></button>
+                
+                  <button data-dc-tpl="136" style="flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; border-width: medium; border-style: none; border-color: currentcolor; border-image: none; background: oklch(0.48 0.035 260); box-shadow: none; opacity: 0.55; color: rgb(255, 255, 255); font-size: 11px; font-weight: 700; cursor: pointer; transition: opacity 0.15s;"><span class="sc-interp">ДВ</span></button>
+                
+                  <button data-dc-tpl="136" style="flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; border-width: medium; border-style: none; border-color: currentcolor; border-image: none; background: oklch(0.48 0.035 326); box-shadow: none; opacity: 0.55; color: rgb(255, 255, 255); font-size: 11px; font-weight: 700; cursor: pointer; transition: opacity 0.15s;"><span class="sc-interp">МР</span></button>
+                
+                  <button data-dc-tpl="136" style="flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; border-width: medium; border-style: none; border-color: currentcolor; border-image: none; background: oklch(0.48 0.035 53); box-shadow: none; opacity: 0.55; color: rgb(255, 255, 255); font-size: 11px; font-weight: 700; cursor: pointer; transition: opacity 0.15s;"><span class="sc-interp">М</span></button>
+                
+              </div>
+              <div data-dc-tpl="137" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin: 0px -20px;">
+                
+                  <div data-dc-tpl="139" style="flex: 0 0 auto; width: 100%; box-sizing: border-box; padding: 0px 20px; scroll-snap-align: start;">
+                    <div data-dc-tpl="140" style="background: rgb(28, 29, 33); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 14px; display: flex; flex-direction: column; overflow: hidden;">
+                      <div data-dc-tpl="141" style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 12px 14px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.06);">
+                        <span data-dc-tpl="142" style="flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: oklch(0.48 0.035 244); color: rgb(255, 255, 255); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">СР</span></span>
+                        <span data-dc-tpl="143" style="flex: 1 1 0%; min-width: 0px; display: flex; flex-direction: column; line-height: 1.25;"><span data-dc-tpl="144" style="font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Сырьевой рынок</span></span><span data-dc-tpl="145" style="font-size: 11.5px; color: rgb(140, 142, 147);"><span class="sc-interp">08:47</span></span></span>
+                        <span data-dc-tpl="146" style="flex: 0 0 auto; display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; color: oklch(0.66 0.2 27);"><span data-dc-tpl="147" style="width: 7px; height: 7px; border-radius: 1px; background: oklch(0.66 0.2 27);"></span><span class="sc-interp">тревожный</span></span>
+                      </div>
+                      <div data-dc-tpl="148" style="padding: 12px 14px 14px; font-size: 14px; line-height: 1.55; color: rgb(224, 225, 228); text-wrap: pretty;"><span class="sc-interp">Источники в правительстве: Минфин подготовил постановление о временной экспортной пошлине на плоский и сортовой прокат. Ставка — 7% от таможенной стоимости, срок действия — до конца 2027 года.</span></div>
+                    </div>
+                  </div>
+                
+                  <div data-dc-tpl="139" style="flex: 0 0 auto; width: 100%; box-sizing: border-box; padding: 0px 20px; scroll-snap-align: start;">
+                    <div data-dc-tpl="140" style="background: rgb(28, 29, 33); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 14px; display: flex; flex-direction: column; overflow: hidden;">
+                      <div data-dc-tpl="141" style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 12px 14px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.06);">
+                        <span data-dc-tpl="142" style="flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: oklch(0.48 0.035 260); color: rgb(255, 255, 255); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">ДВ</span></span>
+                        <span data-dc-tpl="143" style="flex: 1 1 0%; min-width: 0px; display: flex; flex-direction: column; line-height: 1.25;"><span data-dc-tpl="144" style="font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Деловой вестник</span></span><span data-dc-tpl="145" style="font-size: 11.5px; color: rgb(140, 142, 147);"><span class="sc-interp">09:15</span></span></span>
+                        <span data-dc-tpl="146" style="flex: 0 0 auto; display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; color: rgb(140, 142, 147);"><span data-dc-tpl="147" style="width: 7px; height: 7px; border-radius: 50%; background: rgb(140, 142, 147);"></span><span class="sc-interp">нейтральный</span></span>
+                      </div>
+                      <div data-dc-tpl="148" style="padding: 12px 14px 14px; font-size: 14px; line-height: 1.55; color: rgb(224, 225, 228); text-wrap: pretty;"><span class="sc-interp">Проект постановления об экспортной пошлине на металлопрокат внесён в правительство. Обсуждается ставка 7% и применение ко всем отгрузкам с 1 ноября. Возможны исключения для ЕАЭС.</span></div>
+                    </div>
+                  </div>
+                
+                  <div data-dc-tpl="139" style="flex: 0 0 auto; width: 100%; box-sizing: border-box; padding: 0px 20px; scroll-snap-align: start;">
+                    <div data-dc-tpl="140" style="background: rgb(28, 29, 33); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 14px; display: flex; flex-direction: column; overflow: hidden;">
+                      <div data-dc-tpl="141" style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 12px 14px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.06);">
+                        <span data-dc-tpl="142" style="flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: oklch(0.48 0.035 326); color: rgb(255, 255, 255); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">МР</span></span>
+                        <span data-dc-tpl="143" style="flex: 1 1 0%; min-width: 0px; display: flex; flex-direction: column; line-height: 1.25;"><span data-dc-tpl="144" style="font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Минфин России</span></span><span data-dc-tpl="145" style="font-size: 11.5px; color: rgb(140, 142, 147);"><span class="sc-interp">10:02</span></span></span>
+                        <span data-dc-tpl="146" style="flex: 0 0 auto; display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; color: rgb(242, 242, 243);"><span data-dc-tpl="147" style="width: 7px; height: 7px; border-radius: 1px; background: rgb(242, 242, 243);"></span><span class="sc-interp">официальный</span></span>
+                      </div>
+                      <div data-dc-tpl="148" style="padding: 12px 14px 14px; font-size: 14px; line-height: 1.55; color: rgb(224, 225, 228); text-wrap: pretty;"><span class="sc-interp">Правительство вводит временную экспортную пошлину на отдельные виды металлопроката. Постановление вступает в силу с 1 ноября 2026 года.</span></div>
+                    </div>
+                  </div>
+                
+                  <div data-dc-tpl="139" style="flex: 0 0 auto; width: 100%; box-sizing: border-box; padding: 0px 20px; scroll-snap-align: start;">
+                    <div data-dc-tpl="140" style="background: rgb(28, 29, 33); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 14px; display: flex; flex-direction: column; overflow: hidden;">
+                      <div data-dc-tpl="141" style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 12px 14px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.06);">
+                        <span data-dc-tpl="142" style="flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: oklch(0.48 0.035 53); color: rgb(255, 255, 255); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;"><span class="sc-interp">М</span></span>
+                        <span data-dc-tpl="143" style="flex: 1 1 0%; min-width: 0px; display: flex; flex-direction: column; line-height: 1.25;"><span data-dc-tpl="144" style="font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Металл-Инсайд</span></span><span data-dc-tpl="145" style="font-size: 11.5px; color: rgb(140, 142, 147);"><span class="sc-interp">10:40</span></span></span>
+                        <span data-dc-tpl="146" style="flex: 0 0 auto; display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; color: oklch(0.66 0.2 27);"><span data-dc-tpl="147" style="width: 7px; height: 7px; border-radius: 1px; background: oklch(0.66 0.2 27);"></span><span class="sc-interp">тревожный</span></span>
+                      </div>
+                      <div data-dc-tpl="148" style="padding: 12px 14px 14px; font-size: 14px; line-height: 1.55; color: rgb(224, 225, 228); text-wrap: pretty;"><span class="sc-interp">По нашим оценкам, пошлина снизит рентабельность экспортёров проката на 4–6 п.п. Сильнее всего пострадают компании с высокой долей поставок в Турцию и Юго-Восточную Азию.</span></div>
+                    </div>
+                  </div>
+                
+              </div>
+            
+            
+            
+              <div data-dc-tpl="162" style="display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;">
+                <div data-dc-tpl="163" style="display: flex; flex-direction: column; gap: 4px; min-width: 0px;">
+                  <span data-dc-tpl="164" class="panel-lbl">Важность для бизнеса</span>
+                  <span data-dc-tpl="165" style="font-size: 14px; line-height: 1.4; color: rgb(201, 203, 208); text-wrap: pretty;"><span class="sc-interp">Прямой удар по экспортной выручке с 1 ноября</span></span>
+                </div>
+                <span data-dc-tpl="166" style="flex: 0 0 auto; display: flex; align-items: baseline; gap: 3px;"><span data-dc-tpl="167" style="font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; color: rgb(217, 43, 33);"><span class="sc-interp">90</span></span><span data-dc-tpl="168" style="font-size: 14px; color: rgb(140, 142, 147);">/100</span></span>
+              </div>
+              <div data-dc-tpl="169" style="display: flex; flex-direction: column; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px;">
+                
+                  <div data-dc-tpl="171" style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-top-width: medium; border-top-style: none; border-top-color: currentcolor;">
+                    <div data-dc-tpl="172" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                      <span data-dc-tpl="173" style="font-size: 14px; font-weight: 600;"><span class="sc-interp">Масштаб</span></span>
+                      <span data-dc-tpl="174" style="display: flex; align-items: center; gap: 8px;">
+                        <span data-dc-tpl="175" style="display: flex; gap: 3px;">
+                          <span data-dc-tpl="177" style="width: 14px; height: 6px; border-radius: 2px; background: rgb(242, 242, 243);"></span><span data-dc-tpl="177" style="width: 14px; height: 6px; border-radius: 2px; background: rgb(242, 242, 243);"></span><span data-dc-tpl="177" style="width: 14px; height: 6px; border-radius: 2px; background: rgb(242, 242, 243);"></span><span data-dc-tpl="177" style="width: 14px; height: 6px; border-radius: 2px; background: rgb(242, 242, 243);"></span><span data-dc-tpl="177" style="width: 14px; height: 6px; border-radius: 2px; background: rgb(242, 242, 243);"></span>
+                        </span>
+                        <span data-dc-tpl="178" style="font-size: 13px; font-weight: 700; width: 26px; text-align: right;"><span class="sc-interp">5/5</span></span>
+                      </span>
+                    </div>
+                    <span data-dc-tpl="179" style="font-size: 13px; line-height: 1.4; color: rgb(163, 165, 171); text-wrap: pretty;"><span class="sc-interp">&gt;30% · Экспорт проката 19,8 млрд ₽ из 52 млрд ₽ выручки — корзина &gt;30%</span></span>
+                  </div>
+                
+                  <div data-dc-tpl="171" style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                    <div data-dc-tpl="172" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                      <span data-dc-tpl="173" style="font-size: 14px; font-weight: 600;"><span class="sc-interp">Прямота</span></span>
+                      <span data-dc-tpl="174" style="display: flex; align-items: center; gap: 8px;">
+                        <span data-dc-tpl="175" style="display: flex; gap: 3px;">
+                          <span data-dc-tpl="177" style="width: 14px; height: 6px; border-radius: 2px; background: rgb(242, 242, 243);"></span><span data-dc-tpl="177" style="width: 14px; height: 6px; border-radius: 2px; background: rgb(242, 242, 243);"></span><span data-dc-tpl="177" style="width: 14px; height: 6px; border-radius: 2px; background: rgb(242, 242, 243);"></span>
+                        </span>
+                        <span data-dc-tpl="178" style="font-size: 13px; font-weight: 700; width: 26px; text-align: right;"><span class="sc-interp">×1</span></span>
+                      </span>
+                    </div>
+                    <span data-dc-tpl="179" style="font-size: 13px; line-height: 1.4; color: rgb(163, 165, 171); text-wrap: pretty;"><span class="sc-interp">Сама компания · Пошлина взимается с самой компании как экспортёра</span></span>
+                  </div>
+                
+                  <div data-dc-tpl="171" style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                    <div data-dc-tpl="172" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                      <span data-dc-tpl="173" style="font-size: 14px; font-weight: 600;"><span class="sc-interp">Срочность</span></span>
+                      <span data-dc-tpl="174" style="display: flex; align-items: center; gap: 8px;">
+                        <span data-dc-tpl="175" style="display: flex; gap: 3px;">
+                          <span data-dc-tpl="177" style="width: 14px; height: 6px; border-radius: 2px; background: rgb(242, 242, 243);"></span><span data-dc-tpl="177" style="width: 14px; height: 6px; border-radius: 2px; background: rgb(242, 242, 243);"></span><span data-dc-tpl="177" style="width: 14px; height: 6px; border-radius: 2px; background: rgb(242, 242, 243);"></span><span data-dc-tpl="177" style="width: 14px; height: 6px; border-radius: 2px; background: rgb(58, 59, 64);"></span>
+                        </span>
+                        <span data-dc-tpl="178" style="font-size: 13px; font-weight: 700; width: 26px; text-align: right;"><span class="sc-interp">×0,9</span></span>
+                      </span>
+                    </div>
+                    <span data-dc-tpl="179" style="font-size: 13px; line-height: 1.4; color: rgb(163, 165, 171); text-wrap: pretty;"><span class="sc-interp">До месяца · Вступает 1 ноября — через 2 недели</span></span>
+                  </div>
+                
+              </div>
+              <div data-dc-tpl="180" style="display: flex; gap: 8px;">
+                
+                  <span data-dc-tpl="182" style="flex: 1 1 0%; display: flex; flex-direction: column; gap: 2px; background: rgb(14, 15, 18); border-radius: 10px; padding: 9px 12px;"><span data-dc-tpl="183" style="font-size: 11.5px; color: rgb(140, 142, 147);"><span class="sc-interp">Тип</span></span><span data-dc-tpl="184" style="font-size: 14px; font-weight: 600; color: rgb(217, 43, 33);"><span class="sc-interp">Риск</span></span></span>
+                
+                  <span data-dc-tpl="182" style="flex: 1 1 0%; display: flex; flex-direction: column; gap: 2px; background: rgb(14, 15, 18); border-radius: 10px; padding: 9px 12px;"><span data-dc-tpl="183" style="font-size: 11.5px; color: rgb(140, 142, 147);"><span class="sc-interp">Затронуто</span></span><span data-dc-tpl="184" style="font-size: 14px; font-weight: 600; color: rgb(242, 242, 243);"><span class="sc-interp">38% выручки</span></span></span>
+                
+              </div>
+              <span data-dc-tpl="185" style="font-feature-settings: &quot;tnum&quot;; font-size: 12.5px; line-height: 1.45; color: rgb(163, 165, 171);"><span class="sc-interp">I = 20 × Масштаб × Прямота × Срочность = 20 × 5 × 1 × 0,9 = 90</span></span>
+            
+          </div>
+        </aside>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+
+  
+
+  
+    <div data-dc-tpl="496" class="hidden-page">
+      <div data-dc-tpl="497" class="hidden-scroll">
+        <div data-dc-tpl="498" class="hidden-inner">
+          <div data-dc-tpl="499" class="hidden-head">
+            <button data-dc-tpl="500" class="hidden-back"><svg data-dc-tpl="501" width="13" height="13" viewBox="0 0 16 16"><path data-dc-tpl="502" d="M10.5 2.5L5 8l5.5 5.5" stroke="currentColor" stroke-width="1.9" fill="none"></path></svg>Лента</button>
+            <div data-dc-tpl="503" class="hidden-title-row">
+              <h1 data-dc-tpl="504" class="hidden-title">Скрытые</h1>
+              <span data-dc-tpl="505" class="hidden-count">Скрыто: <span class="sc-interp">37</span></span>
+            </div>
+            <p data-dc-tpl="506" class="hidden-desc"><span class="sc-interp">Пробыли в ленте больше 3 дней без решения — событие уже потеряло актуальность.</span></p>
+          </div>
+          <div data-dc-tpl="507" class="hidden-toolbar">
+            <div data-dc-tpl="508" class="hidden-tabs">
+              
+                <button data-dc-tpl="510" class="hidden-tab" style="background: rgb(72, 73, 79); box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px; color: rgb(242, 242, 243);">
+                  <span data-dc-tpl="511"><span class="sc-interp">Устаревшие</span></span><span data-dc-tpl="512" class="hidden-tab-count" style="color: rgb(217, 43, 33);"><span class="sc-interp">3</span></span>
+                </button>
+              
+                <button data-dc-tpl="510" class="hidden-tab" style="background: transparent; box-shadow: none; color: rgb(163, 165, 171);">
+                  <span data-dc-tpl="511"><span class="sc-interp">Слабое влияние</span></span><span data-dc-tpl="512" class="hidden-tab-count" style="color: rgb(140, 142, 147);"><span class="sc-interp">34</span></span>
+                </button>
+              
+            </div>
+            <span data-dc-tpl="513" class="hidden-note"><svg data-dc-tpl="514" width="14" height="14" viewBox="0 0 20 20" style="flex: 0 0 auto;"><circle data-dc-tpl="515" cx="10" cy="10" r="7.5" stroke="#8C8E93" stroke-width="1.7" fill="none"></circle><path data-dc-tpl="516" d="M10 5.5V10l3 2" stroke="#8C8E93" stroke-width="1.7" fill="none" stroke-linecap="round"></path></svg>Новости старше 7 дней удаляются автоматически</span>
+          </div>
+          
+          <div data-dc-tpl="519" class="hidden-grid">
+            
+              <div data-dc-tpl="521" class="hidden-card">
+                <div data-dc-tpl="522" class="hidden-score">
+                  <b data-dc-tpl="523" style="color: oklch(0.66 0.2 27);"><span class="sc-interp">44</span></b>
+                  <span data-dc-tpl="524" class="hidden-score-label">важность</span>
+                </div>
+                <div data-dc-tpl="525" class="hidden-card-main">
+                  <span data-dc-tpl="526" class="hidden-card-title"><span class="sc-interp">ФАС предложила ограничить рост цен на арматуру для госстроек</span></span>
+                  <span data-dc-tpl="527" class="hidden-card-reason"><span class="sc-interp">Было в ленте 4 дня</span></span>
+                  <span data-dc-tpl="528" class="hidden-card-meta">
+                    
+                    <span data-dc-tpl="531"><span class="sc-interp">В скрытом 1 день · удалим через 6 дней</span></span>
+                  </span>
+                </div>
+                <button data-dc-tpl="532" class="hidden-card-btn"><span class="sc-interp">Вернуть</span></button>
+              </div>
+            
+              <div data-dc-tpl="521" class="hidden-card">
+                <div data-dc-tpl="522" class="hidden-score">
+                  <b data-dc-tpl="523" style="color: oklch(0.66 0.2 27);"><span class="sc-interp">38</span></b>
+                  <span data-dc-tpl="524" class="hidden-score-label">важность</span>
+                </div>
+                <div data-dc-tpl="525" class="hidden-card-main">
+                  <span data-dc-tpl="526" class="hidden-card-title"><span class="sc-interp">Металлурги Урала обсудили с Минпромторгом квоты на экспорт лома</span></span>
+                  <span data-dc-tpl="527" class="hidden-card-reason"><span class="sc-interp">Было в ленте 5 дней</span></span>
+                  <span data-dc-tpl="528" class="hidden-card-meta">
+                    
+                    <span data-dc-tpl="531"><span class="sc-interp">В скрытом 3 дня · удалим через 4 дня</span></span>
+                  </span>
+                </div>
+                <button data-dc-tpl="532" class="hidden-card-btn"><span class="sc-interp">Вернуть</span></button>
+              </div>
+            
+              <div data-dc-tpl="521" class="hidden-card">
+                <div data-dc-tpl="522" class="hidden-score">
+                  <b data-dc-tpl="523" style="color: oklch(0.72 0.14 150);"><span class="sc-interp">52</span></b>
+                  <span data-dc-tpl="524" class="hidden-score-label">важность</span>
+                </div>
+                <div data-dc-tpl="525" class="hidden-card-main">
+                  <span data-dc-tpl="526" class="hidden-card-title"><span class="sc-interp">Вьетнам снизил ввозную пошлину на горячекатаный прокат</span></span>
+                  <span data-dc-tpl="527" class="hidden-card-reason"><span class="sc-interp">Было в ленте 4 дня</span></span>
+                  <span data-dc-tpl="528" class="hidden-card-meta">
+                    
+                    <span data-dc-tpl="531"><span class="sc-interp">В скрытом 5 дней · удалим через 2 дня</span></span>
+                  </span>
+                </div>
+                <button data-dc-tpl="532" class="hidden-card-btn"><span class="sc-interp">Вернуть</span></button>
+              </div>
+            
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  </div></div></div></div>
+
+
+
+</body></html>
