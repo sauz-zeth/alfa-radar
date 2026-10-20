@@ -452,81 +452,117 @@ button,textarea,input{font-family:inherit}
 
 
   <sc-if value="{{ tabProfile }}" hint-placeholder-val="{{ false }}">
-    <div class="profile-page">
-      <div class="profile-hero">
-        <div class="profile-avatar" aria-hidden="true">АВ</div>
-        <h1 style="margin:0;font-size:24px;line-height:1.25;font-weight:600;letter-spacing:-.02em;">Андрей Волков</h1>
-        <span style="font-size:14px;color:#A3A5AB;">Генеральный директор</span>
-        <span style="font-size:13px;color:#C9CBD0;margin-top:2px;">a.volkov@transmetall.ru</span>
-      </div>
-      <div class="profile-section" style="padding:16px;">
+    <div data-screen-label="Профиль бизнеса" style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;">
+      <div style="flex:none;display:flex;flex-direction:column;gap:14px;padding:16px 16px 14px;">
         <div style="display:flex;align-items:center;gap:12px;">
-          <div class="profile-icon" style="width:44px;height:44px;background:#392422;color:#F19B93;font-size:14px;font-weight:700;">ТМ</div>
-          <div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:17px;font-weight:600;">АО «ТрансМеталл»</span><span style="font-size:13px;color:#A3A5AB;">Металлургия · прокат</span></div>
+          <div style="flex:none;width:48px;height:48px;border-radius:50%;background:#F2F2F3;color:#16171A;font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ pf.ini }}</div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px;">
+            <button onClick="{{ pf.editOwner }}" style="background:none;border:none;padding:0;cursor:pointer;color:#A3A5AB;font-size:13.5px;text-align:left;font-family:inherit;">{{ pf.owner }}</button>
+            <button onClick="{{ pf.editBiz }}" style="background:none;border:none;padding:0;cursor:pointer;color:#F2F2F3;font-size:19px;font-weight:700;letter-spacing:-.015em;text-align:left;font-family:inherit;">{{ pf.biz }}</button>
+            <span style="font-size:13px;color:#8C8E93;">Производство проката · Екатеринбург</span>
+          </div>
         </div>
-        <div style="display:flex;gap:16px;margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08);">
-          <div style="flex:1;display:flex;flex-direction:column;gap:5px;"><span style="font-size:22px;font-weight:600;letter-spacing:-.02em;">52 млрд ₽</span><span style="font-size:12px;color:#A3A5AB;">Выручка за 2025 год</span></div>
-          <div style="flex:1;display:flex;flex-direction:column;gap:5px;border-left:1px solid rgba(255,255,255,.08);padding-left:16px;"><span style="font-size:22px;font-weight:600;letter-spacing:-.02em;">38%</span><span style="font-size:12px;color:#A3A5AB;">Доля экспорта</span></div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 0;">
+          <div style="display:flex;flex-direction:column;gap:3px;padding:0 10px;"><span style="font-size:11px;color:#8C8E93;">Выручка</span><span style="font-size:14px;font-weight:700;line-height:1.2;">52 млрд ₽</span></div>
+          <div style="display:flex;flex-direction:column;gap:3px;padding:0 10px;border-left:1px solid rgba(255,255,255,.08);"><span style="font-size:11px;color:#8C8E93;">Сотрудники</span><span style="font-size:14px;font-weight:700;line-height:1.2;">500–1000</span></div>
+          <div style="display:flex;flex-direction:column;gap:3px;padding:0 10px;border-left:1px solid rgba(255,255,255,.08);"><span style="font-size:11px;color:#8C8E93;">Возраст</span><span style="font-size:14px;font-weight:700;line-height:1.2;">10+ лет</span></div>
+          <div style="display:flex;flex-direction:column;gap:3px;padding:0 10px;border-left:1px solid rgba(255,255,255,.08);"><span style="font-size:11px;color:#8C8E93;">ВЭД</span><span style="font-size:14px;font-weight:700;line-height:1.2;">Турция</span></div>
         </div>
+        <button onClick="{{ logout }}" style="align-self:flex-start;height:32px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:none;font-size:13px;font-weight:600;color:#D92B21;cursor:pointer;">Выйти</button>
       </div>
-      <div style="font-size:12px;line-height:1.5;color:#A3A5AB;padding:0 12px;margin:0 0 22px;">Данные компании определяют влияние новостей.<br>Обновлено 1 октября.</div>
-      <sc-for list="{{ profile }}" as="g" hint-placeholder-count="2">
-        <details class="profile-section">
-          <summary><span class="profile-icon" aria-hidden="true">{{ g.icon }}</span><span style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:16px;font-weight:500;">{{ g.title }}</span><span style="font-size:12px;color:#A3A5AB;">{{ g.sub }}</span></span></summary>
-          <sc-for list="{{ g.rows }}" as="p" hint-placeholder-count="3"><div class="profile-row"><span style="color:#A3A5AB;">{{ p.k }}</span><span>{{ p.v }}</span></div></sc-for>
-        </details>
-      </sc-for>
-      <details class="profile-section factor-settings" open="{{ true }}">
-        <summary><span class="profile-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M4 17h16"></path><circle cx="9" cy="7" r="3" fill="#303137"></circle><circle cx="15" cy="17" r="3" fill="#303137"></circle></svg></span><span style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:16px;font-weight:500;">Настройка ленты</span><span style="font-size:12px;color:#A3A5AB;">Факторы влияния · {{ fxMeta }}</span></span></summary>
-      <div style="display:flex;flex-direction:column;gap:12px;padding:4px 12px 14px;">
-        <div style="position:relative;width:204px;height:204px;margin:4px auto;">
-          <canvas ref="{{ factorChartRef }}" role="img" aria-label="{{ fxChartLabel }}">Количество факторов по степени влияния. Выберите группу кнопками ниже.</canvas>
-          <div style="position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><span style="font-size:36px;font-weight:600;letter-spacing:-.04em;">{{ fxActive }}</span><span style="font-size:12px;color:#A3A5AB;">активных факторов</span></div>
-        </div>
-        <div style="font-size:12px;line-height:1.5;color:#A3A5AB;text-align:center;">Размер сектора — число факторов, не доля бизнеса.<br>Нажмите на сектор или выберите группу.</div>
-        <div style="display:flex;gap:6px;">
-          <sc-for list="{{ fxGroups }}" as="g" hint-placeholder-count="3">
-            <button onClick="{{ g.pick }}" aria-pressed="{{ g.selected }}" style="flex:1;min-width:0;min-height:74px;padding:10px 4px;border:1px solid {{ g.border }};border-radius:12px;background:{{ g.bg }};color:#F2F2F3;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;"><span style="font-size:20px;font-weight:600;color:{{ g.color }};">{{ g.count }}</span><span style="font-size:12px;">{{ g.label }}</span></button>
-          </sc-for>
-        </div>
-        <button onClick="{{ fxPickInactive }}" aria-pressed="{{ fxInactiveSelected }}" style="min-height:44px;border-radius:12px;border:1px solid {{ fxInactiveBorder }};background:transparent;color:#A3A5AB;font-size:13px;cursor:pointer;">Не влияют · {{ fxInactive }}</button>
-        <sc-if value="{{ fxHasSelection }}"><div style="font-size:14px;font-weight:600;padding:4px;">{{ fxSelectedLabel }}</div></sc-if>
-        <sc-if value="{{ fxGroupEmpty }}"><div style="font-size:13px;color:#A3A5AB;padding:4px;">В этой группе пока нет факторов.</div></sc-if>
-        <sc-if value="{{ fxHasSelection }}">
-        <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;">
-          <sc-for list="{{ fx }}" as="f" hint-placeholder-count="8">
-            <div style="border-top:{{ f.sep }};">
-              <button onClick="{{ f.toggle }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:11px 14px;border:none;background:none;cursor:pointer;color:#F2F2F3;text-align:left;font-family:inherit;">
-                <span style="flex:none;width:4px;height:28px;border-radius:2px;background:{{ f.bar }};"></span>
-                <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;">
-                  <span style="font-size:14.5px;font-weight:600;color:{{ f.nameCo }};">{{ f.name }}</span>
-                  <span style="font-size:12px;color:#8C8E93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.level }}</span>
-                </span>
-                <span style="flex:none;min-width:44px;height:28px;padding:0 9px;box-sizing:border-box;border-radius:8px;background:{{ f.bg }};color:{{ f.co }};box-shadow:{{ f.ring }};font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;font-feature-settings:'tnum' 1;">{{ f.w }}</span>
-              </button>
-              <sc-if value="{{ f.open }}" hint-placeholder-val="{{ false }}">
-                <div style="display:flex;flex-direction:column;gap:6px;padding:0 14px 14px 30px;">
-                  <sc-for list="{{ f.opts }}" as="o" hint-placeholder-count="4">
-                    <button onClick="{{ o.pick }}" style="display:flex;align-items:center;gap:10px;height:40px;padding:0 10px;border-radius:10px;border:1px solid {{ o.border }};background:{{ o.selBg }};color:#F2F2F3;cursor:pointer;text-align:left;font-family:inherit;">
-                      <span style="flex:none;width:38px;height:24px;border-radius:6px;background:{{ o.bg }};color:{{ o.co }};box-shadow:{{ o.ring }};font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ o.v }}</span>
-                      <span style="flex:1;font-size:13.5px;">{{ o.t }}</span>
+      <div style="flex:none;display:flex;gap:4px;margin:0 16px;padding:3px;background:#2C2D32;border-radius:11px;">
+        <sc-for list="{{ pf.tabs }}" as="t" hint-placeholder-count="2"><button onClick="{{ t.onClick }}" style="flex:1;height:36px;border:none;border-radius:9px;background:{{ t.bg }};color:{{ t.co }};font-size:14px;font-weight:600;cursor:pointer;">{{ t.label }}</button></sc-for>
+      </div>
+
+      <sc-if value="{{ pf.tCat }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:14px;padding:14px 16px 24px;">
+          <span style="font-size:13px;line-height:1.45;color:#A3A5AB;padding:0 2px;text-wrap:pretty;">По этим категориям лента отбирает новости. Чем сильнее влияние, тем выше новость в ленте.</span>
+          <div style="display:flex;align-items:center;gap:18px;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;">
+            <div style="flex:none;position:relative;width:104px;height:104px;border-radius:50%;background:{{ pf.pie }};">
+              <div style="position:absolute;inset:18px;border-radius:50%;background:#1C1D21;display:flex;flex-direction:column;align-items:center;justify-content:center;"><span style="font-size:22px;font-weight:700;line-height:1;">{{ pf.active }}</span><span style="font-size:10.5px;color:#8C8E93;">влияют</span></div>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:9px;">
+              <sc-for list="{{ pf.legend }}" as="l" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;"><span style="flex:none;width:10px;height:10px;border-radius:3px;background:{{ l.co }};"></span><span style="flex:1;min-width:0;">{{ l.name }}</span><span style="flex:none;font-weight:700;">{{ l.n }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+          <sc-for list="{{ pf.groups }}" as="g" hint-placeholder-count="3">
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;align-items:center;gap:8px;padding:0 4px;"><span style="width:8px;height:8px;border-radius:2px;background:{{ g.co }};"></span><span style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#A3A5AB;">{{ g.name }} · {{ g.n }}</span></div>
+              <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;">
+                <sc-if value="{{ g.empty }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 14px;font-size:13px;color:#8C8E93;">Нет категорий</div></sc-if>
+                <sc-for list="{{ g.items }}" as="c" hint-placeholder-count="3">
+                  <div style="border-top:{{ c.sep }};">
+                    <button onClick="{{ c.toggle }}" style="width:100%;display:flex;align-items:center;gap:10px;padding:11px 14px;border:none;background:none;cursor:pointer;color:#F2F2F3;text-align:left;font-family:inherit;">
+                      <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;"><span style="font-size:14.5px;font-weight:600;">{{ c.name }}</span><span style="font-size:12.5px;line-height:1.35;color:#A3A5AB;text-wrap:pretty;">{{ c.why }}</span></span>
+                      <svg width="12" height="12" viewBox="0 0 16 16" style="flex:none;color:#6E7076;transform:{{ c.chev }};"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none"></path></svg>
                     </button>
-                  </sc-for>
-                  <div style="display:flex;align-items:center;gap:10px;padding:6px 2px 0;">
-                    <span style="flex:none;font-size:12.5px;color:#A3A5AB;">Точно</span>
-                    <input type="range" aria-label="{{ f.name }}" min="0" max="1" step="0.05" value="{{ f.raw }}" onChange="{{ f.onRange }}" style="flex:1;accent-color:{{ f.accent }};">
-                    <span style="flex:none;width:34px;text-align:right;font-size:13px;font-weight:700;font-feature-settings:'tnum' 1;">{{ f.w }}</span>
+                    <sc-if value="{{ c.open }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 14px 14px;">
+                        <sc-for list="{{ c.opts }}" as="o" hint-placeholder-count="4"><button onClick="{{ o.pick }}" style="display:flex;align-items:center;gap:8px;height:38px;padding:0 10px;border-radius:10px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:#F2F2F3;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;"><span style="flex:none;width:8px;height:8px;border-radius:2px;background:{{ o.co }};"></span>{{ o.label }}</button></sc-for>
+                      </div>
+                    </sc-if>
                   </div>
-                </div>
-              </sc-if>
+                </sc-for>
+              </div>
             </div>
           </sc-for>
+          <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;">
+            <button onClick="{{ pf.toggleNone }}" style="width:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;border:none;background:none;cursor:pointer;color:#A3A5AB;font-size:14px;font-weight:600;font-family:inherit;"><span style="flex:1;text-align:left;">Не влияют · {{ pf.noneN }}</span><svg width="12" height="12" viewBox="0 0 16 16" style="transform:{{ pf.noneChev }};"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none"></path></svg></button>
+            <sc-if value="{{ pf.noneOpen }}" hint-placeholder-val="{{ false }}">
+              <sc-for list="{{ pf.none }}" as="c" hint-placeholder-count="3">
+                <div style="border-top:1px solid rgba(255,255,255,.06);">
+                  <button onClick="{{ c.toggle }}" style="width:100%;display:flex;align-items:center;gap:10px;padding:11px 14px;border:none;background:none;cursor:pointer;color:#C9CBD0;text-align:left;font-family:inherit;">
+                    <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;"><span style="font-size:14.5px;font-weight:600;">{{ c.name }}</span><span style="font-size:12.5px;line-height:1.35;color:#8C8E93;">{{ c.why }}</span></span>
+                    <svg width="12" height="12" viewBox="0 0 16 16" style="flex:none;color:#6E7076;transform:{{ c.chev }};"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none"></path></svg>
+                  </button>
+                  <sc-if value="{{ c.open }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 14px 14px;">
+                      <sc-for list="{{ c.opts }}" as="o" hint-placeholder-count="4"><button onClick="{{ o.pick }}" style="display:flex;align-items:center;gap:8px;height:38px;padding:0 10px;border-radius:10px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:#F2F2F3;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;"><span style="flex:none;width:8px;height:8px;border-radius:2px;background:{{ o.co }};"></span>{{ o.label }}</button></sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </sc-if>
+          </div>
         </div>
-        </sc-if>
-      </div>
-      </details>
-      <button onClick="{{ logout }}" style="width:100%;min-height:48px;margin-top:8px;border-radius:14px;border:none;background:transparent;font-size:15px;color:#E77D74;cursor:pointer;">Выйти из аккаунта</button>
+      </sc-if>
+
+      <sc-if value="{{ pf.tCp }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px;padding:14px 16px 24px;">
+          <span style="font-size:13px;line-height:1.45;color:#A3A5AB;padding:0 2px;text-wrap:pretty;">С кем вы работаете по данным платежей. Новости о них попадают в ленту.</span>
+          <div style="display:flex;gap:18px;padding:0 2px;border-bottom:1px solid rgba(255,255,255,.08);">
+            <sc-for list="{{ pf.cpTabs }}" as="t" hint-placeholder-count="2"><button onClick="{{ t.onClick }}" style="flex:none;display:flex;align-items:center;gap:6px;background:none;border:none;padding:8px 0;margin-bottom:-1px;cursor:pointer;font-size:14px;font-weight:600;color:{{ t.co }};border-bottom:2px solid {{ t.bar }};">{{ t.label }}<span style="font-weight:500;color:#6E7076;">{{ t.n }}</span></button></sc-for>
+          </div>
+          <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;">
+            <sc-for list="{{ pf.cps }}" as="r" hint-placeholder-count="10">
+              <button onClick="{{ r.onClick }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:11px 14px;border:none;border-top:{{ r.sep }};background:none;cursor:pointer;color:#F2F2F3;text-align:left;font-family:inherit;">
+                <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;"><span style="font-size:14.5px;font-weight:600;">{{ r.name }}</span><span style="font-size:12.5px;color:#8C8E93;">{{ r.ind }}</span></span>
+                <span style="flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span style="font-size:13px;font-weight:600;">{{ r.share }}</span><span style="width:56px;height:3px;border-radius:2px;background:#2C2D32;overflow:hidden;"><span style="display:block;height:100%;width:{{ r.w }};background:#C9CBD0;"></span></span></span>
+              </button>
+            </sc-for>
+            <sc-if value="{{ pf.hasRest }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ pf.toggleRest }}" style="width:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;border:none;border-top:1px solid rgba(255,255,255,.06);background:none;cursor:pointer;color:#A3A5AB;font-size:14px;font-weight:600;font-family:inherit;"><span style="flex:1;text-align:left;">{{ pf.restLabel }}</span><svg width="12" height="12" viewBox="0 0 16 16" style="transform:{{ pf.restChev }};"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none"></path></svg></button>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
     </div>
+    <sc-if value="{{ pf.edOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ pf.edClose }}" style="position:absolute;inset:0;z-index:60;background:rgba(0,0,0,.55);display:flex;flex-direction:column;justify-content:flex-end;">
+        <div onClick="{{ stop }}" style="background:#1C1D21;border-radius:22px 22px 0 0;padding:10px 18px 30px;display:flex;flex-direction:column;gap:12px;">
+          <div style="align-self:center;width:36px;height:4px;border-radius:2px;background:#3A3B40;"></div>
+          <span style="font-size:17px;font-weight:700;">{{ pf.edTitle }}</span>
+          <sc-if value="{{ pf.edHasHint }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;line-height:1.4;color:#A3A5AB;">{{ pf.edHint }}</span></sc-if>
+          <input value="{{ pf.edVal }}" onChange="{{ pf.edChange }}" style="height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:#232428;color:#F2F2F3;padding:0 12px;font-size:15px;outline:none;">
+          <div style="display:flex;gap:10px;">
+            <button onClick="{{ pf.edClose }}" style="flex:1;height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:none;color:#F2F2F3;font-size:14.5px;font-weight:600;cursor:pointer;">Отмена</button>
+            <button onClick="{{ pf.edSave }}" style="flex:1;height:46px;border-radius:12px;border:none;background:#F2F2F3;color:#16171A;font-size:14.5px;font-weight:600;cursor:pointer;">Сохранить</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
   </sc-if>
 
   <div style="height:30px;flex:none;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;box-sizing:border-box;"><div style="width:134px;height:5px;border-radius:3px;background:#F2F2F3;"></div></div>
@@ -1164,6 +1200,417 @@ button,textarea,input{font-family:inherit}
     </div>
   </sc-if>
 
+  <sc-if value="{{ tcOpen }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Карточка отслеживаемой новости" style="position:absolute;left:0;right:0;top:47px;bottom:0;background:#0E0F12;z-index:52;display:flex;flex-direction:column;color:#F2F2F3;">
+      <div style="flex:none;display:flex;align-items:center;gap:6px;height:44px;padding:0 16px;">
+        <button onClick="{{ closeNews }}" style="flex:none;display:flex;align-items:center;gap:4px;background:none;border:none;padding:8px 0;cursor:pointer;font-size:14px;font-weight:600;color:#F2F2F3;"><svg width="13" height="13" viewBox="0 0 16 16"><path d="M10.5 2.5L5 8l5.5 5.5" stroke="currentColor" stroke-width="1.9" fill="none"></path></svg>Назад</button>
+        <span style="flex:1;"></span>
+        <span style="flex:none;height:28px;padding:0 10px;border-radius:999px;background:rgba(255,255,255,.08);display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:{{ tc.kindCo }};"><span style="width:7px;height:7px;border-radius:{{ tc.kindShape }};background:currentColor;"></span>{{ tc.kindLabel }}</span>
+        <button onClick="{{ tc.openScore }}" style="flex:none;height:28px;padding:0 10px;border-radius:999px;border:none;background:rgba(255,255,255,.08);display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:#A3A5AB;font-family:inherit;">Важность<span style="font-size:14px;font-weight:700;color:{{ tc.scoreCo }};">{{ tc.score }}</span></button>
+        <button onClick="{{ tc.toggleMenu }}" style="width:34px;height:34px;border-radius:50%;border:none;background:rgba(255,255,255,.1);color:#F2F2F3;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;"><span style="width:4px;height:4px;border-radius:50%;background:currentColor;"></span><span style="width:4px;height:4px;border-radius:50%;background:currentColor;"></span><span style="width:4px;height:4px;border-radius:50%;background:currentColor;"></span></button>
+      </div>
+      <div style="flex:none;display:flex;flex-direction:column;gap:8px;padding:0 16px 10px;">
+        <span style="font-size:17px;line-height:1.24;font-weight:700;letter-spacing:-.015em;text-wrap:pretty;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ tc.name }}</span>
+        <div style="display:flex;align-items:flex-start;gap:10px;padding-top:6px;">
+          <sc-if value="{{ tc.hasMore }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ tc.openSheet }}" style="flex:none;height:24px;margin-top:-5px;padding:0 9px;border-radius:999px;border:none;background:rgba(255,255,255,.1);color:#F2F2F3;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">{{ tc.moreText }}</button>
+          </sc-if>
+          <div style="position:relative;flex:1;display:flex;justify-content:space-between;">
+            <span style="position:absolute;left:20px;right:20px;top:7px;height:1.5px;background:rgba(255,255,255,.16);"></span>
+            <sc-for list="{{ tc.dots }}" as="d" hint-placeholder-count="3">
+              <button onClick="{{ d.onClick }}" style="position:relative;width:44px;background:none;border:none;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;">
+                <span style="height:14px;display:flex;align-items:center;justify-content:center;"><span style="width:{{ d.size }};height:{{ d.size }};border-radius:50%;background:{{ d.bg }};box-shadow:0 0 0 3px #0E0F12;transition:all .15s;"></span></span>
+                <span style="font-size:11px;font-weight:{{ d.fw }};color:{{ d.dc }};white-space:nowrap;">{{ d.d }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px;">
+          <div style="display:flex;align-items:center;gap:8px;min-height:22px;">
+            <span style="flex:1;min-width:0;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#8C8E93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ tc.evLabel }}</span>
+            <sc-if value="{{ tc.past }}" hint-placeholder-val="{{ false }}"><button onClick="{{ tc.toLatest }}" style="flex:none;height:22px;padding:0 9px;border-radius:999px;border:none;background:rgba(255,255,255,.1);color:#F2F2F3;font-size:11.5px;font-weight:600;cursor:pointer;">К последнему</button></sc-if>
+            <sc-if value="{{ tc.hasMarker }}" hint-placeholder-val="{{ true }}"><span style="flex:none;height:22px;padding:0 9px;border-radius:999px;background:{{ tc.mkBg }};color:{{ tc.mkCo }};font-size:11.5px;font-weight:600;display:flex;align-items:center;white-space:nowrap;">{{ tc.marker }}</span></sc-if>
+          </div>
+          <span style="font-size:14px;line-height:1.36;font-weight:600;color:#E0E1E4;text-wrap:pretty;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ tc.evText }}</span>
+        </div>
+      </div>
+      <div style="flex:none;display:flex;gap:18px;padding:0 16px;overflow-x:auto;scrollbar-width:none;background:#0E0F12;border-bottom:1px solid rgba(255,255,255,.08);">
+        <sc-for list="{{ tc.tabs }}" as="t" hint-placeholder-count="6"><button onClick="{{ t.onClick }}" style="flex:none;background:none;border:none;padding:10px 0;margin-bottom:-1px;cursor:pointer;font-size:14px;font-weight:600;color:{{ t.color }};border-bottom:2px solid {{ t.bar }};white-space:nowrap;">{{ t.label }}</button></sc-for>
+      </div>
+      <div style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;">
+        <div style="flex:none;display:flex;flex-direction:column;gap:12px;padding:16px 16px 20px;">
+          <sc-if value="{{ tc.tAn }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:2px;">
+              <span style="font-size:15px;font-weight:600;">Что произошло</span>
+              <sc-for list="{{ tc.theses }}" as="x" hint-placeholder-count="4">
+                <div style="display:flex;flex-direction:column;gap:7px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06);">
+                  <span style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#6E7076;">{{ x.cat }}</span>
+                  <span style="font-size:14.5px;line-height:1.42;text-wrap:pretty;">{{ x.t }}</span>
+                  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;">
+                    <span style="flex:none;display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px 0 4px;border-radius:999px;background:{{ x.g.bg }};color:{{ x.g.co }};font-size:11px;font-weight:600;white-space:nowrap;"><span style="display:flex;padding-left:1px;"><sc-for list="{{ x.g.avs }}" as="a" hint-placeholder-count="2"><span style="width:16px;height:16px;border-radius:50%;margin-left:{{ a.ml }};box-shadow:0 0 0 1.5px #1C1D21;background:{{ a.bg }};color:#fff;font-size:7px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ a.i }}</span></sc-for></span>{{ x.g.label }}</span>
+                    <span style="height:20px;padding:0 8px;border-radius:999px;background:{{ x.stBg }};color:{{ x.stCo }};font-size:11px;font-weight:600;display:flex;align-items:center;">{{ x.st }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:14px;">
+              <span style="font-size:15px;font-weight:600;">Сравнение источников</span>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <span style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:oklch(0.82 0.13 150);"><span style="width:8px;height:8px;border-radius:50%;background:currentColor;"></span>Сходятся</span>
+                <sc-for list="{{ tc.agree }}" as="x" hint-placeholder-count="2"><span style="font-size:14px;line-height:1.4;padding-left:15px;text-wrap:pretty;">{{ x.t }}</span></sc-for>
+              </div>
+              <sc-if value="{{ tc.hasDiffer }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  <span style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:oklch(0.86 0.12 80);"><span style="width:8px;height:8px;border-radius:1px;background:currentColor;"></span>Расходятся</span>
+                  <sc-for list="{{ tc.differ }}" as="x" hint-placeholder-count="2"><span style="font-size:14px;line-height:1.4;padding-left:15px;text-wrap:pretty;">{{ x.t }}</span></sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ tc.hasSingle }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  <span style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#A3A5AB;"><span style="width:8px;height:8px;box-sizing:border-box;border-radius:50%;border:1.5px solid currentColor;"></span>Пишет один источник</span>
+                  <sc-for list="{{ tc.single }}" as="x" hint-placeholder-count="1"><span style="font-size:14px;line-height:1.4;padding-left:15px;text-wrap:pretty;">{{ x.t }} <span style="color:#8C8E93;">— {{ x.s }}</span></span></sc-for>
+                </div>
+              </sc-if>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 4px 0;">
+                <span style="font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8C8E93;">Источники · {{ tc.srcPos }}</span>
+                <span style="display:flex;gap:5px;"><sc-for list="{{ tc.srcDots }}" as="d" hint-placeholder-count="4"><span style="width:6px;height:6px;border-radius:50%;background:{{ d.bg }};"></span></sc-for></span>
+              </div>
+              <div onScroll="{{ tc.srcScroll }}" style="display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;padding:0 16px;scroll-padding:0 16px;">
+                <sc-for list="{{ tc.srcs }}" as="s" hint-placeholder-count="2">
+                  <div style="flex:none;width:calc(100% - 24px);box-sizing:border-box;scroll-snap-align:start;min-height:220px;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <span style="flex:none;width:32px;height:32px;border-radius:50%;background:{{ s.bg }};color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ s.i }}</span>
+                      <span style="flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25;"><span style="font-size:14px;font-weight:600;">{{ s.name }}</span><span style="font-size:12px;color:#8C8E93;">{{ s.time }}</span></span>
+                      <sc-if value="{{ s.primary }}" hint-placeholder-val="{{ false }}"><span style="flex:none;height:20px;padding:0 8px;border-radius:999px;background:oklch(0.6 0.14 150 / .18);color:oklch(0.82 0.13 150);font-size:11px;font-weight:600;display:flex;align-items:center;">Первоисточник</span></sc-if>
+                    </div>
+                    <span style="flex:1;font-size:14px;line-height:1.5;color:#E0E1E4;text-wrap:pretty;">{{ s.text }}</span>
+                    <a href="#" onClick="{{ tc.openPost }}" style="align-self:flex-start;display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600;">Оригинал поста<svg width="10" height="10" viewBox="0 0 16 16"><path d="M5 3h8v8M13 3L3 13" stroke="currentColor" stroke-width="2" fill="none"></path></svg></a>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ tc.tBiz }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ tc.miss }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:8px;background:oklch(0.8 0.15 75 / .1);border:1px solid oklch(0.8 0.15 75 / .25);border-radius:14px;padding:14px 16px;">
+                <span style="font-size:14px;font-weight:600;color:oklch(0.88 0.12 80);">Не хватает данных профиля</span>
+                <span style="font-size:13px;line-height:1.4;color:#E0E1E4;">Без этого значения эффект не посчитать. Укажите {{ tc.needLabel }}.</span>
+                <div style="display:flex;gap:8px;"><input value="{{ tc.profDraft }}" onChange="{{ tc.onProf }}" placeholder="например, 2100" inputmode="numeric" style="flex:1;min-width:0;height:40px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:#232428;color:#F2F2F3;padding:0 10px;font-size:14px;outline:none;"><button onClick="{{ tc.saveProf }}" style="flex:none;height:40px;padding:0 14px;border-radius:9px;border:none;background:#F2F2F3;color:#16171A;font-size:13px;font-weight:600;cursor:pointer;">Сохранить</button></div>
+              </div>
+            </sc-if>
+            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:2px;">
+              <span style="font-size:15px;font-weight:600;">Цифры для компании</span>
+              <sc-for list="{{ tc.nums }}" as="x" hint-placeholder-count="2">
+                <div style="display:flex;flex-direction:column;gap:6px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06);">
+                  <span style="font-size:22px;font-weight:700;letter-spacing:-.01em;color:{{ x.numCo }};">{{ x.num }}</span>
+                  <span style="font-size:13.5px;color:#C9CBD0;">{{ x.label }}</span>
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="flex:none;display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px 0 4px;border-radius:999px;background:{{ x.g.bg }};color:{{ x.g.co }};font-size:11px;font-weight:600;white-space:nowrap;"><span style="width:14px;height:14px;display:flex;align-items:center;justify-content:center;"><span style="width:7px;height:7px;transform:rotate(45deg);background:currentColor;"></span></span>{{ x.g.label }}</span>
+                    <sc-if value="{{ x.canCalc }}" hint-placeholder-val="{{ true }}"><button onClick="{{ x.toggle }}" style="background:none;border:none;padding:0;cursor:pointer;font-size:12.5px;font-weight:600;color:#A3A5AB;">Как посчитано</button></sc-if>
+                    <sc-if value="{{ x.miss }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:oklch(0.86 0.12 80);">укажите значение выше</span></sc-if>
+                  </div>
+                  <sc-if value="{{ x.open }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:grid;grid-template-columns:72px 1fr;gap:6px 10px;background:#232428;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.4;">
+                      <span style="color:#8C8E93;">Профиль</span><span style="color:#E0E1E4;">{{ x.prof }}</span>
+                      <span style="color:#8C8E93;">Новость</span><span style="color:#E0E1E4;">{{ x.par }}</span>
+                      <span style="color:#8C8E93;">Формула</span><span style="color:#F2F2F3;font-weight:600;">{{ x.f }}</span>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
+              <span style="font-size:15px;font-weight:600;">Почему это важно для вас</span>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <span style="font-size:12px;color:#8C8E93;">Данные профиля, которые повлияли на вывод</span>
+                <sc-for list="{{ tc.prof }}" as="p" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:13.5px;"><span style="color:#C9CBD0;">{{ p.k }}</span><span style="flex:none;font-weight:600;color:{{ p.co }};">{{ p.v }}</span></div>
+                </sc-for>
+              </div>
+              <div style="display:flex;flex-direction:column;padding-top:12px;border-top:1px solid rgba(255,255,255,.06);">
+                <sc-for list="{{ tc.chain }}" as="c" hint-placeholder-count="3">
+                  <div style="display:flex;flex-direction:column;">
+                    <div style="display:flex;flex-direction:column;gap:2px;background:#232428;border-radius:10px;padding:9px 12px;">
+                      <span style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#8C8E93;">{{ c.step }}</span>
+                      <span style="font-size:14px;line-height:1.35;font-weight:600;">{{ c.t }}</span>
+                    </div>
+                    <sc-if value="{{ c.arrow }}" hint-placeholder-val="{{ true }}"><span style="align-self:center;height:18px;display:flex;align-items:center;color:#6E7076;"><svg width="12" height="12" viewBox="0 0 16 16"><path d="M8 2v11M3.5 8.5L8 13l4.5-4.5" stroke="currentColor" stroke-width="1.8" fill="none"></path></svg></span></sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              <span style="align-self:flex-start;display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px 0 4px;border-radius:999px;background:{{ tc.aiTag.bg }};color:{{ tc.aiTag.co }};font-size:11px;font-weight:600;white-space:nowrap;"><span style="width:14px;height:14px;display:flex;align-items:center;justify-content:center;"><span style="width:7px;height:7px;transform:rotate(45deg);background:currentColor;"></span></span>{{ tc.aiTag.label }}</span>
+            </div>
+            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
+              <span style="font-size:15px;font-weight:600;">Риски и возможности</span>
+              <sc-for list="{{ tc.risks }}" as="x" hint-placeholder-count="2">
+                <div style="display:flex;gap:10px;"><span style="flex:none;width:9px;height:9px;border-radius:2px;margin-top:5px;background:oklch(0.7 0.18 27);"></span><div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;"><span style="font-size:14px;line-height:1.4;text-wrap:pretty;">{{ x.t }}</span>
+                  <span style="display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px 0 4px;border-radius:999px;background:{{ x.g.bg }};color:{{ x.g.co }};font-size:11px;font-weight:600;white-space:nowrap;"><sc-if value="{{ x.g.isA }}" hint-placeholder-val="{{ false }}"><span style="width:14px;height:14px;border-radius:4px;background:#D92B21;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;">А</span></sc-if><sc-if value="{{ x.g.isAi }}" hint-placeholder-val="{{ false }}"><span style="width:14px;height:14px;display:flex;align-items:center;justify-content:center;"><span style="width:7px;height:7px;transform:rotate(45deg);background:currentColor;"></span></span></sc-if><sc-if value="{{ x.g.hasAv }}" hint-placeholder-val="{{ false }}"><span style="display:flex;padding-left:1px;"><sc-for list="{{ x.g.avs }}" as="a" hint-placeholder-count="1"><span style="width:16px;height:16px;border-radius:50%;margin-left:{{ a.ml }};box-shadow:0 0 0 1.5px #1C1D21;background:{{ a.bg }};color:#fff;font-size:7px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ a.i }}</span></sc-for></span></sc-if>{{ x.g.label }}</span>
+                </div></div>
+              </sc-for>
+              <sc-for list="{{ tc.opps }}" as="x" hint-placeholder-count="1">
+                <div style="display:flex;gap:10px;"><span style="flex:none;width:9px;height:9px;border-radius:50%;margin-top:5px;background:oklch(0.78 0.14 150);"></span><div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;"><span style="font-size:14px;line-height:1.4;text-wrap:pretty;">{{ x.t }}</span>
+                  <span style="display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px 0 4px;border-radius:999px;background:{{ x.g.bg }};color:{{ x.g.co }};font-size:11px;font-weight:600;white-space:nowrap;"><sc-if value="{{ x.g.isA }}" hint-placeholder-val="{{ false }}"><span style="width:14px;height:14px;border-radius:4px;background:#D92B21;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;">А</span></sc-if><sc-if value="{{ x.g.isAi }}" hint-placeholder-val="{{ false }}"><span style="width:14px;height:14px;display:flex;align-items:center;justify-content:center;"><span style="width:7px;height:7px;transform:rotate(45deg);background:currentColor;"></span></span></sc-if><sc-if value="{{ x.g.hasAv }}" hint-placeholder-val="{{ false }}"><span style="display:flex;padding-left:1px;"><sc-for list="{{ x.g.avs }}" as="a" hint-placeholder-count="1"><span style="width:16px;height:16px;border-radius:50%;margin-left:{{ a.ml }};box-shadow:0 0 0 1.5px #1C1D21;background:{{ a.bg }};color:#fff;font-size:7px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ a.i }}</span></sc-for></span></sc-if>{{ x.g.label }}</span>
+                </div></div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ tc.hasAlfa }}" hint-placeholder-val="{{ true }}">
+              <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;align-items:center;gap:10px;"><span style="flex:none;width:28px;height:28px;border-radius:8px;background:#D92B21;color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;">А</span><span style="display:flex;flex-direction:column;line-height:1.25;"><span style="font-size:14px;font-weight:600;">Аналитика Альфа-Банка</span><span style="font-size:12px;color:#8C8E93;">{{ tc.alfaAuthor }}</span></span></div>
+                <span style="font-size:14px;line-height:1.45;color:#E0E1E4;text-wrap:pretty;">{{ tc.alfaText }}</span>
+                <div style="display:flex;flex-direction:column;gap:3px;background:#232428;border-radius:10px;padding:10px 12px;"><span style="font-size:12px;font-weight:600;color:#A3A5AB;">Как повлияла на вывод</span><span style="font-size:13.5px;line-height:1.4;">{{ tc.alfaUse }}</span></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ tc.noAlfa }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;">
+                <span style="font-size:14px;font-weight:600;">Аналитика Альфа-Банка</span>
+                <span style="font-size:13.5px;line-height:1.45;color:#A3A5AB;">По этой теме у банка нет материалов. Вывод построен только на источниках и профиле компании.</span>
+              </div>
+            </sc-if>
+          </sc-if>
+
+          <sc-if value="{{ tc.tSc }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <span style="font-size:12px;color:#8C8E93;">Главное допущение</span>
+                <span style="font-size:15px;font-weight:600;line-height:1.35;">{{ tc.lever }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <span style="font-size:12px;color:#8C8E93;">Горизонт</span>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#2C2D32;border-radius:10px;padding:3px;">
+                  <sc-for list="{{ tc.hzs }}" as="h" hint-placeholder-count="3"><button onClick="{{ h.onClick }}" style="height:34px;border:none;border-radius:8px;background:{{ h.bg }};color:{{ h.co }};font-size:13.5px;font-weight:600;cursor:pointer;">{{ h.label }}</button></sc-for>
+                </div>
+              </div>
+              <span style="display:flex;align-items:flex-start;gap:8px;font-size:12.5px;line-height:1.4;color:#C9CBD0;"><sc-if value="{{ tc.bankBase }}" hint-placeholder-val="{{ true }}"><span style="flex:none;width:14px;height:14px;margin-top:1px;border-radius:4px;background:#D92B21;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;">А</span></sc-if>{{ tc.baseSrc }}</span>
+            </div>
+            <sc-if value="{{ tc.miss }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:8px;background:oklch(0.8 0.15 75 / .1);border:1px solid oklch(0.8 0.15 75 / .25);border-radius:14px;padding:14px 16px;">
+                <span style="font-size:14px;font-weight:600;color:oklch(0.88 0.12 80);">Не хватает данных профиля</span>
+                <span style="font-size:13px;line-height:1.4;color:#E0E1E4;">Без этого значения эффект сценариев не посчитать. Укажите {{ tc.needLabel }}.</span>
+                <div style="display:flex;gap:8px;"><input value="{{ tc.profDraft }}" onChange="{{ tc.onProf }}" placeholder="например, 2100" inputmode="numeric" style="flex:1;min-width:0;height:40px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:#232428;color:#F2F2F3;padding:0 10px;font-size:14px;outline:none;"><button onClick="{{ tc.saveProf }}" style="flex:none;height:40px;padding:0 14px;border-radius:9px;border:none;background:#F2F2F3;color:#16171A;font-size:13px;font-weight:600;cursor:pointer;">Сохранить</button></div>
+              </div>
+            </sc-if>
+            <sc-for list="{{ tc.scen }}" as="x" hint-placeholder-count="3">
+              <div style="background:#1C1D21;border:{{ x.bd }};border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
+                <div style="align-self:stretch;display:flex;align-items:baseline;justify-content:space-between;gap:10px;">
+                  <span style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:14px;font-weight:600;">{{ x.name }}</span><span style="font-size:12.5px;color:#8C8E93;">Допущение: {{ x.at }}</span></span>
+                  <span style="flex:none;font-size:20px;font-weight:700;color:{{ x.vco }};white-space:nowrap;">{{ x.value }}</span>
+                </div>
+                <span style="font-size:13px;line-height:1.4;color:#A3A5AB;text-wrap:pretty;">{{ x.note }}</span>
+                <span style="display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px 0 4px;border-radius:999px;background:{{ x.g.bg }};color:{{ x.g.co }};font-size:11px;font-weight:600;white-space:nowrap;"><sc-if value="{{ x.g.isA }}" hint-placeholder-val="{{ false }}"><span style="width:14px;height:14px;border-radius:4px;background:#D92B21;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;">А</span></sc-if><sc-if value="{{ x.g.isAi }}" hint-placeholder-val="{{ false }}"><span style="width:14px;height:14px;display:flex;align-items:center;justify-content:center;"><span style="width:7px;height:7px;transform:rotate(45deg);background:currentColor;"></span></span></sc-if>{{ x.g.label }}</span>
+              </div>
+            </sc-for>
+            <span style="font-size:12px;line-height:1.45;color:#8C8E93;padding:0 4px;">{{ tc.hzNote }}</span>
+            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:2px;">
+              <span style="font-size:15px;font-weight:600;">Что ждём</span>
+              <span style="font-size:12.5px;line-height:1.4;color:#8C8E93;padding:2px 0 6px;">События, которые покажут, какой сценарий сбывается</span>
+              <sc-for list="{{ tc.wait }}" as="w" hint-placeholder-count="3">
+                <div style="display:flex;flex-direction:column;gap:6px;padding:10px 0;border-top:1px solid rgba(255,255,255,.06);">
+                  <div style="display:flex;align-items:flex-start;gap:10px;"><span style="flex:1;font-size:14px;line-height:1.38;text-wrap:pretty;">{{ w.q }}</span><span style="flex:none;height:22px;padding:0 8px;border-radius:999px;background:{{ w.stBg }};color:{{ w.stCo }};font-size:11.5px;font-weight:600;display:flex;align-items:center;">{{ w.st }}</span></div>
+                  <sc-if value="{{ w.own }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:#8C8E93;">Ваш вопрос · агент следит за новостями и отметит ответ</span></sc-if>
+                  <sc-if value="{{ w.closed }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;"><span style="font-size:13px;color:#E0E1E4;">{{ w.a }} · {{ w.d }}</span>
+                    <span style="display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px 0 4px;border-radius:999px;background:{{ w.g.bg }};color:{{ w.g.co }};font-size:11px;font-weight:600;white-space:nowrap;"><sc-for list="{{ w.g.avs }}" as="a" hint-placeholder-count="1"><span style="width:16px;height:16px;border-radius:50%;background:{{ a.bg }};color:#fff;font-size:7px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ a.i }}</span></sc-for>{{ w.g.label }}</span>
+                  </div></sc-if>
+                </div>
+              </sc-for>
+              <div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);">
+                <input value="{{ tc.waitDraft }}" onChange="{{ tc.onWait }}" placeholder="Свой вопрос: что отследить?" style="flex:1;min-width:0;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#232428;color:#F2F2F3;padding:0 10px;font-size:13.5px;outline:none;">
+                <button onClick="{{ tc.addWait }}" style="flex:none;height:40px;padding:0 12px;border-radius:10px;border:none;background:#F2F2F3;color:#16171A;font-size:13px;font-weight:600;cursor:pointer;">Добавить</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ tc.tAct }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
+              <span style="font-size:15px;font-weight:600;">Что сделать</span>
+              <sc-for list="{{ tc.todo }}" as="x" hint-placeholder-count="3">
+                <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;"><span style="font-size:14px;line-height:1.4;text-wrap:pretty;">{{ x.t }}</span>
+                  <span style="display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px 0 4px;border-radius:999px;background:{{ x.g.bg }};color:{{ x.g.co }};font-size:11px;font-weight:600;white-space:nowrap;"><sc-if value="{{ x.g.isA }}" hint-placeholder-val="{{ false }}"><span style="width:14px;height:14px;border-radius:4px;background:#D92B21;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;">А</span></sc-if><sc-if value="{{ x.g.isAi }}" hint-placeholder-val="{{ false }}"><span style="width:14px;height:14px;display:flex;align-items:center;justify-content:center;"><span style="width:7px;height:7px;transform:rotate(45deg);background:currentColor;"></span></span></sc-if>{{ x.g.label }}</span>
+                </div>
+              </sc-for>
+              <div style="display:flex;flex-direction:column;gap:2px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);">
+                <span style="font-size:12px;color:#8C8E93;padding-bottom:4px;">Проверить дополнительно</span>
+                <sc-for list="{{ tc.check }}" as="x" hint-placeholder-count="2">
+                  <button onClick="{{ x.onClick }}" style="display:flex;align-items:flex-start;gap:10px;background:none;border:none;padding:7px 0;cursor:pointer;text-align:left;font-family:inherit;">
+                    <span style="flex:none;width:20px;height:20px;box-sizing:border-box;border-radius:5px;border:1.5px solid {{ x.bd }};background:{{ x.bg }};display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 16 16"><path d="M3 8.5l3 3 7-7" stroke="#16171A" stroke-width="2.4" fill="none"></path></svg></span>
+                    <span style="font-size:14px;line-height:1.38;color:{{ x.tco }};text-decoration:{{ x.dec }};">{{ x.t }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;align-items:center;gap:10px;"><span style="flex:none;width:28px;height:28px;border-radius:8px;background:#D92B21;color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;">А</span><span style="display:flex;flex-direction:column;line-height:1.25;"><span style="font-size:12px;color:#8C8E93;">Продукт Альфа-Банка</span><span style="font-size:15px;font-weight:600;">{{ tc.prodName }}</span></span></div>
+              <span style="font-size:13.5px;line-height:1.45;color:#E0E1E4;">{{ tc.prodDesc }}</span>
+              <span style="font-size:13px;line-height:1.4;color:#A3A5AB;">{{ tc.prodBenefit }}</span>
+              <sc-if value="{{ tc.reqIdle }}" hint-placeholder-val="{{ true }}"><button onClick="{{ tc.sendReq }}" style="height:44px;border-radius:12px;border:none;background:#D92B21;color:#fff;font-size:14.5px;font-weight:600;cursor:pointer;">Заявка менеджеру</button></sc-if>
+              <sc-if value="{{ tc.reqSent }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:2px;background:#232428;border-radius:12px;padding:10px 12px;"><span style="font-size:13.5px;font-weight:600;color:oklch(0.82 0.13 150);">Заявка отправлена</span><span style="font-size:12.5px;color:#A3A5AB;">Менеджер Алексей Смирнов свяжется сегодня до 18:00</span></div></sc-if>
+            </div>
+            <span style="font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8C8E93;padding:6px 4px 0;">Поручение письмом в Outlook</span>
+            <sc-for list="{{ tc.drafts }}" as="d" hint-placeholder-count="2">
+              <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;flex-direction:column;gap:1px;"><span style="font-size:14.5px;font-weight:600;">{{ d.person }}</span><span style="font-size:12.5px;color:#A3A5AB;">{{ d.role }} · срок {{ d.due }}</span></div>
+                <sc-if value="{{ d.hasSupp }}" hint-placeholder-val="{{ false }}"><span style="align-self:flex-start;height:22px;padding:0 9px;border-radius:999px;background:rgba(255,255,255,.08);color:#E0E1E4;font-size:11.5px;font-weight:600;display:flex;align-items:center;">{{ d.supp }}</span></sc-if>
+                <textarea value="{{ d.text }}" onChange="{{ d.onChange }}" rows="4" style="width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.45;color:#F2F2F3;resize:none;outline:none;background:#232428;font-family:inherit;"></textarea>
+                <button onClick="{{ d.send }}" style="height:42px;border-radius:11px;border:none;background:#F2F2F3;color:#16171A;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="3" width="13" height="10" rx="1.5"></rect><path d="M2 4l6 5 6-5"></path></svg>Отправить…</button>
+              </div>
+            </sc-for>
+            <span style="font-size:12px;line-height:1.4;color:#8C8E93;padding:0 4px;">Письмо уходит только после вашего подтверждения.</span>
+            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:2px;">
+              <span style="font-size:15px;font-weight:600;padding-bottom:4px;">Уже отправлено</span>
+              <sc-for list="{{ tc.sentList }}" as="t" hint-placeholder-count="2">
+                <div style="display:flex;flex-direction:column;gap:4px;padding:10px 0;border-top:1px solid rgba(255,255,255,.06);">
+                  <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#8C8E93;"><span style="flex:1;min-width:0;">{{ t.ref }} · {{ t.d }} · {{ t.who }}</span><span style="flex:none;font-weight:700;color:{{ t.stCo }};">{{ t.st }}</span></div>
+                  <span style="font-size:14px;line-height:1.4;text-wrap:pretty;">{{ t.t }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ tc.tLog }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 2px;">
+                <span style="font-size:15px;font-weight:600;">Как я делал разбор</span>
+                <span style="font-size:12px;color:#8C8E93;">{{ tc.logMeta }}</span>
+              </div>
+              <span style="font-size:12.5px;color:#A3A5AB;padding:0 2px;">{{ tc.logSum }}</span>
+              <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px 6px;display:flex;flex-direction:column;">
+                <sc-for list="{{ tc.logs }}" as="l" hint-placeholder-count="8">
+                  <div style="display:grid;grid-template-columns:12px minmax(0,1fr);column-gap:12px;">
+                    <div style="display:flex;flex-direction:column;align-items:center;">
+                      <span style="flex:none;width:10px;height:10px;border-radius:50%;margin-top:4px;background:{{ l.co }};"></span>
+                      <sc-if value="{{ l.line }}" hint-placeholder-val="{{ true }}"><span style="flex:1;width:1.5px;margin-top:4px;background:rgba(255,255,255,.1);"></span></sc-if>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:5px;padding-bottom:16px;min-width:0;">
+                      <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:12px;font-weight:700;color:{{ l.co }};">{{ l.kind }}</span><span style="font-size:11.5px;color:#6E7076;">{{ l.tm }}</span></div>
+                      <span style="font-size:14px;line-height:1.45;color:#F2F2F3;text-wrap:pretty;">{{ l.t }}</span>
+                      <sc-if value="{{ l.hasList }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex;flex-direction:column;gap:4px;">
+                          <sc-for list="{{ l.list }}" as="it" hint-placeholder-count="3"><span style="display:flex;gap:8px;font-size:13.5px;line-height:1.4;color:#C9CBD0;"><span style="flex:none;color:#6E7076;">—</span>{{ it.x }}</span></sc-for>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ l.hasRes }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;line-height:1.4;color:#A3A5AB;">{{ l.res }}</span></sc-if>
+                      <sc-if value="{{ l.hasFix }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex;flex-direction:column;gap:2px;background:oklch(0.8 0.15 75 / .1);border-radius:10px;padding:8px 10px;"><span style="font-size:12px;font-weight:600;color:oklch(0.88 0.12 80);">Нашёл неточность и исправил</span><span style="font-size:13px;line-height:1.4;color:#E0E1E4;">{{ l.fix }}</span></div>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ tc.tLogOld }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+              <span style="font-size:15px;font-weight:600;">План</span>
+              <sc-for list="{{ tc.plan }}" as="p" hint-placeholder-count="3"><div style="display:flex;gap:10px;font-size:14px;line-height:1.38;"><span style="flex:none;width:20px;height:20px;border-radius:50%;background:#2C2D32;color:#C9CBD0;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ p.n }}</span><span>{{ p.t }}</span></div></sc-for>
+            </div>
+            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:2px;">
+              <span style="font-size:15px;font-weight:600;padding-bottom:4px;">Вызванные инструменты</span>
+              <sc-for list="{{ tc.tools }}" as="x" hint-placeholder-count="3">
+                <div style="display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 0;border-top:1px solid rgba(255,255,255,.06);">
+                  <span style="font-size:13.5px;font-weight:600;">{{ x.n }}</span><span style="font-size:12px;color:#A3A5AB;text-align:right;">{{ x.r }}</span>
+                  <span style="grid-column:1 / -1;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:#8C8E93;">{{ x.q }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
+              <span style="font-size:15px;font-weight:600;">Промежуточные результаты</span>
+              <sc-for list="{{ tc.mid }}" as="x" hint-placeholder-count="2"><div style="display:flex;gap:10px;font-size:13.5px;line-height:1.4;color:#E0E1E4;"><span style="flex:none;width:6px;height:6px;border-radius:50%;margin-top:7px;background:#6E7076;"></span><span>{{ x.t }}</span></div></sc-for>
+            </div>
+            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
+              <span style="font-size:15px;font-weight:600;">Самопроверка и исправления</span>
+              <sc-for list="{{ tc.selfcheck }}" as="x" hint-placeholder-count="1">
+                <div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:13.5px;line-height:1.4;">{{ x.t }}</span><span style="font-size:12.5px;line-height:1.4;color:oklch(0.86 0.12 80);">{{ x.fix }}</span></div>
+              </sc-for>
+            </div>
+            <div style="background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
+              <span style="font-size:15px;font-weight:600;">Что использовал агент</span>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <span style="font-size:12px;color:#8C8E93;">Источники</span>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;"><sc-for list="{{ tc.usedSrc }}" as="s" hint-placeholder-count="3"><span style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 3px;border-radius:999px;background:#232428;font-size:12.5px;font-weight:600;"><span style="width:22px;height:22px;border-radius:50%;background:{{ s.bg }};color:#fff;font-size:8.5px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ s.i }}</span>{{ s.name }}</span></sc-for></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <span style="font-size:12px;color:#8C8E93;">Данные компании</span>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;"><sc-for list="{{ tc.usedData }}" as="x" hint-placeholder-count="3"><span style="height:28px;padding:0 10px;border-radius:999px;background:#232428;font-size:12.5px;display:flex;align-items:center;">{{ x.t }}</span></sc-for></div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ tc.tChat }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ tc.noMsgs }}" hint-placeholder-val="{{ true }}"><span style="font-size:13.5px;line-height:1.45;color:#A3A5AB;padding:4px 4px 0;">Спросите про эту историю: уточнить деталь, показать данные в другом разрезе или открыть первоисточник.</span></sc-if>
+            <sc-for list="{{ tc.msgs }}" as="m" hint-placeholder-count="0">
+              <sc-if value="{{ m.me }}" hint-placeholder-val="{{ false }}"><div style="align-self:flex-end;max-width:82%;background:#F2F2F3;color:#16171A;border-radius:16px 16px 4px 16px;padding:9px 13px;font-size:14px;line-height:1.4;">{{ m.t }}</div></sc-if>
+              <sc-if value="{{ m.ai }}" hint-placeholder-val="{{ false }}">
+                <div style="align-self:flex-start;max-width:88%;background:#1C1D21;border:1px solid rgba(255,255,255,.08);border-radius:16px 16px 16px 4px;padding:10px 13px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;">
+                  <span style="font-size:14px;line-height:1.45;text-wrap:pretty;">{{ m.t }}</span>
+                  <sc-if value="{{ m.hasG }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px 0 4px;border-radius:999px;background:{{ m.g.bg }};color:{{ m.g.co }};font-size:11px;font-weight:600;white-space:nowrap;"><sc-if value="{{ m.g.isAi }}" hint-placeholder-val="{{ false }}"><span style="width:14px;height:14px;display:flex;align-items:center;justify-content:center;"><span style="width:7px;height:7px;transform:rotate(45deg);background:currentColor;"></span></span></sc-if><sc-if value="{{ m.g.hasAv }}" hint-placeholder-val="{{ false }}"><span style="display:flex;padding-left:1px;"><sc-for list="{{ m.g.avs }}" as="a" hint-placeholder-count="1"><span style="width:16px;height:16px;border-radius:50%;margin-left:{{ a.ml }};box-shadow:0 0 0 1.5px #1C1D21;background:{{ a.bg }};color:#fff;font-size:7px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ a.i }}</span></sc-for></span></sc-if>{{ m.g.label }}</span></sc-if>
+                  <sc-if value="{{ m.link }}" hint-placeholder-val="{{ false }}"><a href="#" onClick="{{ tc.openPost }}" style="display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600;">Открыть первоисточник<svg width="10" height="10" viewBox="0 0 16 16"><path d="M5 3h8v8M13 3L3 13" stroke="currentColor" stroke-width="2" fill="none"></path></svg></a></sc-if>
+                </div>
+              </sc-if>
+            </sc-for>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;padding-top:4px;">
+              <sc-for list="{{ tc.chips }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.onClick }}" style="min-height:34px;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:none;color:#E0E1E4;font-size:13px;line-height:1.3;text-align:left;cursor:pointer;font-family:inherit;">{{ c.q }}</button></sc-for>
+            </div>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:10px 4px 0;">
+            <span style="font-size:12px;color:#8C8E93;">Что-то не так с разбором?</span>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              <sc-for list="{{ tc.fb }}" as="f" hint-placeholder-count="3"><button onClick="{{ f.onClick }}" style="height:32px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:{{ f.bg }};color:{{ f.co }};font-size:12.5px;font-weight:600;cursor:pointer;">{{ f.l }}</button></sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="flex:none;display:flex;gap:8px;padding:8px 16px 26px;background:#0E0F12;border-top:1px solid rgba(255,255,255,.08);">
+        <input value="{{ tc.chatDraft }}" onChange="{{ tc.onChat }}" onKeyDown="{{ tc.chatKey }}" placeholder="Спросить про эту историю" style="flex:1;min-width:0;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#1C1D21;color:#F2F2F3;padding:0 12px;font-size:14px;outline:none;">
+        <button onClick="{{ tc.sendChat }}" style="flex:none;width:44px;height:44px;border-radius:12px;border:none;background:#F2F2F3;color:#16171A;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 13V3M3.5 7.5L8 3l4.5 4.5" stroke="currentColor" stroke-width="2" fill="none"></path></svg></button>
+      </div>
+      <sc-if value="{{ tc.sheetOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ tc.closeSheet }}" style="position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.5);display:flex;flex-direction:column;justify-content:flex-end;">
+          <div onClick="{{ stop }}" style="max-height:75%;overflow-y:auto;background:#1C1D21;border-radius:22px 22px 0 0;padding:10px 16px 28px;display:flex;flex-direction:column;gap:6px;">
+            <div style="align-self:center;width:36px;height:4px;border-radius:2px;background:#3A3B40;"></div>
+            <div style="font-size:16px;font-weight:700;padding:8px 4px 6px;">{{ tc.sheetTitle }}</div>
+            <sc-for list="{{ tc.sheet }}" as="x" hint-placeholder-count="5">
+              <button onClick="{{ x.onClick }}" style="display:grid;grid-template-columns:52px 12px 1fr auto;column-gap:10px;align-items:start;text-align:left;padding:10px 8px;border:none;border-radius:12px;background:{{ x.bg }};color:#F2F2F3;cursor:pointer;font-family:inherit;">
+                <span style="font-size:12.5px;font-weight:600;color:#A3A5AB;padding-top:1px;">{{ x.d }}</span>
+                <span style="width:9px;height:9px;border-radius:50%;background:{{ x.dot }};margin-top:4px;"></span>
+                <span style="font-size:14px;line-height:1.38;text-wrap:pretty;">{{ x.w }}</span>
+                <span style="font-size:13px;font-weight:700;color:{{ x.scCo }};">{{ x.sc }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ tc.menuOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ tc.closeMenu }}" style="position:absolute;inset:0;z-index:20;">
+          <div onClick="{{ stop }}" style="position:absolute;right:16px;top:46px;width:236px;background:#2C2D32;border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.5);overflow:hidden;display:flex;flex-direction:column;">
+            <button onClick="{{ tc.forward }}" style="height:46px;padding:0 16px;border:none;background:none;color:#F2F2F3;font-size:14.5px;text-align:left;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.08);">Переслать историю</button>
+            <button onClick="{{ tc.unfollow }}" style="height:46px;padding:0 16px;border:none;background:none;color:oklch(0.72 0.18 27);font-size:14.5px;text-align:left;cursor:pointer;">Не отслеживать</button>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ tc.cfOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ tc.cfCancel }}" style="position:absolute;inset:0;z-index:30;background:rgba(0,0,0,.55);display:flex;flex-direction:column;justify-content:flex-end;">
+          <div onClick="{{ stop }}" style="background:#1C1D21;border-radius:22px 22px 0 0;padding:10px 18px 28px;display:flex;flex-direction:column;gap:12px;">
+            <div style="align-self:center;width:36px;height:4px;border-radius:2px;background:#3A3B40;"></div>
+            <span style="font-size:17px;font-weight:700;">Отправить письмо?</span>
+            <span style="font-size:13px;line-height:1.4;color:#A3A5AB;">Письмо уйдёт из Outlook a.volkov@transmetall.ru только после подтверждения.</span>
+            <div style="display:grid;grid-template-columns:52px 1fr;gap:6px 10px;background:#232428;border-radius:12px;padding:12px;font-size:13px;line-height:1.4;">
+              <span style="color:#8C8E93;">Кому</span><span>{{ tc.cfTo }}</span>
+              <span style="color:#8C8E93;">Тема</span><span>{{ tc.cfSubj }}</span>
+              <span style="grid-column:1 / -1;padding-top:6px;border-top:1px solid rgba(255,255,255,.06);color:#E0E1E4;">{{ tc.cfBody }}</span>
+            </div>
+            <div style="display:flex;gap:10px;">
+              <button onClick="{{ tc.cfCancel }}" style="flex:1;height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:none;color:#F2F2F3;font-size:14.5px;font-weight:600;cursor:pointer;">Отмена</button>
+              <button onClick="{{ tc.cfOk }}" style="flex:1.4;height:48px;border-radius:12px;border:none;background:#F2F2F3;color:#16171A;font-size:14.5px;font-weight:600;cursor:pointer;">Подтвердить и отправить</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
   <sc-if value="{{ reasonOpen }}" hint-placeholder-val="{{ false }}">
     <div onClick="{{ closeReason }}" style="position:absolute;inset:0;background:rgba(18,18,22,.38);z-index:55;"></div>
     <div style="position:absolute;left:0;right:0;bottom:0;background:#1C1D21;border-radius:22px 22px 0 0;z-index:56;padding:10px 16px 34px;display:flex;flex-direction:column;gap:6px;">
@@ -1620,6 +2067,98 @@ const CHAINS = {
 const INJECT = { text: 'Правительство утвердило исключения из экспортной пошлины для поставок в страны ЕАЭС', chain: 'n1', q: 1,
   ev: ev('18 окт', 'Правительство утвердило исключения из пошлины для поставок в страны ЕАЭС', 79, 3, { why: 'Поставки в Казахстан и Беларусь (≈18% экспорта) выходят из-под пошлины.', diffs: [{ k: 'Экспортная выручка под пошлиной', from: '19,8 млрд ₽', to: '16,2 млрд ₽', calc: 'baseEaeu' }, { k: 'Влияние на EBITDA в год', from: '−1,39 млрд ₽', to: '−1,14 млрд ₽', calc: 'ebitdaEaeu' }] }),
   ans: { a: 'Да, поставки в ЕАЭС освобождены', src: 'Правительство РФ', d: '18 окт', quote: '«…не применяется к товарам, вывозимым в государства — члены ЕАЭС»' } };
+const TRACK = {
+  n1: { kind: 'risk', bank: 'agree', bankNote: 'Прогноз банка совпадает с выводом: пошлина минимум до конца 2027 года',
+    score: [['Масштаб для компании', 40, 'Экспорт — 38% выручки, 19,8 млрд ₽'], ['Достоверность', 20, 'Постановление опубликовано Минфином'], ['Срочность', 20, 'Вступает в силу через 12 дней'], ['Новизна', 20, 'Новое: пошлина касается и подписанных контрактов']],
+    feed: 'Затрагивает экспорт — главный сегмент в профиле компании, и вы отслеживаете эту историю.',
+    theses: [
+      { cat: 'Факт', t: 'Минфин ввёл экспортную пошлину 7% от таможенной стоимости на плоский и сортовой прокат', st: 'official', s: [2, 1, 0] },
+      { cat: 'Сроки', t: 'Действует с 1 ноября 2026 года для всех отгрузок, включая подписанные контракты', st: 'official', s: [2, 1] },
+      { cat: 'Сроки', t: 'Срок действия — до конца 2027 года', st: 'one', s: [0] },
+      { cat: 'Участники', t: 'Под пошлину попадают все экспортёры проката; для ЕАЭС возможны исключения', st: 'many', s: [1, 0] },
+      { cat: 'Причины', t: 'Цель — насытить внутренний рынок после роста цен на прокат на 9%', st: 'many', s: [1, 3] },
+      { cat: 'Оценка', t: 'Рентабельность экспортёров снизится на 4–6 п.п.', st: 'opinion', s: [3] },
+    ],
+    prof: [['Выручка за год', 'rev'], ['Доля экспорта', 'exp'], ['Контракты IV кв. с отгрузкой после 1 ноября', 'q4'], ['Валютное хеджирование', 'hedge']],
+    profDefault: { rev: '52 млрд ₽', exp: '38%', q4: '4,6 млрд ₽', hedge: 'нет' },
+    nums: [
+      { num: '−1,39 млрд ₽', label: 'EBITDA в год', prof: 'Выручка 52 млрд ₽ × экспорт 38% = 19,8 млрд ₽', par: 'Пошлина 7%, в цену подписанных контрактов не переложить', f: '19,8 млрд × 7% × (1 − 0) = 1,39 млрд ₽' },
+      { num: '4,6 млрд ₽', label: 'контрактов IV квартала попадают под пошлину', prof: 'Реестр контрактов: отгрузки после 1 ноября', par: 'Пошлина действует для всех отгрузок с 1 ноября', f: 'Сумма 14 контрактов = 4,6 млрд ₽' },
+      { num: '−2,7 п.п.', label: 'рентабельность по EBITDA', prof: 'EBITDA 9,1 млрд ₽ при выручке 52 млрд ₽ — 17,5%', par: 'Потери EBITDA 1,39 млрд ₽', f: '(9,1 − 1,39) / 52 = 14,8% → −2,7 п.п.' },
+    ],
+    chain: ['Постановление Минфина', 'Пошлина 7% на весь экспорт проката', '−1,39 млрд ₽ EBITDA в год'],
+    risks: [{ t: 'Покупатели в Турции откажутся от новых цен и перенесут отгрузки', g: 's', s: [1, 3] }, { t: 'Снижение EBITDA приблизит долг/EBITDA к ковенанту 3,0', g: 'ai' }],
+    opps: [{ t: 'Внутренние цены вырастут, когда экспортёры перенаправят объёмы', g: 'alfa' }, { t: 'Отгрузить часть контрактов до 31 октября без пошлины', g: 'ai' }],
+    alfaUse: 'Взяли горизонт «до конца 2027 года» за базовый и долю пошлины в цене 15% — за базовый сценарий. Добавили форвард в действия.',
+    scen: { lever: 'Доля пошлины, которую удастся заложить в цену', vals: ['0%', '15%', '50%'], eff: () => [-1386, -1178, -693], baseSrc: 'Прогноз Альфа-Банка: экспортёры переложат в цену 10–20% пошлины',
+      notes: ['Покупатели не принимают новые цены, пошлина целиком ложится на маржу', 'Часть пошлины уходит в цену новых контрактов', 'Половину пошлины удаётся заложить в цену'] },
+    todo: [{ t: 'Отгрузить до 31 октября контракты, где это возможно', g: 'ai' }, { t: 'Зафиксировать курс по экспортной выручке IV квартала', g: 'alfa' }, { t: 'Пересмотреть цены в новых контрактах с учётом пошлины', g: 'ai' }],
+    check: ['Есть ли в контрактах оговорка о новых пошлинах', 'Какая доля экспорта идёт в ЕАЭС', 'Запас до ковенанта долг/EBITDA при −1,39 млрд ₽'],
+    log: { plan: ['Найти первоисточник и параметры пошлины', 'Сверить сообщения каналов между собой', 'Наложить параметры на профиль компании', 'Построить три сценария и проверить расчёт'],
+      tools: [['Поиск по каналам', '«пошлина прокат 7%» за 7 дней', '5 публикаций'], ['Первоисточник', 'Минфин России · постановление', 'найдено, 13 окт'], ['Профиль компании', 'выручка, доля экспорта, контракты IV кв.', '3 из 4 показателей'], ['Аналитика Альфа-Банка', 'товарные рынки · металлы', '1 материал от 10 окт'], ['Калькулятор', '19,8 млрд × 7% × (1 − x)', '3 сценария']],
+      mid: ['Ставка 7% подтверждена первоисточником', 'Срок до конца 2027 года пишет один канал — пометили', 'База — весь экспорт, а не ≈60%, как считали 9 окт'],
+      check: [['Сверил базу расчёта с постановлением', 'Исправил: база 19,8 млрд ₽ вместо 11,9 млрд ₽ — пошлина касается и подписанных контрактов'], ['Проверил, не мнение ли оценка «−4–6 п.п.»', 'Пометил как мнение Металл-Инсайда, в расчёт не взял']],
+      data: ['Выручка 52 млрд ₽', 'Доля экспорта 38%', 'Реестр контрактов IV кв.', 'EBITDA 9,1 млрд ₽', 'Ковенант долг/EBITDA 3,0'] },
+    chat: [{ q: 'Касается ли пошлина поставок в Казахстан?', a: 'Пока неясно. Постановление исключений не содержит; об исключениях для ЕАЭС пишет только Деловой вестник. Следим в «Что ждём».', g: 's', s: [1] },
+      { q: 'Покажи эффект по кварталам', a: 'IV кв. 2026: −0,23 млрд ₽ (2 месяца), 2027: по −0,35 млрд ₽ в квартал. Итого до конца 2027 года — −1,62 млрд ₽.', g: 'ai' },
+      { q: 'Открой первоисточник', a: 'Постановление Минфина России от 13 октября 2026 года.', g: 's', s: [2], link: 1 }] },
+  n2: { kind: 'risk', bank: 'differ', bankNote: 'Банк не ждёт повышения в декабре, мы учитываем его в пессимистичном сценарии',
+    score: [['Масштаб для компании', 40, 'Плавающий долг 8,4 млрд ₽'], ['Достоверность', 20, 'Официальное решение Банка России'], ['Срочность', 20, 'Расходы растут уже в этом квартале'], ['Новизна', 20, 'Ставку сохранили — ожидали снижение']],
+    feed: 'Ставка влияет на расходы по кредитам с плавающей ставкой из профиля компании.',
+    theses: [
+      { cat: 'Факт', t: 'Банк России сохранил ключевую ставку на уровне 17%', st: 'official', s: [0, 1] },
+      { cat: 'Причины', t: 'Прогноз инфляции повышен до 6,5–7% из-за сентябрьских данных', st: 'official', s: [0, 1] },
+      { cat: 'Сроки', t: 'Следующее заседание — 12 декабря', st: 'official', s: [0] },
+      { cat: 'Оценка', t: 'Не исключено повышение ставки в декабре', st: 'opinion', s: [2] },
+    ],
+    prof: [['Долг с плавающей ставкой', 'fl'], ['Ставка в бюджете 2027', 'bud'], ['Процентные расходы в год', 'int']],
+    profDefault: { fl: '8,4 млрд ₽', bud: '14,5%', int: '1,2 млрд ₽' },
+    nums: [{ num: '+210 млн ₽', label: 'процентных расходов в год сверх бюджета', prof: 'Плавающий долг 8,4 млрд ₽, ставка в бюджете 14,5%', par: 'Ставка 17% до весны', f: '8,4 млрд × (17% − 14,5%) = 210 млн ₽' }],
+    chain: ['Решение ЦБ сохранить 17%', 'Высокая ставка дольше, чем в бюджете', '+210 млн ₽ расходов в год'],
+    risks: [{ t: 'Повышение ставки в декабре добавит ещё 84 млн ₽ в год', g: 's', s: [2] }],
+    opps: [{ t: 'Зафиксировать ставку по части долга до начала снижения', g: 'alfa' }],
+    alfaUse: 'Взяли снижение с апреля как базовый сценарий. В пессимистичном оставили повышение до 18% — здесь расходимся с банком.',
+    scen: { lever: 'Средняя ключевая ставка за период', vals: ['18%', '16,5%', '15%'], eff: () => [-294, -168, -42], baseSrc: 'Прогноз Альфа-Банка: первое снижение в апреле 2027',
+      notes: ['Повышение до 18% в декабре', 'Ставка 17% до апреля, затем снижение', 'Снижение начнётся в феврале'] },
+    todo: [{ t: 'Зафиксировать ставку по 30–50% плавающего долга', g: 'alfa' }, { t: 'Пересчитать бюджет 2027 со ставкой 17% до апреля', g: 'ai' }],
+    check: ['Условия досрочного погашения по кредитам', 'Есть ли ограничения на хеджирование в договорах'],
+    log: { plan: ['Получить решение и прогноз ЦБ', 'Сверить с бюджетом компании', 'Построить сценарии ставки'],
+      tools: [['Первоисточник', 'Банк России · пресс-релиз', 'найдено, 13 окт'], ['Профиль компании', 'долг, ставка в бюджете', '3 из 3'], ['Аналитика Альфа-Банка', 'макроэкономика', '1 материал'], ['Калькулятор', '8,4 млрд × (r − 14,5%)', '3 сценария']],
+      mid: ['Ставка сохранена — подтверждено официально', 'Повышение в декабре пишет только один канал'],
+      check: [['Проверил базу: только плавающий долг', 'Исправил: убрал 1,5 млрд ₽ фиксированного кредита из расчёта']],
+      data: ['Плавающий долг 8,4 млрд ₽', 'Ставка в бюджете 14,5%'] },
+    chat: [{ q: 'Сколько сэкономим, если зафиксировать 3 млрд ₽?', a: 'При базовом сценарии — около 45 млн ₽ в год, при пессимистичном — до 105 млн ₽.', g: 'ai' },
+      { q: 'Покажи по кредитам', a: 'Кредит ВТБ 4,2 млрд ₽ — +105 млн ₽, синдицированный 2,7 млрд ₽ — +68 млн ₽, линия 1,5 млрд ₽ — +37 млн ₽.', g: 'ai' },
+      { q: 'Открой первоисточник', a: 'Пресс-релиз Банка России от 13 октября.', g: 's', s: [0], link: 1 }] },
+  n3: { kind: 'opp', bank: 'none', bankNote: 'По этой теме у Альфа-Банка нет материалов',
+    score: [['Масштаб для компании', 40, 'Ж/д логистика — вторая статья затрат'], ['Достоверность', 20, 'Решение правления РЖД'], ['Срочность', 20, 'Начнёт действовать через 6 недель'], ['Новизна', 20, 'Параметры совпали с ожиданиями']],
+    feed: 'Снижает тариф на маршрутах, по которым идёт ваш экспорт в Азию.',
+    theses: [
+      { cat: 'Факт', t: 'Правление РЖД одобрило скидку 12% на перевозку металла на восток', st: 'official', s: [0, 1] },
+      { cat: 'Участники', t: 'Скидка для грузоотправителей от 50 тыс. т в квартал', st: 'many', s: [0, 1] },
+      { cat: 'Сроки', t: 'Действует с 1 декабря 2026 года', st: 'one', s: [1] },
+      { cat: 'Оценка', t: 'Дальневосточные порты могут поднять ставки', st: 'opinion', s: [2] },
+    ],
+    prof: [['Отгрузки на восток в квартал', 'vol'], ['Расходы на ж/д логистику на восток', 'logEast']],
+    profDefault: { vol: '68 тыс. т' }, need: { key: 'logEast', label: 'расходы на ж/д логистику на восток, млн ₽ в год' },
+    nums: [{ num: 'need', label: 'экономия на ж/д логистике в год', prof: 'Расходы на логистику на восток', par: 'Скидка 12%, объём выше порога', fN: L => `${L} млн × 12% = ${Math.round(L * 0.12)} млн ₽`, vN: L => `+${Math.round(L * 0.12)} млн ₽` }],
+    chain: ['Решение правления РЖД', 'Тариф на восток −12%', 'Экономия на логистике'],
+    risks: [{ t: 'Объём в одном из кварталов окажется ниже 50 тыс. т', g: 'ai' }, { t: 'Рост ставок портов съест часть экономии', g: 's', s: [2] }],
+    opps: [{ t: 'Перевести часть объёма с Балтики на восток', g: 'ai' }],
+    alfaUse: '',
+    scen: { lever: 'Доля восточных отгрузок выше порога', vals: ['40%', '68%', '100%'], effN: L => [L * 0.12 * 0.4, L * 0.12 * 0.68, L * 0.12], baseSrc: 'Прогноза Альфа-Банка нет — базовый вариант взят из вашего плана отгрузок',
+      notes: ['Объём падает ниже порога в двух кварталах', 'Объём по плану — 68 тыс. т в квартал', 'Все кварталы выше порога'] },
+    todo: [{ t: 'Подтвердить план отгрузок через восточные порты с декабря', g: 'ai' }],
+    check: ['Объём по каждому кварталу 2027 года', 'Ставки дальневосточных портов'],
+    log: { plan: ['Найти решение РЖД', 'Сверить порог с объёмами компании', 'Посчитать экономию'],
+      tools: [['Первоисточник', 'РЖД · решение правления', 'найдено, 13 окт'], ['Профиль компании', 'логистика, объёмы', '1 из 2 — нет расходов на логистику'], ['Аналитика Альфа-Банка', 'транспорт', 'материалов нет']],
+      mid: ['Скидка и порог подтверждены', 'Без расходов на логистику экономию посчитать нельзя'],
+      check: [['Проверил, не завышен ли объём', 'Исправил: взял план 68 тыс. т, а не пиковый квартал 74 тыс. т']],
+      data: ['Отгрузки на восток 68 тыс. т в квартал'] },
+    chat: [{ q: 'Что будет, если объём упадёт ниже порога?', a: 'Скидка не применяется за весь квартал. В пессимистичном сценарии это два квартала из четырёх.', g: 's', s: [0] },
+      { q: 'Покажи по маршрутам', a: 'Нужны расходы по маршрутам — в профиле их нет. Укажите их во вкладке «Влияние».', g: 'ai' },
+      { q: 'Открой первоисточник', a: 'Решение правления РЖД от 13 октября.', g: 's', s: [0], link: 1 }] },
+};
 const CALC = {
   ebitda: { prof: 'Выручка 52 млрд ₽ × доля экспорта 38% = 19,8 млрд ₽', par: 'Ставка 7% (сообщения 9 окт), доля пошлины в цене 15%', f: '19,8 млрд × 7% × (1 − 0,15) = 1,18 млрд ₽' },
   ebitda0: { prof: 'Выручка 52 млрд ₽ × доля экспорта 38% = 19,8 млрд ₽', par: 'Ставка 7%, на подписанные контракты — доля в цене 0%', f: '19,8 млрд × 7% × (1 − 0) = 1,39 млрд ₽' },
@@ -1680,6 +2219,17 @@ const SCORE = {
   n3: { m: 3, d: 0.8, u: 0.75, share: '6% затрат', mWhy: 'Перевозки на восток: ж/д 2,1 млрд ₽ + порт 0,7 млрд ₽ из 46 млрд ₽ затрат, корзина 5–15%', dWhy: 'Решение принимает контрагент — РЖД', uWhy: 'Скидка с 1 декабря — до квартала', why: 'Дешевле возить экспорт на восток с декабря' },
   n4: { m: 3, d: 0.8, u: 0.75, share: '7% затрат', mWhy: 'Модернизация 2027 — 3,2 млрд ₽ из 46 млрд ₽ затрат, корзина 5–15%', dWhy: 'Отраслевая программа, доступна при подаче заявки', uWhy: 'Заявки до конца года — до квартала', why: 'Можно удешевить запланированную модернизацию' },
   n5: { m: 3, d: 0.8, u: 0.9, share: '12% выручки', mWhy: 'Экспорт в Азию 6,2 млрд ₽ из 52 млрд ₽ выручки, корзина 5–15%', dWhy: 'Меняется цена на рынке отрасли, а не у компании', uWhy: 'Тендер во Вьетнаме в ноябре — до месяца', why: 'Давление на цены перед тендером во Вьетнаме' },
+};
+const PCATS = [
+  ['Экспортные пошлины и квоты', 'd', 'Экспорт — 38% вашей выручки'], ['Цены на сталь и прокат', 'd', 'Это ваша основная продукция'], ['Ключевая ставка', 'd', 'У вас есть кредиты в банке'], ['Курс рубля', 'd', 'Часть выручки в долларах и юанях'],
+  ['Железная руда', 'i', 'Основное сырьё — 28% закупок'], ['Коксующийся уголь', 'i', 'Сырьё для производства'], ['Ж/д тарифы', 'i', 'Отгрузки идут по железной дороге'], ['Санкции', 'i', 'Продаёте в Турцию'], ['Спрос в строительстве', 'i', 'Строители — крупнейшие покупатели'],
+  ['Цены на электроэнергию', 'b', 'Энергоёмкое производство'], ['Налоги и НДС', 'b', 'Общая система налогообложения'], ['Рынок труда', 'b', 'В компании 500–1000 сотрудников'],
+  ['Нефть и газ', 'n', 'Не связаны с вашими денежными потоками'], ['Розничная торговля', 'n', 'Вы не продаёте частным лицам'], ['IT и цифровизация', 'n', 'Не ваша отрасль'], ['Сельское хозяйство', 'n', 'Нет покупателей и поставщиков в отрасли'],
+];
+const PGRP = { d: ['Прямое влияние', 'oklch(0.66 0.2 27)', 'Прямое'], i: ['Косвенное', 'oklch(0.8 0.13 75)', 'Косвенное'], b: ['Фоновое', '#8C8E93', 'Фоновое'], n: ['Не влияют', '#3A3B40', 'Не влияет'] };
+const PCP = {
+  sup: [['Добыча железной руды', 28], ['Угольная компания', 17], ['Ж/д перевозки', 12], ['Электроэнергия', 9], ['Ферросплавы', 7], ['Огнеупоры', 5], ['Металлолом', 4], ['Порт и экспедирование', 3], ['Ремонт оборудования', 3], ['Поставка газа', 2], ['Упаковка', 4], ['Химия', 3], ['Спецодежда', 2], ['IT-услуги', 1]],
+  buy: [['Строительство', 22], ['Машиностроение', 15], ['Трейдер, Турция', 11], ['Металлобаза', 9], ['Трубный завод', 8], ['Судостроение', 7], ['Строительство', 6], ['Энергетика', 5], ['Металлобаза', 4], ['Мостостроение', 3], ['Автопром', 6], ['Строительство', 4]],
 };
 const FACTORS = [
   ['Экспортные пошлины и квоты', 1], ['Цены на сталь и прокат', 1], ['Железная руда', 1], ['Коксующийся уголь', 1], ['Курс рубля к доллару и юаню', 1], ['Ключевая ставка', 1],
@@ -2086,6 +2636,140 @@ class Component extends DCLogic {
       swUp: ev2 => { const d = this.sw; this.sw = null; if (!d) return; const dx = ev2.clientX - d.x, dy = ev2.clientY - d.y; if (Math.abs(dx) > 60 && Math.abs(dx) > 1.5 * Math.abs(dy)) { const j = k + (dx < 0 ? 1 : -1); if (j >= 0 && j < L) setEv(j); } },
     };
   }
+  profVals() {
+    const s = this.state, G = { ...(s.pGrp || {}) }, grpOf = i => G[i] || PCATS[i][1], open = s.pOpen;
+    const item = (i, j) => { const o = open === i, g = grpOf(i); return { name: PCATS[i][0], why: PCATS[i][2], sep: j ? '1px solid rgba(255,255,255,.06)' : 'none', open: o, chev: o ? 'rotate(180deg)' : 'none', toggle: () => this.setState({ pOpen: o ? null : i }),
+      opts: ['d', 'i', 'b', 'n'].map(k => ({ label: PGRP[k][2], co: PGRP[k][1], bd: k === g ? '#F2F2F3' : 'rgba(255,255,255,.1)', bg: k === g ? '#2C2D32' : 'transparent', pick: () => { this.setState(st => ({ pGrp: { ...(st.pGrp || {}), [i]: k }, pOpen: null })); if (k !== g) this.showToast(`«${PCATS[i][0]}» → ${PGRP[k][0].toLowerCase()}. Лента пересчитана`); } })) }; };
+    const by = k => PCATS.map((c, i) => i).filter(i => grpOf(i) === k);
+    const cnt = { d: by('d').length, i: by('i').length, b: by('b').length }, tot = cnt.d + cnt.i + cnt.b || 1;
+    const a1 = cnt.d / tot * 360, a2 = a1 + cnt.i / tot * 360, gap = '#1C1D21';
+    const pie = `conic-gradient(${PGRP.d[1]} 0 ${a1}deg, ${PGRP.i[1]} ${a1}deg ${a2}deg, ${PGRP.b[1]} ${a2}deg 360deg)`;
+    const tab = s.pTab || 'cat', cp = s.pCp || 'sup', names = s.pNames || {};
+    const list = PCP[cp].map(([ind, sh], i) => ({ ind, sh, i })).sort((a, b) => b.sh - a.sh), head = list.slice(0, 10), rest = list.slice(10), restSh = rest.reduce((a, x) => a + x.sh, 0), max = list[0].sh;
+    const base = cp === 'sup' ? 'Поставщик' : 'Покупатель', unit = cp === 'sup' ? 'закупок' : 'выручки';
+    const nm = x => names[cp + x.i] || `${base} ${x.i + 1}`;
+    const ed = s.pEd, owner = s.pOwner || 'Андрей Волков', biz = s.pBiz || 'АО «ТрансМеталл»';
+    const openEd = (key, title, val, hint) => this.setState({ pEd: { key, title, hint: hint || '' }, pEdVal: val });
+    const ini = owner.split(/\s+/).map(w => w[0] || '').join('').slice(0, 2).toUpperCase();
+    return { pf: {
+      owner, biz, ini, editOwner: () => openEd('owner', 'Имя предпринимателя', owner), editBiz: () => openEd('biz', 'Название бизнеса', biz),
+      tabs: [['cat', 'Категории'], ['cp', 'Контрагенты']].map(([k, label]) => ({ label, bg: tab === k ? '#48494F' : 'transparent', co: tab === k ? '#F2F2F3' : '#A3A5AB', onClick: () => this.setState({ pTab: k }) })),
+      tCat: tab === 'cat', tCp: tab === 'cp',
+      pie, active: String(cnt.d + cnt.i + cnt.b), legend: ['d', 'i', 'b'].map(k => ({ name: PGRP[k][0], co: PGRP[k][1], n: String(cnt[k]) })),
+      groups: ['d', 'i', 'b'].map(k => { const ids = by(k); return { name: PGRP[k][0], co: PGRP[k][1], n: String(ids.length), empty: !ids.length, items: ids.map(item) }; }),
+      none: by('n').map((i, j) => item(i, 1)), noneN: String(by('n').length), noneOpen: !!s.pNone, noneChev: s.pNone ? 'rotate(180deg)' : 'none', toggleNone: () => this.setState({ pNone: !s.pNone }),
+      cpTabs: [['sup', 'Поставщики'], ['buy', 'Покупатели']].map(([k, label]) => ({ label, n: String(PCP[k].length), co: cp === k ? '#F2F2F3' : '#8C8E93', bar: cp === k ? '#F2F2F3' : 'transparent', onClick: () => this.setState({ pCp: k, pRest: false }) })),
+      cps: (s.pRest ? list : head).map((x, j) => ({ name: nm(x), ind: x.ind, share: `${x.sh}% ${unit}`, w: Math.round(x.sh / max * 100) + '%', sep: j ? '1px solid rgba(255,255,255,.06)' : 'none',
+        onClick: () => openEd(cp + x.i, 'Переименовать', nm(x), `${x.ind} · ${x.sh}% ${unit}. Имя видно только вам и помогает узнавать контрагента в новостях.`) })),
+      hasRest: rest.length > 0, restLabel: s.pRest ? 'Свернуть' : `Ещё ${rest.length} · ${restSh}%`, restChev: s.pRest ? 'rotate(180deg)' : 'none', toggleRest: () => this.setState({ pRest: !s.pRest }),
+      edOpen: !!ed, edTitle: ed ? ed.title : '', edHint: ed ? ed.hint : '', edHasHint: !!(ed && ed.hint), edVal: s.pEdVal || '', edChange: e => this.setState({ pEdVal: e.target.value }),
+      edClose: () => this.setState({ pEd: null }),
+      edSave: () => { const v = (s.pEdVal || '').trim(); if (!v) return; if (ed.key === 'owner') this.setState({ pOwner: v, pEd: null }); else if (ed.key === 'biz') this.setState({ pBiz: v, pEd: null }); else this.setState(st => ({ pNames: { ...(st.pNames || {}), [ed.key]: v }, pEd: null })); this.showToast('Сохранено'); },
+    } };
+  }
+  trackVals(n) {
+    const s = this.state, id = n.id, ch = CHAINS[id], T = TRACK[id];
+    const E = this.events(n), L = E.length, k = Math.min((s.ev || {})[id] ?? L - 1, L - 1), e = E[k], latest = k === L - 1;
+    const up = (key, v) => this.setState(st => ({ [key]: { ...(st[key] || {}), [id]: typeof v === 'function' ? v((st[key] || {})[id]) : v } }));
+    const get = (key, d) => (s[key] || {})[id] ?? d;
+    const srcN = i => (n.sources[i] || {}).name;
+    const av = (nm, i) => ({ i: initials(nm), bg: avBg(nm), ml: i ? '-5px' : '0' });
+    const tag = (g, idx) => { if (g === 'alfa') return { label: 'Альфа-Банк', isA: true, isAi: false, hasAv: false, avs: [], co: '#F2F2F3', bg: 'oklch(0.55 0.2 27 / .2)' };
+      if (g === 'ai') return { label: 'Вывод AI', isA: false, isAi: true, hasAv: false, avs: [], co: 'oklch(0.84 0.07 265)', bg: 'oklch(0.6 0.1 265 / .18)' };
+      const nm = (idx || []).map(srcN).filter(Boolean); return { label: `${nm.length} ${pl(nm.length, 'источник', 'источника', 'источников')}`, isA: false, isAi: false, hasAv: true, avs: nm.slice(0, 3).map(av), co: '#C9CBD0', bg: 'rgba(255,255,255,.07)' }; };
+    const ST = { official: ['Официально', 'oklch(0.82 0.13 150)', 'oklch(0.6 0.14 150 / .18)'], many: ['Пишут несколько каналов', '#E0E1E4', 'rgba(255,255,255,.1)'], one: ['Пишет один канал', 'oklch(0.86 0.12 80)', 'oklch(0.8 0.15 75 / .15)'], opinion: ['Мнение', '#A3A5AB', 'rgba(255,255,255,.05)'] };
+    const tabId = get('tcTab', 'an'), PR = { ...T.profDefault, ...(get('tcProf', {})) }, needKey = T.need && T.need.key, needVal = needKey ? PR[needKey] : null, miss = !!needKey && !needVal;
+    const total = e.sc || scoreOf(id), parts = (() => { const S = scoreOf(id), raw = T.score.map(p => Math.round(p[1] * S / 100)); raw[3] = Math.max(0, Math.min(T.score[3][1], S - raw[0] - raw[1] - raw[2])); return T.score.map((p, i) => ({ k: p[0], v: String(raw[i]), max: String(p[1]), why: p[2], w: Math.round(raw[i] / p[1] * 100) + '%' })); })();
+    const BANK = { agree: ['Совпадает', 'oklch(0.82 0.13 150)'], differ: ['Расходится', 'oklch(0.86 0.12 80)'], none: ['Нет материалов', '#A3A5AB'] }[T.bank];
+    const isRisk = T.kind === 'risk', hz = get('tcHz', 12), hzK = H[hz];
+    const calcOpen = get('tcCalc', {}), chk = get('tcChk', {}), sent = get('tcSent', []), sentIdx = sent.map(x => x.i), chat = get('tcChat', []), fb = get('tcFb', {});
+    const SC = { wait: ['ждём', '#A3A5AB', 'rgba(255,255,255,.08)'], yes: ['подтвердилось', 'oklch(0.82 0.13 150)', 'oklch(0.6 0.14 150 / .2)'], no: ['опровергнуто', 'oklch(0.76 0.16 27)', 'oklch(0.6 0.2 27 / .18)'] };
+    const effs = T.scen.effN ? (miss ? null : T.scen.effN(parseFloat(needVal))) : T.scen.eff();
+    const ask = q => { const a = T.chat.find(c => c.q === q); up('tcChat', c => [...(c || []), { me: true, t: q }]); clearTimeout(this.tcT); this.tcT = setTimeout(() => up('tcChat', c => [...(c || []), a ? { t: a.a, g: a.g, s: a.s, link: a.link } : { t: 'В источниках истории и профиле компании данных по этому вопросу нет. Могу поручить проверку — откройте «Действия».', g: 'ai' }]), 700); };
+    const tabs = [['an', 'Разбор'], ['biz', 'Влияние'], ['sc', 'Сценарии'], ['act', 'Действия'], ['log', 'Ход анализа'], ['chat', 'Чат']];
+    const drafts = ch.drafts.map((d, i) => ({ d, i })).filter(x => !sentIdx.includes(x.i));
+    const cf = get('tcConfirm', null), cfD = cf != null ? ch.drafts[cf] : null;
+    return {
+      name: ch.name, meta: `${L} ${pl(L, 'событие', 'события', 'событий')} · с ${E[0].d}`,
+      evLabel: k === 0 ? 'Начало истории' : `Что изменилось с ${E[k - 1].d}`, evText: e.w, evWhy: e.why || '', hasWhy: !!e.why, evMeta: `${e.d} · ${e.src} ${pl(e.src, 'источник', 'источника', 'источников')}`,
+      marker: k === 0 ? '' : e.same ? 'Выводы прежние' : 'Выводы изменились', hasMarker: k > 0, mkCo: e.same ? '#C9CBD0' : 'oklch(0.86 0.13 80)', mkBg: e.same ? 'rgba(255,255,255,.08)' : 'oklch(0.8 0.15 75 / .16)',
+      past: !latest, pastNote: `Вы смотрите событие ${e.d}. Разбор ниже — по последнему событию ${E[L - 1].d}.`, toLatest: () => this.setState(st => ({ ev: { ...(st.ev || {}), [id]: L - 1 } })),
+      tl: E.map((x, i) => ({ d: x.d, w: x.w, sc: String(x.sc || scoreOf(id)), on: i === k, bd: i === k ? '#F2F2F3' : 'rgba(255,255,255,.08)', bg: i === k ? '#232428' : '#16171A', co: i === k ? '#F2F2F3' : '#A3A5AB', dot: i === L - 1 ? 'oklch(0.66 0.2 27)' : x.same ? '#6E7076' : '#C9CBD0', onClick: () => this.setState(st => ({ ev: { ...(st.ev || {}), [id]: i } })) })),
+      tlRef: el => { if (el && this.tcTl !== id + k) { this.tcTl = id + k; const c = el.children[k]; if (c) el.scrollLeft = c.offsetLeft - el.clientWidth + c.offsetWidth + 16; } },
+      score: String(total), scoreCo: scoreColor(total), scoreOpen: !!get('tcScore', false), toggleScore: () => up('tcScore', v => !v), chev: get('tcScore', false) ? 'rotate(180deg)' : 'none',
+      parts, feed: T.feed,
+      kindLabel: isRisk ? 'Риск' : 'Возможность', kindCo: isRisk ? 'oklch(0.74 0.17 27)' : 'oklch(0.8 0.14 150)', kindShape: isRisk ? '2px' : '50%',
+      bankLabel: BANK[0], bankCo: BANK[1], bankNote: T.bankNote,
+      tabs: tabs.map(([k2, label]) => ({ label, color: tabId === k2 ? '#F2F2F3' : '#8C8E93', bar: tabId === k2 ? '#F2F2F3' : 'transparent', onClick: () => up('tcTab', k2) })),
+      tAn: tabId === 'an', tBiz: tabId === 'biz', tSc: tabId === 'sc', tAct: tabId === 'act', tLog: tabId === 'log', tChat: tabId === 'chat',
+      theses: T.theses.map(x => ({ cat: x.cat, t: x.t, st: ST[x.st][0], stCo: ST[x.st][1], stBg: ST[x.st][2], g: tag('s', x.s) })),
+      agree: n.compare.agree.map(t => ({ t })), differ: n.compare.differ.map(t => ({ t })), single: n.compare.single.map(x => ({ t: x.t, s: x.s })), hasDiffer: n.compare.differ.length > 0, hasSingle: n.compare.single.length > 0,
+      srcPos: `${get('tcSrc', 0) + 1} из ${n.sources.length}`,
+      srcs: n.sources.map(x => ({ name: x.name, time: x.time, text: x.text, i: initials(x.name), bg: avBg(x.name), primary: !!x.primary })),
+      srcScroll: ev2 => { const el = ev2.currentTarget, i = Math.round(el.scrollLeft / (el.clientWidth - 24)); if (i !== get('tcSrc', 0)) up('tcSrc', i); },
+      srcDots: n.sources.map((x, i) => ({ bg: i === get('tcSrc', 0) ? '#F2F2F3' : '#3A3B40' })),
+      nums: T.nums.map((x, i) => { const isN = x.num === 'need', m = isN && miss, o = !!calcOpen[i]; return { num: m ? 'Нет данных' : isN ? x.vN(parseFloat(needVal)) : x.num, numCo: m ? 'oklch(0.86 0.12 80)' : '#F2F2F3', label: x.label, miss: m, prof: isN && !m ? `${x.prof}: ${needVal} млн ₽` : x.prof, par: x.par, f: isN ? (m ? '' : x.fN(parseFloat(needVal))) : x.f, open: o && !m, canCalc: !m, g: tag('ai'), toggle: () => up('tcCalc', c => ({ ...(c || {}), [i]: !o })) }; }),
+      miss, needLabel: T.need ? T.need.label : '', profDraft: get('tcDraftProf', ''), onProf: ev2 => up('tcDraftProf', ev2.target.value),
+      saveProf: () => { const v = parseInt(get('tcDraftProf', ''), 10); if (!v) { this.showToast('Введите число'); return; } up('tcProf', p => ({ ...(p || {}), [needKey]: String(v) })); up('tcDraftProf', ''); this.showToast('Сохранено в профиле компании — расчёт обновлён'); },
+      prof: T.prof.map(([k2, key]) => { const v = PR[key]; return { k: k2, v: v ? (key === needKey ? v + ' млн ₽' : v) : 'не указано', co: v ? '#F2F2F3' : 'oklch(0.86 0.12 80)' }; }),
+      chain: T.chain.map((t, i, a) => ({ t, step: ['Событие', 'Фактор', 'Последствие'][i], arrow: i < a.length - 1 })),
+      risks: T.risks.map(x => ({ t: x.t, g: tag(x.g, x.s) })), opps: T.opps.map(x => ({ t: x.t, g: tag(x.g, x.s) })),
+      hasAlfa: T.bank !== 'none', noAlfa: T.bank === 'none', aiTag: tag('ai'), alfaAuthor: n.alfa.author, alfaText: n.alfa.text, alfaUse: T.alfaUse,
+      lever: T.scen.lever, hzs: [3, 6, 12].map(h => ({ label: h + ' мес', bg: hz === h ? '#48494F' : 'transparent', co: hz === h ? '#F2F2F3' : '#A3A5AB', onClick: () => up('tcHz', h) })),
+      baseSrc: T.scen.baseSrc, bankBase: T.bank !== 'none',
+      scen: ['Пессимистичный', 'Базовый', 'Оптимистичный'].map((nm, i) => { const v = effs ? effs[i] * hzK : 0; return { name: nm, at: T.scen.vals[i], note: T.scen.notes[i], value: effs ? fmt(v) : 'Нет данных', vco: !effs ? 'oklch(0.86 0.12 80)' : v < 0 ? RED : v > 0 ? GREEN : '#8C8E93', bd: i === 1 ? '1.5px solid #F2F2F3' : '1px solid rgba(255,255,255,.08)', g: i === 1 && T.bank !== 'none' ? tag('alfa') : tag('ai') }; }),
+      hzNote: `Эффект на операционную прибыль за ${hz} мес. Профиль компании на 1 октября.`,
+      waitDraft: get('tcWaitDraft', ''), onWait: ev2 => up('tcWaitDraft', ev2.target.value),
+      addWait: () => { const q = get('tcWaitDraft', '').trim(); if (!q) return; up('tcWaitAdd', l => [...(l || []), q]); up('tcWaitDraft', ''); this.showToast('Вопрос добавлен — агент сообщит, когда появится ответ'); },
+      wait: [...this.waitOf(n), ...get('tcWaitAdd', []).map(q => ({ q, st: 'wait', own: true }))].map(w => ({ own: !!w.own, q: w.q, st: SC[w.st][0], stCo: SC[w.st][1], stBg: SC[w.st][2], closed: w.st !== 'wait', a: w.a, d: w.d, src: w.src, g: { label: w.src || '', isA: false, isAi: false, hasAv: true, avs: w.src ? [av(w.src, 0)] : [], co: '#C9CBD0', bg: 'rgba(255,255,255,.07)' } })),
+      todo: T.todo.map(x => ({ t: x.t, g: tag(x.g) })),
+      check: T.check.map((t, i) => ({ t, on: !!chk[i], bd: chk[i] ? '#F2F2F3' : 'rgba(255,255,255,.3)', bg: chk[i] ? '#F2F2F3' : 'transparent', tco: chk[i] ? '#8C8E93' : '#F2F2F3', dec: chk[i] ? 'line-through' : 'none', onClick: () => up('tcChk', c => ({ ...(c || {}), [i]: !(c || {})[i] })) })),
+      prodName: n.product.name, prodDesc: n.product.desc, prodBenefit: n.product.benefit,
+      reqSent: !!get('tcReq', false), reqIdle: !get('tcReq', false), sendReq: () => { up('tcReq', true); this.showToast('Заявка отправлена менеджеру'); },
+      drafts: drafts.map(({ d, i }) => ({ person: P[d.p].person, role: P[d.p].role, email: P[d.p].email, due: d.due, supp: d.supp ? `Дополнение к ${d.supp}` : '', hasSupp: !!d.supp, text: (get('tcTxt', {}))[i] ?? d.draft,
+        onChange: ev2 => { const v = ev2.target.value; up('tcTxt', c => ({ ...(c || {}), [i]: v })); }, send: () => up('tcConfirm', i) })), hasDrafts: drafts.length > 0,
+      sentList: [...sent.map(x => ({ ref: x.ref, d: x.d, who: P[ch.drafts[x.i].p].person, t: x.t, st: x.st, stCo: ST_CO[x.st] || '#A3A5AB' })).reverse(), ...ch.issued.map(x => ({ ref: x.ref, d: x.d, who: P[x.p].person, t: x.t, st: x.st, stCo: ST_CO[x.st] || '#A3A5AB' }))],
+      cfOpen: cfD != null, cfTo: cfD ? `${P[cfD.p].person} <${P[cfD.p].email}>` : '', cfSubj: `Поручение: ${ch.name}`, cfBody: cfD ? (get('tcTxt', {}))[cf] ?? cfD.draft : '',
+      cfCancel: () => up('tcConfirm', null),
+      cfOk: () => { const ref = 'TM-' + (1040 + sent.length), t = (get('tcTxt', {}))[cf] ?? cfD.draft; up('tcSent', l => [...(l || []), { i: cf, ref, d: 'сегодня', t: t.split('. ')[0], st: 'Отправлено' }]); up('tcConfirm', null); this.showToast('Письмо отправлено через Outlook');
+        setTimeout(() => up('tcSent', l => (l || []).map(x => x.ref === ref ? { ...x, st: 'Прочитано' } : x)), 2600); },
+      openScore: () => this.setState({ scoreFor: id }),
+      ...(() => { const start = Math.max(0, Math.min(k, L - 5)), setEv = i => this.setState(st => ({ ev: { ...(st.ev || {}), [id]: i }, tcSheet: { ...(st.tcSheet || {}), [id]: false } }));
+        return { hasMore: start > 0, moreText: 'ещё ' + start, openSheet: () => up('tcSheet', true), sheetOpen: !!get('tcSheet', false), closeSheet: () => up('tcSheet', false), sheetTitle: `${L} ${pl(L, 'событие', 'события', 'событий')} в истории`,
+          dots: E.slice(start, start + 5).map((x, j) => { const i = start + j, on = i === k; return { d: x.d, size: on ? '14px' : '9px', bg: on ? '#F2F2F3' : i === L - 1 ? 'oklch(0.66 0.2 27)' : '#6E7076', fw: on ? '700' : '500', dc: on ? '#F2F2F3' : '#8C8E93', onClick: () => setEv(i) }; }),
+          sheet: E.map((x, i) => { const sc = x.sc || scoreOf(id); return { d: x.d, w: x.w, sc: String(sc), scCo: scoreColor(sc), bg: i === k ? '#2C2D32' : 'transparent', dot: i === k ? '#F2F2F3' : '#6E7076', onClick: () => setEv(i) }; }).reverse() }; })(),
+      ...(() => { const K = { start: ['Старт', '#C9CBD0'], plan: ['План', '#C9CBD0'], search: ['Поиск', 'oklch(0.8 0.1 240)'], data: ['Данные', 'oklch(0.82 0.09 200)'], calc: ['Расчёт', 'oklch(0.8 0.1 300)'], note: ['Вывод', '#E0E1E4'], warn: ['Не хватает данных', 'oklch(0.86 0.12 80)'], check: ['Проверка', 'oklch(0.86 0.12 80)'], done: ['Готово', 'oklch(0.82 0.13 150)'] };
+        const lg = [], add = (k2, t, res, fix, list) => lg.push({ k2, t, res, fix, list });
+        add('start', `Начал разбор: в истории «${ch.name}» появилось новое событие от ${E[L - 1].d}.`);
+        add('plan', 'Составил план действий:', '', '', T.log.plan);
+        const srcNames = n.sources.map(x => x.name), prim = n.sources.find(x => x.primary);
+        T.log.tools.forEach(([nm, q, r], ti) => {
+          if (nm === 'Поиск по каналам') add('search', 'Ищу, что пишут о событии в Telegram-каналах за последнюю неделю.', `Нашёл ${r}`);
+          else if (nm === 'Первоисточник') add('search', `Ищу официальный документ, чтобы не опираться только на пересказы: ${q}.`, r.startsWith('найдено') ? `Нашёл документ от ${r.split(', ')[1] || ''}` : r);
+          else if (nm === 'Профиль компании') { add('data', 'Посмотрел данные вашей компании, которые влияют на вывод:', '', '', T.log.data); if (miss) add('warn', `В профиле не указаны ${T.need.label}. Без этого не могу посчитать эффект в деньгах — попросил вас указать значение во вкладке «Влияние».`); }
+          else if (nm === 'Аналитика Альфа-Банка') add('data', 'Проверил, есть ли по теме аналитика Альфа-Банка.', r === 'материалов нет' ? 'Материалов нет — строю вывод без прогноза банка' : `Нашёл ${r}, возьму прогноз за основу базового сценария`);
+          else if (nm === 'Калькулятор') add('calc', `Посчитал, сколько это в деньгах для компании: ${q}.`, `Получил ${r} — они во вкладке «Сценарии»`);
+          if (ti === 0) add('data', `Прочитал посты ${srcNames.length} ${pl(srcNames.length, 'канала', 'каналов', 'каналов')}: ${srcNames.join(', ')}.`, prim ? `Первоисточник — ${prim.name}` : '');
+        });
+        T.log.mid.forEach(t => add('note', t + '.'));
+        T.log.check.forEach(([t, fx]) => add('check', `Перепроверил себя: ${t.charAt(0).toLowerCase() + t.slice(1)}.`, '', fx));
+        add('done', 'Разбор готов. Если что-то не так — отметьте кнопкой ниже, я учту это в следующий раз.');
+        let m = 9 * 60 + 41; const tf = v => `${String(Math.floor(v / 60)).padStart(2, '0')}:${String(v % 60).padStart(2, '0')}`;
+        const nFix = T.log.check.length;
+        return { logMeta: `${E[L - 1].d}, ${tf(m)}`, logSum: `${lg.length} шагов · ${nFix} ${pl(nFix, 'исправление', 'исправления', 'исправлений')} в ходе проверки`,
+          logs: lg.map((l, i) => { if (i && i % 3 === 0) m += 1; return { t: l.t, tm: tf(m), kind: K[l.k2][0], co: K[l.k2][1], hasRes: !!l.res, res: l.res, hasFix: !!l.fix, fix: l.fix, hasList: !!(l.list && l.list.length), list: (l.list || []).map(x => ({ x })), line: i < lg.length - 1 }; }) }; })(),      plan: T.log.plan.map((t, i) => ({ n: String(i + 1), t })), tools: T.log.tools.map(x => ({ n: x[0], q: x[1], r: x[2] })), mid: T.log.mid.map(t => ({ t })), selfcheck: T.log.check.map(x => ({ t: x[0], fix: x[1] })),
+      usedSrc: n.sources.map(x => ({ name: x.name, i: initials(x.name), bg: avBg(x.name) })), usedData: T.log.data.map(t => ({ t })),
+      chips: T.chat.map(c => ({ q: c.q, onClick: () => ask(c.q) })), msgs: chat.map(m => ({ me: !!m.me, ai: !m.me, t: m.t, g: m.g ? tag(m.g, m.s) : null, hasG: !!m.g, link: !!m.link })), hasMsgs: chat.length > 0, noMsgs: chat.length === 0,
+      chatDraft: get('tcChatDraft', ''), onChat: ev2 => up('tcChatDraft', ev2.target.value), sendChat: () => { const q = get('tcChatDraft', '').trim(); if (!q) return; up('tcChatDraft', ''); up('tcTab', 'chat'); ask(q); },
+      chatKey: ev2 => { if (ev2.key === 'Enter') { const q = get('tcChatDraft', '').trim(); if (!q) return; up('tcChatDraft', ''); up('tcTab', 'chat'); ask(q); } },
+      chipAsk: () => {},
+      fb: ['Ошибка в факте', 'Оценка неточна', 'Не касается нас'].map(l => ({ l, bg: fb[l] ? '#F2F2F3' : 'transparent', co: fb[l] ? '#16171A' : '#C9CBD0', onClick: () => { up('tcFb', c => ({ ...(c || {}), [l]: !(c || {})[l] })); if (!fb[l]) this.showToast('Спасибо — учтём в следующих разборах'); } })),
+      menuOpen: !!s.tcMenu, toggleMenu: () => this.setState(st => ({ tcMenu: !st.tcMenu })), closeMenu: () => this.setState({ tcMenu: false }),
+      forward: () => { this.setState({ tcMenu: false }); this.showToast(`История из ${L} ${pl(L, 'события', 'событий', 'событий')} переслана`); },
+      unfollow: () => { this.setState(st => ({ tcMenu: false, news: null, interesting: st.interesting.filter(x => x !== id) })); this.showToast('Больше не отслеживается'); },
+      openPost: ev2 => { ev2.preventDefault(); ev2.stopPropagation(); this.showToast('Пост откроется в Telegram'); },
+    };
+  }
   chainValsOld(n) {
     const s = this.state, ch = CHAINS[n.id];
     if (!ch) return { isChain: false, noChain: true, full: true, scenShow: true, dots: [], sheet: [], diffs: [], scenDiffs: [], tasks: [], archFacts: [] };
@@ -2429,6 +3113,7 @@ class Component extends DCLogic {
               opts: FX_LV.map(l => { const q = fxPaint(l.v), on = Math.abs(l.v - w) < 0.001; return { v: fmtW(l.v), t: l.t, bg: q.bg, co: q.co, ring: q.ring, border: on ? '#F2F2F3' : 'rgba(255,255,255,.08)', selBg: on ? '#2C2D32' : 'transparent', pick: () => set(i, l.v) }; }) }; }),
         };
       })(),
+      ...this.profVals(),
       tabFeed: s.tab === 'feed', tabInt: s.tab === 'int', tabSrc: s.tab === 'src', tabProfile: s.tab === 'profile',
       peekOpen: !!s.peek && !!this.byId(s.peek), pk: s.peek && this.byId(s.peek) ? this.peekVals(this.byId(s.peek)) : { rows: [], tags: [], facts: [], avs: [], src: {} }, closePeek: () => this.setState({ peek: null }),
       scoreOpen: !!s.scoreFor, scoreClose: () => this.setState({ scoreFor: null }), stop: e => e.stopPropagation(),
@@ -2502,6 +3187,7 @@ class Component extends DCLogic {
       triggers: [['Пошлины и квоты на металлы', 'Сразу, push-уведомление'], ['Ключевая ставка ±1 п.п.', 'Сразу'], ['Санкции против контрагентов', 'Сразу, push и почта'], ['Курс USD ±5% за неделю', 'В сводке']].map(([label, sub], i) => ({ label, sub, sep: i ? '1px solid rgba(255,255,255,.08)' : 'none', ...sw(!!s.trig[i]), toggle: () => this.setState(st => ({ trig: { ...st.trig, [i]: !st.trig[i] } })) })),
       logout: () => this.showToast('Выход отключён в прототипе'),
       tgClick: e => { e.preventDefault(); e.stopPropagation(); this.showToast('Пост откроется в Telegram'); },
+      tcOpen: !!nn && !!TRACK[nn.id] && !!CHAINS[nn.id], tc: nn && TRACK[nn.id] && CHAINS[nn.id] ? this.trackVals(nn) : {},
       newsOpen: !!nn, n: nn ? this.newsVals(nn) : {}, nsv: nn ? this.srcViewer('n-' + nn.id, this.newsVals(nn).posts) : { items: [], pills: [] }, c: nn ? this.chainVals(nn) : { dots: [], sheet: [], diffs: [], scenDiffs: [], tasks: [], archFacts: [], d2: [], line: [], wait: [], scen: [], l2: [], issued: [], drafts: [] },
       olComp: !!s.compose && !!s.comp, cv: this.compVals(), olFlow: s.olFlow || '', olLogin: s.olFlow === 'login', olConsent: s.olFlow === 'consent',
       olNext: () => this.setState({ olFlow: 'consent' }), olCancel: () => this.setState({ olFlow: null }),
