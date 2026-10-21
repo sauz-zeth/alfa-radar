@@ -89,6 +89,16 @@ docker compose up --build
 возраст, ВЭД-страну, продукты банка и теги. Список поддерживает поиск и фильтры:
 `GET /api/businesses?search=&city=&segment=&okved=&product=&fts=&min_revenue=&max_revenue=`.
 
+Для дропдауна онбординга есть отдельная ручка:
+
+```http
+GET /api/businesses/options?search=&limit=15
+```
+
+- без `search` — 15 репрезентативных компаний из разных отраслей (не 85k);
+- с `search` — поиск по всем компаниям (UID, город, регион, ОКВЭД), до 50 результатов;
+- ответ содержит `mode: "featured" | "search"`, `items` и `total`.
+
 ## Онбординг
 
 7 шагов, значения по умолчанию можно пропустить:
@@ -166,7 +176,7 @@ ML-обучения в проекте нет: старый pipeline/класси
 Все защищённые ручки — `Authorization: Bearer <token>`.
 
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`
-- `GET /api/businesses`, `GET /api/businesses/{uid}`
+- `GET /api/businesses`, `GET /api/businesses/options`, `GET /api/businesses/{uid}`
 - `/api/onboarding/*` — см. выше
 - `GET/PATCH /api/profile`, `GET/PATCH /api/profile/categories`,
   `GET/PATCH /api/profile/counterparties`, `GET/POST /api/profile/reporting`

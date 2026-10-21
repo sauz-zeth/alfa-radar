@@ -35,5 +35,11 @@ class BusinessOut(BusinessListItem):
     group_id: str | None = None
 
 
+class BusinessOptionsResponse(BaseModel):
+    mode: str
+    items: list[BusinessListItem]
+    total: int
+
+
 class BusinessSelectRequest(BaseModel):
     uid: str

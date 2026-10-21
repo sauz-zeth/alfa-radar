@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, or_, select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from back.api.deps import get_current_user
+from back.core.featured import FEATURED_COMPANY_UIDS
 from back.db.models import Company, User
 from back.db.session import get_session
-from back.schemas.business import BusinessListItem, BusinessOut
+from back.schemas.business import BusinessListItem, BusinessOptionsResponse, BusinessOut
 from back.schemas.common import Page
 
 router = APIRouter(prefix="/businesses", tags=["businesses"])
@@ -87,6 +88,78 @@ async def list_businesses(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get("/options", response_model=BusinessOptionsResponse)
+async def business_options(
+    search: str | None = Query(default=None, max_length=128),
+    limit: int = Query(default=15, ge=1, le=50),
+    session: AsyncSession = Depends(get_session),
+    _: User = Depends(get_current_user),
+) -> BusinessOptionsResponse:
+    """Компании для дропдауна онбординга.
+
+    Без поиска возвращает 15 репрезентативных компаний из разных отраслей.
+    С поиском ищет по всем 85k компаниям (UID, город, регион, ОКВЭД).
+    """
+    term = (search or "").strip()
+    if term:
+        pattern = f"%{term}%"
+        filters = or_(
+            Company.uid.ilike(pattern),
+            Company.city.ilike(pattern),
+            Company.region.ilike(pattern),
+            Company.main_okved_name.ilike(pattern),
+        )
+        total = (
+            await session.execute(select(func.count()).select_from(Company).where(filters))
+        ).scalar_one()
+        rows = (
+            (
+                await session.execute(
+                    select(Company)
+                    .where(filters)
+                    .order_by(
+                        case((Company.uid.ilike(f"{term}%"), 0), else_=1),
+                        Company.revenue.desc().nullslast(),
+                        Company.uid,
+                    )
+                    .limit(limit)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        return BusinessOptionsResponse(
+            mode="search",
+            items=[BusinessListItem.model_validate(row) for row in rows],
+            total=total,
+        )
+
+    rows = list(
+        (
+            await session.execute(select(Company).where(Company.uid.in_(FEATURED_COMPANY_UIDS)))
+        ).scalars()
+    )
+    order = {uid: index for index, uid in enumerate(FEATURED_COMPANY_UIDS)}
+    rows.sort(key=lambda row: order.get(row.uid, len(order)))
+    if len(rows) < limit:
+        existing = [row.uid for row in rows]
+        extra = (
+            (
+                await session.execute(
+                    select(Company)
+                    .where(Company.revenue.is_not(None), Company.uid.not_in(existing))
+                    .order_by(Company.revenue.desc().nullslast(), Company.uid)
+                    .limit(limit - len(rows))
+                )
+            )
+            .scalars()
+            .all()
+        )
+        rows.extend(extra)
+    items = [BusinessListItem.model_validate(row) for row in rows]
+    return BusinessOptionsResponse(mode="featured", items=items, total=len(items))
 
 
 @router.get("/{uid}", response_model=BusinessOut)
