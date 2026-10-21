@@ -7,9 +7,10 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 import back.db.models  # noqa: F401
-from back.config import settings
+from back.config import get_settings
 from back.db.base import Base
 
+settings = get_settings()
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

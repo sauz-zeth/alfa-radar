@@ -1,7 +1,7 @@
 [project]
 name = "back"
 version = "0.1.0"
-description = "Backend and ML pipeline for the news analytics service"
+description = "Backend for the Alfa-Future news analytics service"
 readme = "README.md"
 authors = [
     { name = "Andrew", email = "notrlt@proton.me" }
@@ -9,27 +9,21 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     "alembic>=1.20.0",
+    "argon2-cffi>=25.1.0",
     "asyncpg>=0.32.0",
     "fastapi>=0.143.3",
     "httpx>=0.28.1",
-    "litellm>=1.105.1",
-    "numpy>=2.5.4",
+    "openpyxl>=3.1.5",
     "pydantic-settings>=2.16.0",
-    "pymorphy3>=2.0.6",
+    "pyjwt>=2.10.1",
+    "pypdf>=6.1.1",
+    "python-multipart>=0.0.20",
     "sqlalchemy[asyncio]>=2.1.5",
     "uvicorn[standard]>=0.54.0",
 ]
 
 [project.scripts]
-back = "back:main"
-
-[project.optional-dependencies]
-ml = [
-    "scikit-learn>=1.9.1",
-    "sentence-transformers>=6.1.0",
-    "torch>=2.14.1",
-    "transformers>=5.20.1",
-]
+back = "back.main:run"
 
 [build-system]
 requires = ["uv_build>=0.12.7,<0.13.0"]
@@ -50,6 +44,10 @@ exclude = ["migrations/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/demo_events.py" = ["E501"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -61,4 +59,3 @@ python_version = "3.14"
 check_untyped_defs = true
 ignore_missing_imports = true
 warn_unused_ignores = true
-
