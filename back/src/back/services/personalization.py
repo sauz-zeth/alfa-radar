@@ -37,9 +37,19 @@ async def load_counterparties(
 
 async def load_tracked_ids(session: AsyncSession, profile: BusinessProfile) -> set[UUID]:
     rows = await session.execute(
-        select(TrackedItem.event_id).where(TrackedItem.profile_id == profile.id)
+        select(TrackedItem.event_id, TrackedItem.event_ids).where(
+            TrackedItem.profile_id == profile.id
+        )
     )
-    return set(rows.scalars())
+    result: set[UUID] = set()
+    for event_id, event_ids in rows:
+        result.add(event_id)
+        for raw in event_ids or []:
+            try:
+                result.add(UUID(str(raw)))
+            except ValueError:
+                continue
+    return result
 
 
 async def load_skipped_ids(session: AsyncSession, profile: BusinessProfile) -> set[UUID]:

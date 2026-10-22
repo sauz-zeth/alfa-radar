@@ -123,12 +123,34 @@ GET /api/businesses/options?search=&limit=15
 ## Лента и «Отслеживаемое»
 
 - `GET /api/feed` — персонализированная важность: базовая важность события корректируется
-  весами категорий профиля и упоминаниями контрагентов. Поддерживает `impact`, `category`, `q`.
-- `GET /api/feed/{id}` — детали события.
+  весами категорий профиля и упоминаниями контрагентов. Поддерживает `impact`, `category`, `q`,
+  `include_hidden` и `include_tracked`.
+- `GET /api/feed/{id}` — детали события: источники-слайды, факты, разбивка важности,
+  тезисы, сравнение источников, аналитика банка, сценарии, вопросы, действия и журнал агента.
+- `GET /api/feed/hidden?tab=stale|weak|skipped` — «Скрытые»: устаревшие, слабое влияние и
+  пропущенные; `POST /api/feed/{id}/restore` возвращает новость в ленту.
+- `POST /api/feed/{id}/like` — поставить/снять отметку «нравится».
 - `POST /api/feed/{id}/track` — добавляет событие в «Отслеживаемое» и запускает агента.
-- `POST /api/feed/{id}/feedback` — `track`, `skip`, `important`, `not_relevant`.
-- `GET /api/tracked`, `GET /api/tracked/{id}`, `DELETE /api/tracked/{id}`,
-  `POST /api/tracked/{id}/reanalyze`.
+- `POST /api/feed/{id}/feedback` — `track`, `skip`, `important`, `not_relevant` + причина.
+- `GET /api/feed/{id}/scenarios?horizon=3m|6m|12m` — сценарный расчёт (детерминированная заглушка).
+- `GET /api/tracked?status=active|archived|all`, `GET /api/tracked/{id}`,
+  `DELETE /api/tracked/{id}`, `POST /api/tracked/{id}/reanalyze`.
+- `POST /api/tracked/{id}/questions` — свой вопрос к истории.
+- `POST /api/tracked/{id}/archive`, `POST /api/tracked/{id}/resume` — архив и возобновление.
+
+### Источники
+
+- `GET /api/sources` — мои каналы и каталог подписок; аналитика Альфа-Банка всегда включена.
+- `GET /api/sources/catalog?q=` — поиск по каталогу каналов.
+- `POST /api/sources/channels` — добавить канал по `@тегу` или `t.me`-ссылке.
+- `POST /api/sources/channels/{id}/subscribe`, `DELETE /api/sources/channels/{id}`,
+  `POST /api/sources/channels/unsubscribe-all`, `POST /api/sources/channels/restore`.
+
+### Поиск
+
+- `GET /api/search?q=` — новости и компании (своя компания, контрагенты, база).
+- `GET /api/search/history`, `DELETE /api/search/history`,
+  `DELETE /api/search/history/{id}` — история до 10 запросов.
 
 Тип влияния: `risk`, `opportunity`, `mixed`, `neutral`. Для `mixed` карточка одновременно
 показывает риски и возможности.
@@ -178,16 +200,18 @@ ML-обучения в проекте нет: старый pipeline/класси
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`
 - `GET /api/businesses`, `GET /api/businesses/options`, `GET /api/businesses/{uid}`
 - `/api/onboarding/*` — см. выше
-- `GET/PATCH /api/profile`, `GET/PATCH /api/profile/categories`,
-  `GET/PATCH /api/profile/counterparties`, `GET/POST /api/profile/reporting`
-- `/api/feed/*`, `/api/tracked/*`
+- `GET/PATCH /api/profile` — профиль, статистика компании, группы категорий и контрагенты.
+  Дополнительно: `PATCH /api/profile/notifications`.
+- `GET/PATCH /api/profile/categories`, `GET/PATCH /api/profile/counterparties`,
+  `GET/POST /api/profile/reporting`
+- `/api/feed/*`, `/api/tracked/*`, `/api/sources/*`, `/api/search/*`
 - `GET /health`, `GET /health/db`
 
 ## Модель данных
 
 `users`, `companies`, `payments`, `person_company_links`, `business_profiles`, `categories`,
 `business_categories`, `counterparties`, `reporting_uploads`, `news_events`, `tracked_items`,
-`feedback`.
+`feedback`, `event_likes`.
 
 Профиль привязан к бизнесу пользователя; роль хранится в `business_profiles.role`.
 Категории, контрагенты и отчётность — часть профиля. Имена контрагентов по умолчанию
@@ -203,11 +227,18 @@ uv run alembic revision --autogenerate -m "change"
 uv run alembic upgrade head
 ```
 
+`tests/test_api_mockup.py` — интеграционный тест сценариев из макетов (лента, скрытые,
+источники, поиск, отслеживаемое, профиль). Он поднимает схему в отдельной БД и по умолчанию
+использует `postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/alfafuture_test`.
+Другую БД можно указать через `TEST_DATABASE_URL`; без доступного Postgres тест пропускается.
+
 ## Ограничения прототипа
 
 - Новости засеяны демо-набором; парсер Telegram/официальных источников не входит в этот этап.
 - Аналитика Альфа-Банка и RAG не подключены — оставлены как следующий слой.
 - Обратная связь сохраняется, но не пересчитывает персональные веса (это следующий этап).
+- Сценарии, сравнение источников и часть разбора — детерминированные заглушки вместо ML/LLM.
+- Outlook, парсер Telegram и RAG по аналитике банка не входят в этот этап.
 
 ## Отчёты
 

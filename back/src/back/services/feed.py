@@ -4,7 +4,7 @@ from typing import Any
 
 from back.core.categories import CATEGORY_BY_ID
 from back.core.constants import IMPACT_LABELS, PROGNOSIS_NOTE, Impact
-from back.db.models import BusinessCategory, Counterparty, NewsEvent
+from back.db.models import BusinessCategory, BusinessProfile, Counterparty, NewsEvent
 from back.schemas.feed import CategoryBrief, FeedItem, FeedItemDetail
 
 
@@ -93,7 +93,15 @@ def event_to_feed_item(
     *,
     is_tracked: bool = False,
     with_details: bool = False,
+    profile: BusinessProfile | None = None,
+    is_liked: bool = False,
+    likes: int = 0,
+    report: dict[str, Any] | None = None,
 ) -> FeedItem:
+    # Local import avoids a cycle: insights imports MatchResult from this module.
+    from back.services.insights import build_insight
+
+    insight = build_insight(event, profile, match, report) if profile is not None else None
     payload: dict[str, Any] = {
         "id": event.id,
         "title": event.title,
@@ -110,11 +118,24 @@ def event_to_feed_item(
         "matched_counterparties": match.matched_counterparties,
         "match_reason": match.match_reason,
         "is_tracked": is_tracked,
+        "is_liked": is_liked,
+        "likes": likes,
+        "source_count": len(insight.sources) if insight else len(event.source_posts or []) or 1,
+        "sources": insight.sources if insight else [],
+        "facts": event.facts or [],
+        "score_breakdown": insight.score_breakdown if insight else [],
+        "score_why": insight.score_why if insight else match.match_reason,
+        "impact_share": insight.impact_share if insight else "",
+        "is_important_mention": bool(match.matched_counterparties),
+        "chain_key": event.chain_key,
+        "update_label": event.update_label,
         "prognosis_note": PROGNOSIS_NOTE,
         "detail_note": f"(!) {PROGNOSIS_NOTE}",
     }
     if with_details:
-        return FeedItemDetail(**payload, facts=event.facts or [])
+        if insight is not None:
+            payload.update(insight.model_dump())
+        return FeedItemDetail(**payload)
     return FeedItem(**payload)
 
 

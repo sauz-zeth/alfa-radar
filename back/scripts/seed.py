@@ -33,6 +33,7 @@ except ImportError:  # running as `python scripts/seed.py`
 
 RESET_SQL = """
 TRUNCATE TABLE
+    event_likes,
     tracked_items,
     feedback,
     reporting_uploads,

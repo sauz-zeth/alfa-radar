@@ -120,6 +120,9 @@ class BusinessProfile(Base):
     role: Mapped[str | None] = mapped_column(String(32))
     tags: Mapped[list[str]] = mapped_column(JSONB, default=list)
     reporting_summary: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    sources: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    search_history: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    notifications: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     onboarding_step: Mapped[str] = mapped_column(
         String(48), default=OnboardingStep.REGISTERED.value
     )
@@ -242,6 +245,9 @@ class NewsEvent(Base):
     category_ids: Mapped[list[int]] = mapped_column(JSONB, default=list)
     mentioned_company_uids: Mapped[list[str]] = mapped_column(JSONB, default=list)
     facts: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    source_posts: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    chain_key: Mapped[str | None] = mapped_column(String(64), index=True)
+    update_label: Mapped[str | None] = mapped_column(String(128))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -256,6 +262,11 @@ class TrackedItem(Base):
     )
     event_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("news_events.id", ondelete="CASCADE"))
     status: Mapped[str] = mapped_column(String(16), default="active")
+    title: Mapped[str | None] = mapped_column(String(512))
+    event_ids: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    what_changed: Mapped[str | None] = mapped_column(Text)
+    conclusions_changed: Mapped[bool] = mapped_column(Boolean, default=False)
+    questions: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     report: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -275,4 +286,19 @@ class Feedback(Base):
     )
     event_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("news_events.id", ondelete="CASCADE"))
     action: Mapped[str] = mapped_column(String(16))
+    reason: Mapped[str | None] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class EventLike(Base):
+    __tablename__ = "event_likes"
+    __table_args__ = (UniqueConstraint("profile_id", "event_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("business_profiles.id", ondelete="CASCADE"), index=True
+    )
+    event_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("news_events.id", ondelete="CASCADE"), index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

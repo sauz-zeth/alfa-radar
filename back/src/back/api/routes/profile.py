@@ -17,18 +17,36 @@ from back.schemas.onboarding import (
     ReportingResponse,
     ReportingUploadOut,
 )
-from back.schemas.profile import ProfileBundle
-from back.services.profile_view import categories_out, counterparties_out
+from back.schemas.profile import (
+    NotificationTriggerOut,
+    ProfileBundle,
+)
+from back.services.profile_view import (
+    categories_out,
+    counterparties_out,
+    grouped_categories,
+    notification_triggers,
+    profile_stats,
+)
 from back.services.reporting import process_upload
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
 
 async def _bundle(session: AsyncSession, profile: BusinessProfile) -> ProfileBundle:
+    categories = await categories_out(session, profile)
+    counterparties = await counterparties_out(session, profile)
+    by_direction: dict[str, list] = {"supplier": [], "buyer": []}
+    for item in counterparties:
+        by_direction.setdefault(item.direction, []).append(item)
     return ProfileBundle(
         profile=ProfileOut.model_validate(profile),
-        categories=await categories_out(session, profile),
-        counterparties=await counterparties_out(session, profile),
+        stats=profile_stats(profile),
+        category_groups=grouped_categories(categories),
+        categories=categories,
+        counterparties=counterparties,
+        counterparties_by_direction=by_direction,
+        notifications=notification_triggers(profile),
         reporting=profile.reporting_summary or {},
     )
 
@@ -55,6 +73,23 @@ async def update_profile(
         profile.role = payload.role.value
     await session.commit()
     return await _bundle(session, profile)
+
+
+@router.patch("/notifications", response_model=list[NotificationTriggerOut])
+async def update_notifications(
+    payload: dict[str, bool],
+    profile: BusinessProfile = Depends(get_current_profile),
+    session: AsyncSession = Depends(get_session),
+) -> list[NotificationTriggerOut]:
+    stored = dict(profile.notifications or {})
+    triggers = dict(stored.get("triggers") or {})
+    for key, enabled in payload.items():
+        if isinstance(enabled, bool):
+            triggers[key] = enabled
+    stored["triggers"] = triggers
+    profile.notifications = stored
+    await session.commit()
+    return notification_triggers(profile)
 
 
 @router.get("/categories")
