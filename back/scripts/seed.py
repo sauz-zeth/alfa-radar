@@ -24,6 +24,7 @@ from back.core.categories import CATEGORIES
 from back.core.company import company_tags, revenue_segment
 from back.core.constants import DEFAULT_ENTREPRENEUR_NAME
 from back.core.security import hash_password
+from back.core.sources import CHANNELS, RECOMMENDED_IDS
 from back.services.categories import heuristic_category_weights
 
 try:
@@ -33,6 +34,8 @@ except ImportError:  # running as `python scripts/seed.py`
 
 RESET_SQL = """
 TRUNCATE TABLE
+    profile_channels,
+    channels,
     event_likes,
     tracked_items,
     feedback,
@@ -185,6 +188,39 @@ async def seed_categories(conn: asyncpg.Connection) -> None:
         records,
     )
     print(f"categories: {len(records)}")
+
+
+async def seed_channels(conn: asyncpg.Connection) -> None:
+    records = [
+        (
+            item.id,
+            item.name,
+            item.handle,
+            item.topics,
+            "catalog",
+            item.id in RECOMMENDED_IDS,
+            True,
+            json.dumps({}),
+        )
+        for item in CHANNELS
+    ]
+    await conn.executemany(
+        """
+        INSERT INTO channels (
+            id, name, handle, topics, kind, is_recommended, is_active, meta
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+        ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
+            handle = EXCLUDED.handle,
+            topics = EXCLUDED.topics,
+            kind = EXCLUDED.kind,
+            is_recommended = EXCLUDED.is_recommended,
+            is_active = EXCLUDED.is_active
+        """,
+        records,
+    )
+    print(f"channels: {len(records)}")
 
 
 async def seed_companies(conn: asyncpg.Connection, data_dir: Path, limit: int) -> None:
@@ -477,6 +513,7 @@ async def main() -> None:
             print("reset: truncating tables")
             await conn.execute(RESET_SQL)
         await seed_categories(conn)
+        await seed_channels(conn)
         limit = args.limit or settings.seed_company_limit
         await seed_companies(conn, data_dir, limit)
         if not args.skip_payments and settings.seed_with_payments:

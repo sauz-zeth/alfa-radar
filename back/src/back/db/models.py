@@ -121,6 +121,7 @@ class BusinessProfile(Base):
     tags: Mapped[list[str]] = mapped_column(JSONB, default=list)
     reporting_summary: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     sources: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    sources_initialized: Mapped[bool] = mapped_column(Boolean, default=False)
     search_history: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     notifications: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     onboarding_step: Mapped[str] = mapped_column(
@@ -140,6 +141,9 @@ class BusinessProfile(Base):
     counterparties: Mapped[list[Counterparty]] = relationship(
         back_populates="profile", cascade="all, delete-orphan"
     )
+    channel_subscriptions: Mapped[list[ProfileChannel]] = relationship(
+        back_populates="profile", cascade="all, delete-orphan"
+    )
     reporting_uploads: Mapped[list[ReportingUpload]] = relationship(
         back_populates="profile", cascade="all, delete-orphan"
     )
@@ -152,6 +156,47 @@ class BusinessProfile(Base):
             return ROLE_LABELS[Role(self.role)] if self.role else None
         except ValueError:
             return None
+
+
+class Channel(Base):
+    __tablename__ = "channels"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(255))
+    handle: Mapped[str | None] = mapped_column(String(64), unique=True, index=True)
+    topics: Mapped[str] = mapped_column(String(255), default="")
+    kind: Mapped[str] = mapped_column(String(16), default="catalog", index=True)
+    is_recommended: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    meta: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    subscriptions: Mapped[list[ProfileChannel]] = relationship(
+        back_populates="channel", cascade="all, delete-orphan"
+    )
+
+
+class ProfileChannel(Base):
+    __tablename__ = "profile_channels"
+    __table_args__ = (UniqueConstraint("profile_id", "channel_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("business_profiles.id", ondelete="CASCADE"), index=True
+    )
+    channel_id: Mapped[str] = mapped_column(
+        ForeignKey("channels.id", ondelete="CASCADE"), index=True
+    )
+    source: Mapped[str] = mapped_column(String(16), default="catalog")
+    subscribed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    profile: Mapped[BusinessProfile] = relationship(back_populates="channel_subscriptions")
+    channel: Mapped[Channel] = relationship(back_populates="subscriptions")
 
 
 class Category(Base):

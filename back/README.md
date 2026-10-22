@@ -140,11 +140,15 @@ GET /api/businesses/options?search=&limit=15
 
 ### Источники
 
-- `GET /api/sources` — мои каналы и каталог подписок; аналитика Альфа-Банка всегда включена.
-- `GET /api/sources/catalog?q=` — поиск по каталогу каналов.
-- `POST /api/sources/channels` — добавить канал по `@тегу` или `t.me`-ссылке.
+- `GET /api/sources` — подписки профиля; при первом обращении подписывает на 15 рекомендаций.
+- `GET /api/sources/catalog?q=` — поиск по каталогу и пользовательским каналам.
+- `POST /api/sources/channels` — добавить свой канал по `@тегу` или `t.me`-ссылке.
 - `POST /api/sources/channels/{id}/subscribe`, `DELETE /api/sources/channels/{id}`,
   `POST /api/sources/channels/unsubscribe-all`, `POST /api/sources/channels/restore`.
+
+Каталог и рекомендации лежат в `core/sources.py` как сид, пользовательские каналы
+создаются в таблице `channels` (`kind = custom`). Подробности и план подключения реального
+парсера — в [`docs/Sources-Migration.md`](../docs/Sources-Migration.md).
 
 ### Поиск
 
@@ -211,11 +215,13 @@ ML-обучения в проекте нет: старый pipeline/класси
 
 `users`, `companies`, `payments`, `person_company_links`, `business_profiles`, `categories`,
 `business_categories`, `counterparties`, `reporting_uploads`, `news_events`, `tracked_items`,
-`feedback`, `event_likes`.
+`feedback`, `event_likes`, `channels`, `profile_channels`.
 
 Профиль привязан к бизнесу пользователя; роль хранится в `business_profiles.role`.
 Категории, контрагенты и отчётность — часть профиля. Имена контрагентов по умолчанию
 «Поставщик N» / «Покупатель N», переименование хранится в `custom_name`.
+Источники: `channels` — каталог и кастомные каналы, `profile_channels` — подписки профиля.
+Старый JSONB `business_profiles.sources` оставлен только для обратной совместимости.
 
 ## Разработка
 

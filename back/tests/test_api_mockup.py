@@ -256,7 +256,22 @@ async def test_mockup_api_flow(api_env) -> None:
     custom = await client.post(
         "/api/sources/channels", headers=headers, json={"query": "@my_channel"}
     )
-    assert any(item["handle"] == "@my_channel" for item in custom.json()["channels"])
+    custom_channel = next(
+        item for item in custom.json()["channels"] if item["handle"] == "@my_channel"
+    )
+    assert custom_channel["kind"] == "custom"
+    custom_catalog = await client.get(
+        "/api/sources/catalog", headers=headers, params={"q": "my_channel"}
+    )
+    assert any(item["id"] == custom_channel["id"] for item in custom_catalog.json()["items"])
+    unsubscribed = await client.delete(
+        f"/api/sources/channels/{custom_channel['id']}", headers=headers
+    )
+    assert all(item["id"] != custom_channel["id"] for item in unsubscribed.json()["channels"])
+    restored = await client.post("/api/sources/channels/restore", headers=headers)
+    assert len(restored.json()["channels"]) == 15
+    assert restored.json()["custom_count"] == 0
+
     search = await client.get("/api/search", headers=headers, params={"q": "пошлин"})
     assert search.status_code == 200
     assert search.json()["total_news"] >= 1

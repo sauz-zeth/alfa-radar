@@ -1,50 +1,31 @@
-from back.db.models import BusinessProfile
-from back.services.sources import (
-    catalog,
-    ensure_sources,
-    sources_state,
-    subscribe,
-    unsubscribe_all,
-)
+from back.core.sources import CHANNELS, RECOMMENDED_IDS, find_channel, parse_handle, search_channels
 
 
-def _profile() -> BusinessProfile:
-    return BusinessProfile(
-        entrepreneur_name="Иван",
-        business_name="Тест",
-        sources={},
-        notifications={},
-        search_history=[],
-    )
+def test_recommended_are_subset_of_catalog() -> None:
+    catalog_ids = {item.id for item in CHANNELS}
+    assert set(RECOMMENDED_IDS) <= catalog_ids
+    assert len(RECOMMENDED_IDS) == 15
 
 
-def test_default_sources_are_recommended() -> None:
-    profile = _profile()
-    state = sources_state(profile)
-    assert state.recommended_count == 15
-    assert len(state.channels) == 15
-    assert state.alfa_analytics is True
-    assert ensure_sources(profile)["channels"]
+def test_parse_handle() -> None:
+    assert parse_handle("@my_channel") == "@my_channel"
+    assert parse_handle("https://t.me/my_channel") == "@my_channel"
+    assert parse_handle("t.me/my_channel/") == "@my_channel"
+    assert parse_handle("просто текст") is None
 
 
-def test_subscribe_by_handle_and_add_custom() -> None:
-    profile = _profile()
-    subscribe(profile, "@my_own_channel")
-    assert any(item.handle == "@my_own_channel" for item in sources_state(profile).channels)
-    custom = catalog(profile, "my_own").items
-    assert custom and custom[0].kind == "custom"
+def test_find_channel_by_id_name_and_handle() -> None:
+    by_id = find_channel("metall-inside")
+    by_name = find_channel("Металл-Инсайд")
+    by_handle = find_channel("@metall_inside")
+    assert by_id is not None and by_id.id == "metall-inside"
+    assert by_name is not None and by_name.id == "metall-inside"
+    assert by_handle is not None and by_handle.id == "metall-inside"
+    assert find_channel("@unknown_channel") is None
 
 
 def test_catalog_search() -> None:
-    profile = _profile()
-    result = catalog(profile, "металл")
-    assert result.total >= 2
-    assert all("металл" in f"{item.name} {item.topics}".lower() for item in result.items)
-
-
-def test_unsubscribe_all_and_restore_by_resubscribe() -> None:
-    profile = _profile()
-    unsubscribe_all(profile)
-    assert sources_state(profile).channels == []
-    subscribe(profile, "metall-inside")
-    assert len(sources_state(profile).channels) == 1
+    result = search_channels("металл")
+    assert len(result) >= 2
+    assert any(item.id == "metall-inside" for item in result)
+    assert search_channels("") == list(CHANNELS)

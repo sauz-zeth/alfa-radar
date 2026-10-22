@@ -22,7 +22,7 @@ async def get_sources(
     profile: BusinessProfile = Depends(get_current_profile),
     session: AsyncSession = Depends(get_session),
 ) -> SourcesState:
-    state = sources_state(profile)
+    state = await sources_state(session, profile)
     await session.commit()
     return state
 
@@ -31,8 +31,11 @@ async def get_sources(
 async def get_catalog(
     q: str = Query(default="", max_length=200),
     profile: BusinessProfile = Depends(get_current_profile),
+    session: AsyncSession = Depends(get_session),
 ) -> ChannelCatalogResponse:
-    return catalog(profile, q)
+    result = await catalog(session, profile, q)
+    await session.commit()
+    return result
 
 
 @router.post("/channels", response_model=SourcesState)
@@ -42,7 +45,7 @@ async def add_channel(
     session: AsyncSession = Depends(get_session),
 ) -> SourcesState:
     try:
-        state = subscribe(profile, payload.query)
+        state = await subscribe(session, profile, payload.query)
     except LookupError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     await session.commit()
@@ -56,7 +59,7 @@ async def subscribe_channel(
     session: AsyncSession = Depends(get_session),
 ) -> SourcesState:
     try:
-        state = subscribe(profile, channel_id)
+        state = await subscribe(session, profile, channel_id)
     except LookupError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     await session.commit()
@@ -69,7 +72,7 @@ async def unsubscribe_channel(
     profile: BusinessProfile = Depends(get_current_profile),
     session: AsyncSession = Depends(get_session),
 ) -> SourcesState:
-    state = unsubscribe(profile, channel_id)
+    state = await unsubscribe(session, profile, channel_id)
     await session.commit()
     return state
 
@@ -79,7 +82,7 @@ async def unsubscribe_everything(
     profile: BusinessProfile = Depends(get_current_profile),
     session: AsyncSession = Depends(get_session),
 ) -> SourcesState:
-    state = unsubscribe_all(profile)
+    state = await unsubscribe_all(session, profile)
     await session.commit()
     return state
 
@@ -89,6 +92,6 @@ async def restore_channels(
     profile: BusinessProfile = Depends(get_current_profile),
     session: AsyncSession = Depends(get_session),
 ) -> SourcesState:
-    state = restore_recommended(profile)
+    state = await restore_recommended(session, profile)
     await session.commit()
     return state
