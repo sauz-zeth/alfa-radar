@@ -101,8 +101,10 @@ export function FeedPost({ post, onToggleTracked }: FeedPostProps) {
             ))}
           </div>
           <span className="post-source__name">{sourceCountLabel(post.sources.length)}</span>
-          <time className="post-source__time">{source?.time}</time>
+          <time className="post-source__time">{post.sources[0]?.time}</time>
         </div>
+
+        <p className="post-credit">Фото · {source?.name}</p>
 
         <div className="post-card">
           {post.sources.length > 1 && (

@@ -84,5 +84,5 @@ export function buildFilters(posts: FeedPost[]): string[] {
   for (const post of posts) {
     for (const category of post.categories) categories.add(category);
   }
-  return ["Все", "Важное", ...categories].slice(0, 14);
+  return ["Все", "Прямое упоминание", ...categories].slice(0, 14);
 }

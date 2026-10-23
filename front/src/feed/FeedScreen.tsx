@@ -53,7 +53,7 @@ export function FeedScreen() {
 
   const visiblePosts = useMemo(() => {
     if (activeFilter === "Все") return posts;
-    if (activeFilter === "Важное") return posts.filter((post) => post.importance >= 70);
+    if (activeFilter === "Прямое упоминание") return posts.filter((post) => post.importance >= 70);
     return posts.filter((post) => post.categories.includes(activeFilter));
   }, [activeFilter, posts]);
 
