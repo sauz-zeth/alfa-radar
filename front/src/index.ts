@@ -25,6 +25,10 @@ async function proxy(request: Request): Promise<Response> {
 const server = serve({
   routes: {
     [`${PROXY_PREFIX}/*`]: (request) => proxy(request),
+    "/docs": (request) => proxy(request),
+    "/docs/*": (request) => proxy(request),
+    "/redoc": (request) => proxy(request),
+    "/openapi.json": (request) => proxy(request),
     "/*": index,
   },
 
