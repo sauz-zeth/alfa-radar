@@ -39,223 +39,340 @@
 }
 
 .sources-head {
-  position: relative;
   display: flex;
-  height: 44px;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  height: 36px;
 }
 
 .sources-head h1 {
   margin: 0;
-  font-size: 22px;
-  font-weight: 500;
-  line-height: 28px;
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 35px;
   letter-spacing: -0.4px;
 }
 
 .sources-search-button {
-  position: absolute;
-  right: 0;
   display: flex;
-  width: 36px;
+  width: 38px;
   height: 36px;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border: 1px solid #d5d5d5;
+  border-radius: 16px;
   background: var(--card);
   color: var(--text);
-  font-size: 18px;
-  line-height: 1;
 }
 
 .sources-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  margin-top: 14px;
+  gap: 2px;
+  margin-top: 12px;
 }
 
 .sources-tab {
   display: flex;
-  height: 44px;
+  height: 56px;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border-radius: 22px;
+  justify-content: space-between;
+  padding: 0 16px;
+  border: 0.6px solid #d7d7d7;
+  border-radius: 16px;
   background: var(--card);
-  color: var(--text);
+  color: var(--muted);
   font-size: 14px;
   font-weight: 500;
+  line-height: 20px;
 }
 
-.sources-tab span {
-  color: var(--accent);
-  font-size: 13px;
+.sources-tab__count {
+  color: var(--muted);
+  font-size: 15px;
   font-weight: 500;
 }
 
 .sources-tab.is-active {
+  border-color: transparent;
   background: var(--text);
   color: var(--soft);
 }
 
-.sources-tab.is-active span {
+.sources-tab.is-active .sources-tab__count {
   color: var(--accent);
 }
 
 .sources-hint {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-  padding: 10px 14px 10px 10px;
-  border-radius: 22px;
-  background: var(--card);
-}
-
-.sources-hint__avatar {
-  display: flex;
-  flex: none;
-  width: 32px;
-  height: 32px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--text);
-  color: var(--soft);
-  font-size: 10px;
-  font-weight: 500;
-}
-
-.sources-hint__label {
-  margin: 0;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 14px;
-}
-
-.sources-hint__value {
-  margin: 1px 0 0;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 18px;
-}
-
-.sources-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px 12px;
-  margin: 20px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.source-cell {
-  display: flex;
-  flex-direction: column;
   gap: 6px;
-}
-
-.source-tile {
-  position: relative;
-  display: flex;
-  aspect-ratio: 1 / 0.96;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border-radius: 24px;
+  margin-top: 2px;
+  padding: 8px 16px 8px 12px;
+  border: 0.6px solid #d7d7d7;
+  border-radius: 16px;
   background: var(--card);
 }
 
-.source-avatar {
-  display: flex;
-  width: 88%;
-  aspect-ratio: 1;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-size: clamp(26px, 9vw, 40px);
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  transform: translateY(-5%);
+.sources-hint__covers {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 40px;
 }
 
-.source-tile[data-tone="dark"] .source-avatar {
-  background: radial-gradient(circle at 32% 22%, #3a3a3a, #0f0f0f 72%);
-  color: var(--soft);
-}
-
-.source-tile[data-tone="red"] .source-avatar {
-  background: radial-gradient(circle at 32% 22%, #ff6a4a, #cf2a1b 72%);
-  color: #fff;
-}
-
-.source-tile[data-tone="light"] .source-avatar {
-  background: radial-gradient(circle at 32% 22%, #fdfdfd, #dcdcdc 72%);
-  color: var(--text);
-}
-
-.source-check {
+.sources-hint__cover {
   position: absolute;
-  right: 10px;
-  bottom: 10px;
+  top: 50%;
   display: flex;
   width: 24px;
   height: 24px;
   align-items: center;
   justify-content: center;
+  border: 0.4px solid var(--soft);
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
-  color: var(--text);
-  font-size: 12px;
-  line-height: 1;
+  background: var(--text);
+  color: var(--soft);
+  font-size: 7px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  transform: translateY(-50%);
 }
 
-.source-name {
+.sources-hint__cover--back {
+  left: 1px;
+  transform: translateY(-50%) rotate(-10deg);
+}
+
+.sources-hint__cover--front {
+  left: 17px;
+  transform: translateY(-50%) rotate(12deg);
+}
+
+.sources-hint__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sources-hint__label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 12px;
+}
+
+.sources-hint__value {
   margin: 0;
   font-size: 14px;
   font-weight: 500;
-  line-height: 18px;
+  line-height: 16px;
 }
 
-.source-type {
+.sources-collection {
+  margin: 24px -16px 0;
+  padding: 12px 16px 16px;
+  overflow: hidden;
+  border-radius: 100px 100px 24px 24px;
+  background: var(--card);
+}
+
+.sources-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.channel-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+}
+
+.channel-card:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Обложка: круглая аватарка внутри папки, обрезается только снизу. */
+.channel-folder {
+  position: relative;
+  aspect-ratio: 178.5 / 160;
+  overflow: hidden;
+  border-radius: 16px;
+  container-type: inline-size;
+}
+
+.channel-folder__avatar {
+  position: absolute;
+  top: 3%;
+  left: 50%;
+  display: flex;
+  width: 84%;
+  aspect-ratio: 1;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #f7f7f7;
+  border-radius: 50%;
+  font-size: clamp(26px, 25cqw, 46px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  transform: translateX(-50%) rotate(var(--tilt, 12deg));
+}
+
+.channel-folder[data-tone="dark"] .channel-folder__avatar {
+  background: #202020;
+  color: #f7f7f7;
+}
+
+.channel-folder[data-tone="red"] .channel-folder__avatar {
+  background: #ef3124;
+  color: #fff;
+}
+
+.channel-folder[data-tone="light"] .channel-folder__avatar {
+  background: #f7f7f7;
+  color: #202020;
+}
+
+/* Матовое стекло: засвет сверху, маленькая тень снизу, равные скругления. */
+.channel-folder__glass {
+  position: absolute;
+  inset: 55% 4px 2px;
+  border: 0.5px solid rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.09));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 12px 16px -14px rgba(255, 255, 255, 0.9),
+    0 2px 4px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+/* Стеклянный крепёж по углам кармана. */
+.channel-folder__rivet {
+  position: absolute;
+  top: 10px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #cfcfcf 55%, #909090 100%);
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.3),
+    inset 0 0 1px rgba(255, 255, 255, 0.9);
+}
+
+.channel-folder__rivet::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 2px;
+  height: 1px;
+  margin: auto;
+  border-radius: 1px;
+  background: rgba(60, 60, 60, 0.7);
+  transform: rotate(-30deg);
+}
+
+.channel-folder__rivet--left {
+  left: 8px;
+}
+
+.channel-folder__rivet--right {
+  right: 8px;
+}
+
+.channel-folder__check {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+  color: var(--text);
+}
+
+.channel-card[aria-pressed="false"] .channel-folder__check {
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: none;
+}
+
+.channel-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px;
+}
+
+.channel-card__name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--text);
+}
+
+.channel-card__type {
   margin: 0;
   color: var(--muted);
-  font-size: 11px;
-  line-height: 14px;
+  font-size: 12px;
+  line-height: 16px;
 }
 
-.source-more {
+/* «Ещё» — та же круглая обложка, но без папки. */
+.more-card {
   display: flex;
-  aspect-ratio: 1 / 0.96;
+  width: 87.4%;
+  aspect-ratio: 1;
+  margin: 2.5% auto 0;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  border-radius: 24px;
-  background: var(--soft);
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 16px;
+  gap: 4px;
+  border-radius: 50%;
+  background: #f7f7f7;
   text-align: center;
 }
 
-.source-more span:first-child {
-  font-size: 20px;
-  line-height: 1;
+.more-card__arrow {
+  display: block;
+  filter: brightness(0);
+  transform: rotate(180deg);
+}
+
+.more-card__text {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 14px;
+  color: var(--text);
 }
 
 .sources-unsubscribe {
-  width: 100%;
-  height: 44px;
-  margin-top: 20px;
-  border-radius: 22px;
-  background: rgba(239, 49, 36, 0.09);
-  color: var(--accent);
-  font-size: 12px;
+  display: flex;
+  width: calc(100% - 16px);
+  height: 46px;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 8px 0;
+  border-radius: 15px;
+  background: #fff2f1;
+  color: #ff4343;
+  font-size: 13px;
   font-weight: 500;
 }
 
@@ -281,7 +398,10 @@
 }
 
 .sources-restore {
+  display: flex;
   height: 44px;
+  align-items: center;
+  justify-content: center;
   border-radius: 22px;
   background: var(--text);
   color: var(--soft);

@@ -8,33 +8,16 @@ import {
   type Channel,
   type SourcesState,
 } from "../api";
-import searchIcon from "../assets/icons/search.svg";
-import { channelCountLabel } from "../lib/plural";
+import { ChannelCard } from "./ChannelCard";
+import { channelInitials, channelTone } from "./channelVisuals";
+import { MoreCard } from "./MoreCard";
+import { SourcesHeader, type SourcesTab } from "./SourcesHeader";
 import "./sources.css";
-
-const tones = ["dark", "red", "light"] as const;
-
-function initials(name: string): string {
-  return (
-    name
-      .split(/[\s.:-]+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((word) => word[0]?.toUpperCase() ?? "")
-      .join("") || "•"
-  );
-}
-
-function toneFor(channel: Channel): (typeof tones)[number] {
-  let hash = 0;
-  for (const char of channel.id) hash = (hash * 31 + char.charCodeAt(0)) % 997;
-  return tones[hash % tones.length]!;
-}
 
 export default function SourcesPage() {
   const api = useApi();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<"channels" | "catalog">("channels");
+  const [tab, setTab] = useState<SourcesTab>("channels");
   const [query, setQuery] = useState("");
 
   const sources = useApiQuery({
@@ -90,6 +73,11 @@ export default function SourcesPage() {
     [profile.data?.categories],
   );
   const remaining = Math.max(0, (data?.catalog_total ?? 0) - channels.length);
+  const covers = useMemo(() => {
+    const picks = channels.filter((channel) => channel.recommended).slice(0, 2);
+    const list = picks.length > 0 ? picks : channels.slice(0, 2);
+    return [0, 1].map((index) => (list[index] ? channelInitials(list[index].name) : "•"));
+  }, [channels]);
   const pending = subscribe.isPending || unsubscribe.isPending;
 
   const toggleChannel = (channel: Channel) => {
@@ -118,46 +106,21 @@ export default function SourcesPage() {
 
   return (
     <div className="sources-page">
-      <header className="sources-head">
-        <h1>Источники</h1>
-        <button
-          type="button"
-          className="sources-search-button"
-          aria-label="Найти канал"
-          onClick={() => setTab("catalog")}
-        >
-          <img src={searchIcon} alt="" width={18} height={18} />
-        </button>
-      </header>
-
-      <div className="sources-tabs" role="tablist" aria-label="Источники">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "channels"}
-          className={tab === "channels" ? "sources-tab is-active" : "sources-tab"}
-          onClick={() => setTab("channels")}
-        >
-          Каналы <span>{channels.length}</span>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "catalog"}
-          className={tab === "catalog" ? "sources-tab is-active" : "sources-tab"}
-          onClick={() => setTab("catalog")}
-        >
-          Каталог <span>{data.catalog_total}</span>
-        </button>
-      </div>
+      <SourcesHeader
+        tab={tab}
+        channelCount={channels.length}
+        catalogCount={data.catalog_total}
+        onTabChange={setTab}
+      />
 
       {tab === "channels" ? (
         <>
           <section className="sources-hint">
-            <span className="sources-hint__avatar" aria-hidden="true">
-              Пр
+            <span className="sources-hint__covers" aria-hidden="true">
+              <span className="sources-hint__cover sources-hint__cover--back">{covers[1]}</span>
+              <span className="sources-hint__cover sources-hint__cover--front">{covers[0]}</span>
             </span>
-            <div>
+            <div className="sources-hint__text">
               <p className="sources-hint__label">Подобрали каналы под профиль</p>
               <p className="sources-hint__value">{recommended.join(" · ") || "Ваш бизнес"}</p>
             </div>
@@ -176,47 +139,36 @@ export default function SourcesPage() {
               </button>
             </div>
           ) : (
-            <ul className="sources-grid">
-              {channels.map((channel) => (
-                <li key={channel.id} className="source-cell">
-                  <div className="source-tile" data-tone={toneFor(channel)}>
-                    <span className="source-avatar" aria-hidden="true">
-                      {initials(channel.name)}
-                    </span>
-                    <span className="source-check" aria-label="Подписан">
-                      ✓
-                    </span>
-                  </div>
-                  <p className="source-name">{channel.name}</p>
-                  <p className="source-type">{channel.recommended ? "Профиль" : "Свой"}</p>
-                </li>
-              ))}
+            <section className="sources-collection">
+              <ul className="sources-grid">
+                {channels.map((channel, index) => (
+                  <li key={channel.id}>
+                    <ChannelCard
+                      channel={channel}
+                      index={index}
+                      onToggle={toggleChannel}
+                      disabled={pending}
+                    />
+                  </li>
+                ))}
 
-              {remaining > 0 ? (
-                <li className="source-cell">
-                  <button type="button" className="source-more" onClick={() => setTab("catalog")}>
-                    <span aria-hidden="true">↘</span>
-                    <span>
-                      Посмотреть ещё
-                      <br />
-                      {channelCountLabel(remaining)}
-                    </span>
-                  </button>
-                </li>
-              ) : null}
-            </ul>
+                {remaining > 0 ? (
+                  <li>
+                    <MoreCard count={remaining} onClick={() => setTab("catalog")} />
+                  </li>
+                ) : null}
+              </ul>
+
+              <button
+                type="button"
+                className="sources-unsubscribe"
+                onClick={() => unsubscribeAll.mutate()}
+                disabled={unsubscribeAll.isPending}
+              >
+                {unsubscribeAll.isPending ? "Отписываемся…" : "Отписаться от всех"}
+              </button>
+            </section>
           )}
-
-          {channels.length > 0 ? (
-            <button
-              type="button"
-              className="sources-unsubscribe"
-              onClick={() => unsubscribeAll.mutate()}
-              disabled={unsubscribeAll.isPending}
-            >
-              {unsubscribeAll.isPending ? "Отписываемся…" : "Отписаться от всех"}
-            </button>
-          ) : null}
         </>
       ) : (
         <div className="sources-catalog">
@@ -242,8 +194,8 @@ export default function SourcesPage() {
                   disabled={pending}
                   onClick={() => toggleChannel(channel)}
                 >
-                  <span className="catalog-avatar" data-tone={toneFor(channel)} aria-hidden="true">
-                    {initials(channel.name)}
+                  <span className="catalog-avatar" data-tone={channelTone(channel)} aria-hidden="true">
+                    {channelInitials(channel.name)}
                   </span>
                   <span className="catalog-body">
                     <span className="catalog-name">{channel.name}</span>
