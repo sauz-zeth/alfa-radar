@@ -291,6 +291,7 @@ class NewsEvent(Base):
     mentioned_company_uids: Mapped[list[str]] = mapped_column(JSONB, default=list)
     facts: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     source_posts: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    impact_metrics: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     chain_key: Mapped[str | None] = mapped_column(String(64), index=True)
     update_label: Mapped[str | None] = mapped_column(String(128))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)

@@ -40,6 +40,7 @@ class FeedItem(BaseModel):
     source_count: int = 1
     sources: list[SourcePostOut] = []
     facts: list[dict[str, Any]] = []
+    impact_metrics: list[dict[str, Any]] = []
     score_breakdown: list[ScoreComponentOut] = []
     score_why: str = ""
     impact_share: str = ""

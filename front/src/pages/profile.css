@@ -1,0 +1,237 @@
+.profile-page {
+  height: 100%;
+  padding: max(28px, env(safe-area-inset-top)) 20px calc(104px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  background:
+    radial-gradient(120% 40% at 50% -8%, rgba(239, 49, 36, 0.12), transparent 60%),
+    var(--ink);
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.profile-avatar {
+  display: flex;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.profile-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.profile-name {
+  margin: 0;
+  color: var(--muted-strong);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.profile-business {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 27px;
+  letter-spacing: -0.2px;
+}
+
+.profile-meta {
+  margin: 0;
+  color: var(--muted-soft);
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  margin-top: 20px;
+  padding: 10px;
+  border-radius: 20px;
+  background: rgba(247, 247, 247, 0.06);
+}
+
+.profile-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+}
+
+.profile-stat__label {
+  color: var(--muted-soft);
+  font-size: 10px;
+  line-height: 13px;
+}
+
+.profile-stat__value {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.profile-logout {
+  margin-top: 14px;
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 17px;
+  background: rgba(239, 49, 36, 0.18);
+  color: #ff8a80;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.profile-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  margin: 22px 0 16px;
+  padding: 2px;
+  border-radius: 18px;
+  background: rgba(247, 247, 247, 0.06);
+}
+
+.profile-tab {
+  height: 36px;
+  border-radius: 16px;
+  color: var(--muted-strong);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.profile-tab.is-active {
+  background: rgba(247, 247, 247, 0.12);
+  color: var(--surface);
+}
+
+.profile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-hint {
+  margin: 0 0 4px;
+  color: var(--muted-soft);
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.profile-category {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(247, 247, 247, 0.05);
+}
+
+.profile-category__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-category__name {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19px;
+}
+
+.profile-category__weight {
+  color: var(--muted-strong);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-category__bar {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(247, 247, 247, 0.1);
+}
+
+.profile-category__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--surface);
+}
+
+.profile-category__note {
+  margin: 0;
+  color: var(--muted-soft);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.profile-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profile-group__title {
+  margin: 8px 0 0;
+  color: var(--muted-strong);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.profile-counterparty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(247, 247, 247, 0.05);
+}
+
+.profile-counterparty__name {
+  margin: 0;
+  font-size: 14px;
+  line-height: 19px;
+}
+
+.profile-counterparty__note {
+  margin: 2px 0 0;
+  color: var(--muted-soft);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.profile-state {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 120px 24px;
+  background: var(--ink);
+  color: var(--muted-strong);
+  font-size: 14px;
+  text-align: center;
+}
+
+.profile-state p {
+  margin: 0;
+}

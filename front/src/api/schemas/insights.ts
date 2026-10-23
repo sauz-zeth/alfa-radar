@@ -10,6 +10,7 @@ export const sourcePostSchema = z.object({
   is_primary: z.boolean().default(false),
   handle: z.string().nullish(),
   url: z.string().nullish(),
+  image_url: z.string().nullish(),
 });
 
 export const scoreComponentSchema = z.object({

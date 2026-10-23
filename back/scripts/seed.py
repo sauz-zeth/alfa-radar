@@ -345,6 +345,10 @@ async def seed_news(conn: asyncpg.Connection) -> None:
             json.dumps(event["category_ids"]),
             json.dumps(event["mentioned_company_uids"]),
             json.dumps(event["facts"], ensure_ascii=False),
+            json.dumps(event["source_posts"], ensure_ascii=False),
+            json.dumps(event["impact_metrics"], ensure_ascii=False),
+            event["chain_key"],
+            event["update_label"],
             True,
         )
         for event in events
@@ -353,18 +357,28 @@ async def seed_news(conn: asyncpg.Connection) -> None:
         """
         INSERT INTO news_events (
             id, title, summary, what_it_means, source_name, source_url, published_at,
-            importance, impact, category_ids, mentioned_company_uids, facts, is_active
+            importance, impact, category_ids, mentioned_company_uids, facts,
+            source_posts, impact_metrics, chain_key, update_label, is_active
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::jsonb, $12::jsonb, $13)
+        VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::jsonb, $12::jsonb,
+            $13::jsonb, $14::jsonb, $15, $16, $17
+        )
         ON CONFLICT (id) DO UPDATE SET
             title = EXCLUDED.title,
             summary = EXCLUDED.summary,
             what_it_means = EXCLUDED.what_it_means,
+            source_name = EXCLUDED.source_name,
+            source_url = EXCLUDED.source_url,
             published_at = EXCLUDED.published_at,
             importance = EXCLUDED.importance,
             impact = EXCLUDED.impact,
             category_ids = EXCLUDED.category_ids,
             facts = EXCLUDED.facts,
+            source_posts = EXCLUDED.source_posts,
+            impact_metrics = EXCLUDED.impact_metrics,
+            chain_key = EXCLUDED.chain_key,
+            update_label = EXCLUDED.update_label,
             is_active = EXCLUDED.is_active
         """,
         records,
@@ -402,7 +416,20 @@ async def create_demo_profile(conn: asyncpg.Connection, user_id: uuid.UUID, logi
         """
     )
     if row is None:
-        print(f"{login}: no companies available, profile not created")
+        await conn.execute(
+            """
+            INSERT INTO business_profiles (
+                id, user_id, entrepreneur_name, business_name, role,
+                tags, reporting_summary, onboarding_step, onboarding_completed
+            )
+            VALUES ($1, $2, $3, $4, 'cfo', '[]'::jsonb, '{}'::jsonb, 'completed', true)
+            """,
+            uuid.uuid4(),
+            user_id,
+            DEFAULT_ENTREPRENEUR_NAME,
+            "Демо Бизнес",
+        )
+        print(f"{login}: profile created without company")
         return
     company = dict(row)
     company["tags"] = (
@@ -443,6 +470,36 @@ async def create_demo_profile(conn: asyncpg.Connection, user_id: uuid.UUID, logi
         )
     await seed_demo_counterparties(conn, profile_id, company["uid"])
     print(f"{login}: profile created for {company['uid']}")
+
+
+DEMO_SKIP_SLUGS = (
+    "fsbu-lease",
+    "ai-law",
+    "tax-deadlines",
+    "construction-mortgage",
+    "marketplace-returns",
+)
+
+
+async def seed_demo_feedback(conn: asyncpg.Connection, user_id: uuid.UUID) -> None:
+    profile_id = await conn.fetchval("SELECT id FROM business_profiles WHERE user_id = $1", user_id)
+    if profile_id is None:
+        return
+    event_ids = {event["slug"]: event["id"] for event in seeded_events()}
+    records = [
+        (uuid.uuid4(), profile_id, event_ids[slug], "skip", "Демо: скрыто для проверки")
+        for slug in DEMO_SKIP_SLUGS
+        if slug in event_ids
+    ]
+    await conn.executemany(
+        """
+        INSERT INTO feedback (id, profile_id, event_id, action, reason)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (profile_id, event_id) DO NOTHING
+        """,
+        records,
+    )
+    print(f"{profile_id}: demo feedback skipped {len(records)}")
 
 
 async def seed_demo_counterparties(
@@ -525,6 +582,7 @@ async def main() -> None:
         print(f"{settings.demo_login}: user ready ({demo_id})")
         full_id = await ensure_user(conn, settings.demo_full_login, settings.demo_full_password)
         await create_demo_profile(conn, full_id, settings.demo_full_login)
+        await seed_demo_feedback(conn, full_id)
     finally:
         await conn.close()
     print("seed: done")

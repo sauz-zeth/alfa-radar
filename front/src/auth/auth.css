@@ -1,0 +1,90 @@
+.auth-screen {
+  display: flex;
+  min-height: 100dvh;
+  justify-content: center;
+  padding: max(24px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+  background: var(--canvas);
+  color: var(--text);
+}
+
+.auth-panel {
+  display: flex;
+  width: 100%;
+  max-width: 440px;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 6vh;
+}
+
+.auth-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-brand {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.auth-intro h1 {
+  margin: 0 0 8px;
+  font-size: clamp(28px, 8vw, 34px);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.8px;
+}
+
+.auth-intro p {
+  max-width: 340px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 36px;
+  background: var(--card);
+}
+
+.auth-error {
+  margin: 0;
+  color: #c5251a;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(32, 32, 32, 0.12);
+}
+
+.auth-demo {
+  margin: 0;
+  color: rgba(32, 32, 32, 0.45);
+  font-size: 11px;
+}
+
+@media (min-width: 900px) {
+  .auth-panel {
+    padding-top: 12vh;
+  }
+}

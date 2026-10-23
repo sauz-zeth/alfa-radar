@@ -69,6 +69,7 @@ def source_posts(event: NewsEvent) -> list[SourcePostOut]:
                 is_primary=bool(item.get("is_primary")) or index == 0,
                 handle=item.get("handle"),
                 url=item.get("url"),
+                image_url=item.get("image_url"),
             )
         )
     if result:
@@ -81,6 +82,7 @@ def source_posts(event: NewsEvent) -> list[SourcePostOut]:
             text=event.summary,
             is_primary=True,
             url=event.source_url,
+            image_url=getattr(event, "image_url", None),
         )
     ]
 

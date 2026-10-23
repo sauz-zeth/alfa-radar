@@ -123,6 +123,7 @@ def event_to_feed_item(
         "source_count": len(insight.sources) if insight else len(event.source_posts or []) or 1,
         "sources": insight.sources if insight else [],
         "facts": event.facts or [],
+        "impact_metrics": event.impact_metrics or [],
         "score_breakdown": insight.score_breakdown if insight else [],
         "score_why": insight.score_why if insight else match.match_reason,
         "impact_share": insight.impact_share if insight else "",

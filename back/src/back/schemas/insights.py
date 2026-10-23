@@ -12,6 +12,7 @@ class SourcePostOut(BaseModel):
     is_primary: bool = False
     handle: str | None = None
     url: str | None = None
+    image_url: str | None = None
 
 
 class ScoreComponentOut(BaseModel):

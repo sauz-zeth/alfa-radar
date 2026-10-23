@@ -3,7 +3,254 @@ from uuid import NAMESPACE_URL, uuid5
 
 NOW = datetime.now(UTC)
 
+
+def _post(
+    name: str,
+    *,
+    hours: int,
+    tone: str,
+    text: str,
+    image: str,
+    url: str | None = None,
+    primary: bool = False,
+) -> dict:
+    return {
+        "name": name,
+        "time": (NOW - timedelta(hours=hours)).isoformat(),
+        "tone": tone,
+        "text": text,
+        "is_primary": primary,
+        "url": url,
+        "image_url": f"/static/news/{image}",
+    }
+
+
 DEMO_EVENTS = [
+    {
+        "slug": "metal-export-duty",
+        "title": "Повышены экспортные пошлины на металлопродукцию",
+        "summary": (
+            "Правительство повысило ставки экспортных пошлин на горячекатаный прокат и "
+            "арматуру. Новые ставки действуют с 1 ноября до конца года."
+        ),
+        "what_it_means": (
+            "Для экспортёров металла снижается маржа: часть контрактов уже заключена по "
+            "старым ценам. Внутренним потребителям металла пошлина даёт больше предложения "
+            "и давление на цены вниз."
+        ),
+        "source_name": "Правительство РФ",
+        "source_url": "https://government.ru/docs/",
+        "published_at": NOW - timedelta(hours=3),
+        "importance": 92,
+        "impact": "risk",
+        "category_ids": [4, 15],
+        "chain_key": "metals-duty",
+        "facts": [
+            {"text": "Пошлина вступает в силу с 1 ноября.", "status": "Официально"},
+            {"text": "Ставка выросла с 5% до 7% для проката.", "status": "Официально"},
+            {"text": "Мера действует до конца года.", "status": "Официально"},
+        ],
+        "impact_metrics": [
+            {
+                "value": "−1,2 млрд ₽",
+                "note": "EBITDA в год\nпри доле экспорта 38%",
+                "tone": "negative",
+            },
+            {"value": "4,6 млрд ₽", "note": "Контракты IV квартала\nпод пошлиной", "tone": None},
+            {"value": "7%", "note": "Ставка пошлины\nвместо 5%", "tone": "negative"},
+        ],
+        "source_posts": [
+            _post(
+                "Правительство РФ",
+                hours=3,
+                tone="official",
+                text=(
+                    "Подписано постановление о повышении ставок экспортных пошлин на "
+                    "отдельные виды металлопродукции."
+                ),
+                image="steel.jpg",
+                url="https://government.ru/docs/",
+                primary=True,
+            ),
+            _post(
+                "Деловой вестник",
+                hours=4,
+                tone="media",
+                text=(
+                    "Участники рынка оценивают потери экспортёров в 1,2 млрд ₽ EBITDA "
+                    "в год при текущей доле экспорта."
+                ),
+                image="publication.jpg",
+                url="https://www.vedomosti.ru/business",
+            ),
+            _post(
+                "Металл-Инсайд",
+                hours=5,
+                tone="telegram",
+                text="Под пошлину попадают контракты IV квартала на 4,6 млрд ₽.",
+                image="logistics.jpg",
+                url="https://t.me/metals_inside",
+            ),
+        ],
+    },
+    {
+        "slug": "metal-duty-update",
+        "title": "Минпромторг уточнил параметры экспортной пошлины",
+        "summary": (
+            "Ведомство разъяснило, что пошлина не распространяется на часть сортамента "
+            "и на поставки в страны ЕАЭС."
+        ),
+        "what_it_means": (
+            "Уточнение частично снимает риск для производителей, работающих в ЕАЭС. "
+            "Экспортным контрактам в дальнее зарубежье пересмотр не поможет."
+        ),
+        "source_name": "Минпромторг",
+        "source_url": "https://minpromtorg.gov.ru/",
+        "published_at": NOW - timedelta(hours=20),
+        "importance": 74,
+        "impact": "mixed",
+        "category_ids": [4, 15],
+        "chain_key": "metals-duty",
+        "update_label": "Обновлено: уточнены сроки",
+        "facts": [
+            {"text": "Поставки в ЕАЭС под пошлину не попадают.", "status": "Официально"},
+            {"text": "Разъяснение опубликовано 22 октября.", "status": "Официально"},
+        ],
+        "impact_metrics": [
+            {
+                "value": "−0,7 млрд ₽",
+                "note": "Уточнённая оценка\nэффекта на EBITDA",
+                "tone": "negative",
+            },
+            {"value": "2 из 9", "note": "Позиций сортамента\nисключены", "tone": "positive"},
+        ],
+        "source_posts": [
+            _post(
+                "Минпромторг",
+                hours=20,
+                tone="official",
+                text="Опубликованы разъяснения по применению пошлины к отдельным видам проката.",
+                image="steel.jpg",
+                url="https://minpromtorg.gov.ru/",
+                primary=True,
+            ),
+            _post(
+                "Интерфакс",
+                hours=21,
+                tone="media",
+                text="Ведомство уточнило сроки и перечень исключений.",
+                image="publication.jpg",
+                url="https://www.interfax.ru/business/",
+            ),
+        ],
+    },
+    {
+        "slug": "iron-ore-price",
+        "title": "Железная руда подорожала на 8% за месяц",
+        "summary": (
+            "Рост цен поддерживается спросом металлургов и ограничениями поставок из "
+            "крупных добывающих регионов."
+        ),
+        "what_it_means": (
+            "Для металлурга-покупателя сырья это риск себестоимости, для производителя "
+            "руды — возможность улучшить маржу."
+        ),
+        "source_name": "Металлы и руды",
+        "source_url": "https://metals-mining.ru/",
+        "published_at": NOW - timedelta(hours=9),
+        "importance": 71,
+        "impact": "mixed",
+        "category_ids": [15],
+        "facts": [
+            {"text": "Цена выросла на 8% за месяц.", "status": "Пишут несколько каналов"},
+            {"text": "Спрос со стороны металлургов остаётся высоким.", "status": "Оценка"},
+        ],
+        "impact_metrics": [
+            {"value": "+8%", "note": "Цена руды\nза месяц", "tone": "positive"},
+            {
+                "value": "−0,3 млрд ₽",
+                "note": "Себестоимость проката\nпри текущих запасах",
+                "tone": "negative",
+            },
+        ],
+        "source_posts": [
+            _post(
+                "Металлы и руды",
+                hours=9,
+                tone="media",
+                text="Котировки железной руды обновили локальный максимум.",
+                image="steel.jpg",
+                url="https://metals-mining.ru/",
+                primary=True,
+            ),
+            _post(
+                "Металл-Инсайд",
+                hours=10,
+                tone="telegram",
+                text="Металлурги фиксируют рост закупочных цен на сырьё.",
+                image="publication.jpg",
+                url="https://t.me/metals_inside",
+            ),
+        ],
+    },
+    {
+        "slug": "rzd-tariffs",
+        "title": "РЖД проиндексировали тарифы на грузовые перевозки",
+        "summary": (
+            "Индексация на 10% затрагивает ключевые номенклатуры грузов и вступает в силу "
+            "с нового месяца."
+        ),
+        "what_it_means": (
+            "Логистические расходы вырастут. Компаниям с длинными поставками нужно "
+            "пересчитать себестоимость и условия контрактов."
+        ),
+        "source_name": "РЖД",
+        "source_url": "https://www.rzd.ru/",
+        "published_at": NOW - timedelta(hours=14),
+        "importance": 78,
+        "impact": "risk",
+        "category_ids": [20, 4],
+        "facts": [
+            {"text": "Тарифы проиндексированы на 10%.", "status": "Официально"},
+            {"text": "Мера вступает в силу с 1 ноября.", "status": "Официально"},
+        ],
+        "impact_metrics": [
+            {
+                "value": "−0,4 млрд ₽",
+                "note": "Логистика на восток\nпри росте тарифа",
+                "tone": "negative",
+            },
+            {"value": "12 дней", "note": "Средний срок доставки\nдо портов", "tone": None},
+            {"value": "+10%", "note": "Индексация\nгрузового тарифа", "tone": "negative"},
+        ],
+        "source_posts": [
+            _post(
+                "РЖД",
+                hours=14,
+                tone="official",
+                text="Опубликовано решение об индексации тарифов на грузовые перевозки.",
+                image="logistics.jpg",
+                url="https://www.rzd.ru/",
+                primary=True,
+            ),
+            _post(
+                "РЖД-Партнёр",
+                hours=15,
+                tone="media",
+                text="Перевозчики ожидают роста издержек в восточном направлении.",
+                image="publication.jpg",
+                url="https://www.rzd-partner.ru/",
+            ),
+            _post(
+                "Грузопоток",
+                hours=16,
+                tone="telegram",
+                text="Участники рынка пересматривают контракты на IV квартал.",
+                image="steel.jpg",
+                url="https://t.me/gruzpotok",
+            ),
+        ],
+    },
     {
         "slug": "cb-rate-14",
         "title": "ЦБ сохранил ключевую ставку на уровне 14%",
@@ -17,83 +264,115 @@ DEMO_EVENTS = [
             "больше дохода."
         ),
         "source_name": "Банк России",
-        "published_at": NOW - timedelta(hours=2),
+        "source_url": "https://www.cbr.ru/press/",
+        "published_at": NOW - timedelta(hours=26),
         "importance": 88,
         "impact": "mixed",
         "category_ids": [1, 23],
         "facts": [
             {"text": "Ключевая ставка сохранена на уровне 14% годовых.", "status": "Официально"},
             {"text": "Риторика регулятора стала жёстче.", "status": "Официально"},
+            {"text": "Следующее заседание — через шесть недель.", "status": "Официально"},
         ],
-    },
-    {
-        "slug": "inflation-forecast",
-        "title": "ЦБ повысил прогноз инфляции на 2027 год",
-        "summary": (
-            "Регулятор допускает более медленное возвращение инфляции к цели и предупреждает "
-            "о длительном периоде высоких ставок."
-        ),
-        "what_it_means": (
-            "Рост издержек и стоимости финансирования может сохраниться дольше, чем ожидалось. "
-            "Стоит пересмотреть бюджет и ценовые допущения."
-        ),
-        "source_name": "Интерфакс",
-        "published_at": NOW - timedelta(hours=5),
-        "importance": 82,
-        "impact": "risk",
-        "category_ids": [1, 13],
-        "facts": [{"text": "Прогноз инфляции повышен.", "status": "Официально"}],
-    },
-    {
-        "slug": "rub-usd",
-        "title": "Рубль ослаб к юаню и доллару на фоне оттока капитала",
-        "summary": "Курс рубля снизился к основным валютам, волатильность выросла.",
-        "what_it_means": (
-            "Для экспортёра ослабление рубля поддерживает выручку, для импортёра — "
-            "увеличивает стоимость закупок. Влияние смешанное, зависит от валютной позиции."
-        ),
-        "source_name": "Ведомости",
-        "published_at": NOW - timedelta(hours=8),
-        "importance": 78,
-        "impact": "mixed",
-        "category_ids": [2, 4],
-        "facts": [
-            {"text": "Волатильность валютного рынка выросла.", "status": "Пишут несколько каналов"}
+        "impact_metrics": [
+            {"value": "14%", "note": "Ключевая ставка\nбез изменений", "tone": None},
+            {
+                "value": "−0,9 млрд ₽",
+                "note": "Процентные расходы\nза 12 месяцев",
+                "tone": "negative",
+            },
+            {
+                "value": "+1,1 млрд ₽",
+                "note": "Доход по депозитам\nпри текущей подушке",
+                "tone": "positive",
+            },
         ],
-    },
-    {
-        "slug": "metal-export-duty",
-        "title": "Повышены экспортные пошлины на металлопродукцию",
-        "summary": "Правительство увеличило ставки экспортных пошлин для отдельных видов металлопроката.",
-        "what_it_means": (
-            "Для экспортёров металла снижается маржа, для внутренних потребителей металла "
-            "может стать больше предложения и ниже цены."
-        ),
-        "source_name": "Правительство РФ",
-        "published_at": NOW - timedelta(hours=12),
-        "importance": 76,
-        "impact": "risk",
-        "category_ids": [4, 15],
-        "facts": [{"text": "Ставки экспортных пошлин повышены.", "status": "Официально"}],
+        "source_posts": [
+            _post(
+                "Банк России",
+                hours=26,
+                tone="official",
+                text="Совет директоров принял решение сохранить ключевую ставку на уровне 14%.",
+                image="rate.jpg",
+                url="https://www.cbr.ru/press/",
+                primary=True,
+            ),
+            _post(
+                "Интерфакс",
+                hours=27,
+                tone="media",
+                text="Регулятор сигнализирует о длительном периоде жёсткой ДКП.",
+                image="fx.jpg",
+                url="https://www.interfax.ru/business/",
+            ),
+            _post(
+                "Экономика и банки",
+                hours=28,
+                tone="telegram",
+                text="Банки не ожидают снижения ставок по кредитам до конца года.",
+                image="publication.jpg",
+                url="https://t.me/ekonomika_banki",
+            ),
+        ],
     },
     {
         "slug": "sanctions-package",
         "title": "ЕС расширил санкционный список против российских компаний",
-        "summary": "В новый пакет вошли ограничения на оборудование и несколько юридических лиц.",
+        "summary": (
+            "В новый пакет вошли ограничения на оборудование и несколько юридических лиц. "
+            "ЕС также ужесточил контроль за обходом ограничений."
+        ),
         "what_it_means": (
             "Возможны дополнительные комплаенс-проверки и удлинение цепочек поставок. "
             "Нужно проверить контрагентов и импортные позиции."
         ),
         "source_name": "Reuters",
-        "published_at": NOW - timedelta(hours=16),
-        "importance": 74,
+        "source_url": "https://www.reuters.com/world/europe/",
+        "published_at": NOW - timedelta(hours=32),
+        "importance": 83,
         "impact": "risk",
         "category_ids": [3, 12],
         "facts": [
             {
                 "text": "Пакет включает ограничения на оборудование.",
                 "status": "Пишут несколько каналов",
-            }
+            },
+            {"text": "В список вошли несколько юридических лиц.", "status": "Официально"},
+        ],
+        "impact_metrics": [
+            {"value": "+18%", "note": "Срок поставки\nоборудования", "tone": "negative"},
+            {
+                "value": "3 позиции",
+                "note": "Импортных контракта\nпод проверкой",
+                "tone": "negative",
+            },
+        ],
+        "source_posts": [
+            _post(
+                "Reuters",
+                hours=32,
+                tone="media",
+                text="Евросоюз утвердил новый пакет ограничений против российских компаний.",
+                image="sanctions.jpg",
+                url="https://www.reuters.com/world/europe/",
+                primary=True,
+            ),
+            _post(
+                "РБК",
+                hours=33,
+                tone="media",
+                text="В пакет вошли ограничения на оборудование и логистические сервисы.",
+                image="it.jpg",
+                url="https://www.rbc.ru/politics/",
+            ),
+            _post(
+                "Комплаенс-канал",
+                hours=34,
+                tone="telegram",
+                text="Участники рынка начали проверку контрагентов из нового списка.",
+                image="publication.jpg",
+                url="https://t.me/compliance_channel",
+            ),
         ],
     },
     {
@@ -105,11 +384,46 @@ DEMO_EVENTS = [
             "возможность заранее перестроить график и избежать пеней."
         ),
         "source_name": "ФНС России",
-        "published_at": NOW - timedelta(hours=20),
-        "importance": 65,
+        "source_url": "https://www.nalog.gov.ru/rn77/news/",
+        "published_at": NOW - timedelta(hours=38),
+        "importance": 68,
         "impact": "opportunity",
         "category_ids": [5, 6],
-        "facts": [{"text": "Опубликованы разъяснения по срокам.", "status": "Официально"}],
+        "facts": [
+            {"text": "Опубликованы разъяснения по срокам.", "status": "Официально"},
+            {"text": "Перенос касается отдельных уведомлений.", "status": "Официально"},
+        ],
+        "impact_metrics": [
+            {"value": "2 недели", "note": "Запас на подготовку\nуведомлений", "tone": "positive"},
+            {"value": "0 ₽", "note": "Пеней при оплате\nв новые сроки", "tone": "positive"},
+        ],
+        "source_posts": [
+            _post(
+                "ФНС России",
+                hours=38,
+                tone="official",
+                text="Опубликованы разъяснения о порядке и сроках уплаты налогов в IV квартале.",
+                image="taxes.jpg",
+                url="https://www.nalog.gov.ru/rn77/news/",
+                primary=True,
+            ),
+            _post(
+                "Гарант",
+                hours=40,
+                tone="media",
+                text="Эксперты отметили, что часть сроков переносится на две недели.",
+                image="publication.jpg",
+                url="https://www.garant.ru/news/",
+            ),
+            _post(
+                "Налоги и учёт",
+                hours=41,
+                tone="telegram",
+                text="Бухгалтерам советуют проверить календарь платежей до 1 ноября.",
+                image="rate.jpg",
+                url="https://t.me/nalogi_uchet",
+            ),
+        ],
     },
     {
         "slug": "fsbu-lease",
@@ -117,100 +431,92 @@ DEMO_EVENTS = [
         "summary": "Стандарт меняет порядок признания обязательств по аренде и раскрытие информации.",
         "what_it_means": "Потребуется пересмотр учётной политики и оценка влияния на отчётность.",
         "source_name": "Минфин России",
-        "published_at": NOW - timedelta(days=1, hours=1),
-        "importance": 61,
+        "source_url": "https://minfin.gov.ru/ru/document/",
+        "published_at": NOW - timedelta(hours=44),
+        "importance": 66,
         "impact": "risk",
-        "category_ids": [6],
-        "facts": [{"text": "Стандарт утверждён.", "status": "Официально"}],
-    },
-    {
-        "slug": "rzd-tariffs",
-        "title": "РЖД проиндексировали тарифы на грузовые перевозки",
-        "summary": "Индексация затрагивает ключевые номенклатуры грузов и вступает в силу с нового месяца.",
-        "what_it_means": (
-            "Логистические расходы вырастут. Для компаний с длинными поставками нужно "
-            "пересчитать себестоимость и условия контрактов."
-        ),
-        "source_name": "РЖД",
-        "published_at": NOW - timedelta(days=1, hours=4),
-        "importance": 72,
-        "impact": "risk",
-        "category_ids": [20],
-        "facts": [{"text": "Тарифы проиндексированы.", "status": "Официально"}],
-    },
-    {
-        "slug": "labour-safety",
-        "title": "Минтруд ужесточает требования к охране труда",
-        "summary": "Новые требования касаются обучения сотрудников и оценки профессиональных рисков.",
-        "what_it_means": "Возможны дополнительные расходы на обучение и аудит процессов.",
-        "source_name": "Минтруд России",
-        "published_at": NOW - timedelta(days=1, hours=7),
-        "importance": 58,
-        "impact": "risk",
-        "category_ids": [8],
-        "facts": [{"text": "Требования вступают в силу поэтапно.", "status": "Официально"}],
-    },
-    {
-        "slug": "state-invest-loans",
-        "title": "Расширена программа льготного инвестиционного кредитования",
-        "summary": "Лимиты программы увеличены, список отраслей дополнен.",
-        "what_it_means": (
-            "Появилась возможность удешевить финансирование инвестпроекта. Стоит проверить "
-            "соответствие условиям и подготовить заявку."
-        ),
-        "source_name": "Минэкономразвития",
-        "published_at": NOW - timedelta(days=1, hours=10),
-        "importance": 70,
-        "impact": "opportunity",
-        "category_ids": [9, 1],
-        "facts": [{"text": "Лимиты программы увеличены.", "status": "Официально"}],
-    },
-    {
-        "slug": "iron-ore-price",
-        "title": "Железная руда подорожала на 8% за месяц",
-        "summary": "Рост цен поддерживается спросом со стороны металлургов и ограничениями поставок.",
-        "what_it_means": (
-            "Для металлурга-покупателя сырья это риск себестоимости, для производителя руды — "
-            "возможность улучшить маржу."
-        ),
-        "source_name": "Металлы и руды",
-        "published_at": NOW - timedelta(days=2),
-        "importance": 75,
-        "impact": "mixed",
-        "category_ids": [15],
-        "facts": [{"text": "Цена выросла на 8% за месяц.", "status": "Пишут несколько каналов"}],
-    },
-    {
-        "slug": "brent-up",
-        "title": "Нефть Brent выросла выше 85 долларов за баррель",
-        "summary": "Цены поддерживаются сокращением добычи и ростом геополитических рисков.",
-        "what_it_means": (
-            "Для переработчика сырьё дорожает, для экспортёра нефти выручка растёт. "
-            "Влияние на бизнес зависит от позиции в цепочке."
-        ),
-        "source_name": "Oil Capital",
-        "published_at": NOW - timedelta(days=2, hours=3),
-        "importance": 77,
-        "impact": "mixed",
-        "category_ids": [16, 2],
+        "category_ids": [6, 9],
         "facts": [
-            {"text": "Brent торгуется выше 85 долларов.", "status": "Пишут несколько каналов"}
+            {"text": "Стандарт утверждён.", "status": "Официально"},
+            {"text": "Обязательное применение — с 2027 года.", "status": "Официально"},
+        ],
+        "impact_metrics": [
+            {
+                "value": "+0,6 млрд ₽",
+                "note": "Обязательства\nпо аренде в балансе",
+                "tone": "negative",
+            },
+            {"value": "1 раз", "note": "Пересмотр учётной\nполитики", "tone": None},
+        ],
+        "source_posts": [
+            _post(
+                "Минфин России",
+                hours=44,
+                tone="official",
+                text="Приказ об утверждении нового ФСБУ по аренде опубликован.",
+                image="leasing.jpg",
+                url="https://minfin.gov.ru/ru/document/",
+                primary=True,
+            ),
+            _post(
+                "КонсультантПлюс",
+                hours=45,
+                tone="media",
+                text="Стандарт потребует пересмотра договоров аренды и раскрытий.",
+                image="rate.jpg",
+                url="https://www.consultant.ru/",
+            ),
         ],
     },
     {
-        "slug": "fertilizer-quota",
-        "title": "Введены квоты на экспорт удобрений",
-        "summary": "Квоты ограничивают вывоз отдельных категорий удобрений до конца сезона.",
+        "slug": "rub-usd",
+        "title": "Рубль ослаб к юаню и доллару на фоне оттока капитала",
+        "summary": "Курс рубля снизился к основным валютам, волатильность выросла.",
         "what_it_means": (
-            "Для экспортёра это риск по объёмам, для внутреннего покупателя — возможность "
-            "получить более доступное сырьё."
+            "Для экспортёра ослабление рубля поддерживает выручку, для импортёра — "
+            "увеличивает стоимость закупок. Влияние смешанное, зависит от валютной позиции."
         ),
-        "source_name": "Rupec",
-        "published_at": NOW - timedelta(days=2, hours=8),
-        "importance": 69,
+        "source_name": "Ведомости",
+        "source_url": "https://www.vedomosti.ru/market",
+        "published_at": NOW - timedelta(hours=48),
+        "importance": 79,
         "impact": "mixed",
-        "category_ids": [17, 4],
-        "facts": [{"text": "Квоты введены до конца сезона.", "status": "Официально"}],
+        "category_ids": [2, 13],
+        "facts": [
+            {"text": "Волатильность валютного рынка выросла.", "status": "Пишут несколько каналов"},
+            {"text": "Экспортёры увеличили продажу валютной выручки.", "status": "Оценка"},
+        ],
+        "impact_metrics": [
+            {"value": "+2,4%", "note": "Курс юаня\nк рублю за неделю", "tone": "negative"},
+            {"value": "+0,8 млрд ₽", "note": "Валютная выручка\nэкспортёра", "tone": "positive"},
+        ],
+        "source_posts": [
+            _post(
+                "Ведомости",
+                hours=48,
+                tone="media",
+                text="Рубль ослаб к юаню и доллару на фоне роста оттока капитала.",
+                image="fx.jpg",
+                url="https://www.vedomosti.ru/market",
+                primary=True,
+            ),
+            _post(
+                "Банк России",
+                hours=49,
+                tone="official",
+                text="Регулятор отмечает повышенную волатильность на валютном рынке.",
+                image="rate.jpg",
+                url="https://www.cbr.ru/press/",
+            ),
+            _post(
+                "Валюта и рынки",
+                hours=50,
+                tone="telegram",
+                text="Импортёры пересчитывают закупки по новому курсу.",
+                image="publication.jpg",
+                url="https://t.me/currency_markets",
+            ),
+        ],
     },
     {
         "slug": "wheat-forecast",
@@ -218,35 +524,85 @@ DEMO_EVENTS = [
         "summary": "Аналитики ухудшили оценку урожая и ожидают роста цен на продовольствие.",
         "what_it_means": "Для переработчиков и ритейла растёт закупочная стоимость сырья.",
         "source_name": "Агроинвестор",
-        "published_at": NOW - timedelta(days=3),
-        "importance": 73,
+        "source_url": "https://www.agroinvestor.ru/",
+        "published_at": NOW - timedelta(hours=76),
+        "importance": 72,
         "impact": "risk",
         "category_ids": [18, 13],
-        "facts": [{"text": "Прогноз урожая снижен.", "status": "Пишут несколько каналов"}],
+        "facts": [
+            {"text": "Прогноз урожая снижен.", "status": "Пишут несколько каналов"},
+            {"text": "Засуха затронула южные регионы.", "status": "Официально"},
+        ],
+        "impact_metrics": [
+            {"value": "−9%", "note": "Прогноз урожая\nк прошлому году", "tone": "negative"},
+            {"value": "+6%", "note": "Закупочная цена\nпшеницы", "tone": "negative"},
+        ],
+        "source_posts": [
+            _post(
+                "Агроинвестор",
+                hours=76,
+                tone="media",
+                text="Аналитики снизили прогноз урожая пшеницы из-за засухи в южных регионах.",
+                image="agro.jpg",
+                url="https://www.agroinvestor.ru/",
+                primary=True,
+            ),
+            _post(
+                "Минсельхоз",
+                hours=77,
+                tone="official",
+                text="Ведомство подтвердило влияние засухи на отдельные регионы.",
+                image="logistics.jpg",
+                url="https://mcx.gov.ru/press-service/",
+            ),
+        ],
     },
     {
-        "slug": "localization",
-        "title": "Ужесточены правила локализации промышленного оборудования",
-        "summary": "Для доступа к мерам поддержки потребуется подтвердить большую долю российских комплектующих.",
-        "what_it_means": "Возможны пересмотр цепочек поставок и дополнительные инвестиции в локализацию.",
-        "source_name": "Минпромторг",
-        "published_at": NOW - timedelta(days=3, hours=6),
-        "importance": 66,
-        "impact": "risk",
-        "category_ids": [19],
-        "facts": [{"text": "Правила локализации ужесточены.", "status": "Официально"}],
-    },
-    {
-        "slug": "util-fee",
-        "title": "Утильсбор на импортные грузовики повышен",
-        "summary": "Повышение затрагивает импорт техники и может отразиться на стоимости логистики.",
-        "what_it_means": "Обновление парка и импорт техники станут дороже.",
-        "source_name": "Коммерсантъ",
-        "published_at": NOW - timedelta(days=3, hours=11),
+        "slug": "ai-law",
+        "title": "Принят закон об ответственности за ИИ-контент",
+        "summary": "Документ вводит требования к маркировке и раскрытию использования ИИ.",
+        "what_it_means": "Возможны дополнительные комплаенс-требования к цифровым каналам.",
+        "source_name": "ТАСС",
+        "source_url": "https://tass.ru/ekonomika",
+        "published_at": NOW - timedelta(hours=57),
         "importance": 64,
         "impact": "risk",
-        "category_ids": [21, 4],
-        "facts": [{"text": "Утильсбор повышен.", "status": "Официально"}],
+        "category_ids": [25, 23],
+        "facts": [
+            {"text": "Закон принят.", "status": "Официально"},
+            {"text": "Требования к маркировке вступят в силу поэтапно.", "status": "Официально"},
+        ],
+        "impact_metrics": [
+            {"value": "3 месяца", "note": "На доработку\nцифровых каналов", "tone": "negative"},
+            {"value": "+12%", "note": "Стоимость\nконтент-процессов", "tone": "negative"},
+        ],
+        "source_posts": [
+            _post(
+                "ТАСС",
+                hours=57,
+                tone="media",
+                text="Принят закон, вводящий ответственность за немаркированный ИИ-контент.",
+                image="it.jpg",
+                url="https://tass.ru/ekonomika",
+                primary=True,
+            ),
+            _post(
+                "Финтех-ассоциация",
+                hours=58,
+                tone="telegram",
+                text="Участники рынка оценивают расходы на маркировку и аудит контента.",
+                image="rate.jpg",
+                url="https://t.me/fintechassociation",
+            ),
+            _post(
+                "Sostav",
+                hours=59,
+                tone="media",
+                text="Рекламный рынок готовится к новым требованиям к ИИ-креативам.",
+                image="publication.jpg",
+                url="https://www.sostav.ru/",
+            ),
+        ],
     },
     {
         "slug": "marketplace-returns",
@@ -257,134 +613,105 @@ DEMO_EVENTS = [
             "к онлайн-каналу. Влияние смешанное."
         ),
         "source_name": "Retail.ru",
-        "published_at": NOW - timedelta(days=4),
-        "importance": 68,
+        "source_url": "https://www.retail.ru/news/",
+        "published_at": NOW - timedelta(hours=62),
+        "importance": 67,
         "impact": "mixed",
         "category_ids": [22, 13],
-        "facts": [{"text": "Требования к возвратам расширены.", "status": "Официально"}],
+        "facts": [
+            {"text": "Требования к возвратам расширены.", "status": "Официально"},
+            {"text": "Новые правила вступят в силу с января.", "status": "Официально"},
+        ],
+        "impact_metrics": [
+            {"value": "+4%", "note": "Доля возвратов\nв онлайн-канале", "tone": "negative"},
+            {"value": "−0,2 млрд ₽", "note": "Операционные\nиздержки в год", "tone": "negative"},
+            {"value": "+3%", "note": "Конверсия\nповторных покупок", "tone": "positive"},
+        ],
+        "source_posts": [
+            _post(
+                "Retail.ru",
+                hours=62,
+                tone="media",
+                text="Маркетплейсы готовятся к расширенным требованиям по возвратам товаров.",
+                image="retail.jpg",
+                url="https://www.retail.ru/news/",
+                primary=True,
+            ),
+            _post(
+                "Коммерсантъ",
+                hours=63,
+                tone="media",
+                text="Новые правила затронут продавцов и логистических партнёров.",
+                image="logistics.jpg",
+                url="https://www.kommersant.ru/business",
+            ),
+            _post(
+                "Ритейл-канал",
+                hours=64,
+                tone="telegram",
+                text="Продавцы оценивают рост возвратов в 3–5%.",
+                image="publication.jpg",
+                url="https://t.me/retail_channel",
+            ),
+        ],
     },
     {
-        "slug": "digital-ruble",
-        "title": "Запущены расчёты цифровым рублём между юрлицами",
-        "summary": "Пилот расширен на новые банки и сценарии B2B-платежей.",
-        "what_it_means": (
-            "Появляется новый канал расчётов и возможность снизить издержки, но требуется "
-            "адаптация казначейства и учётных процессов."
+        "slug": "construction-mortgage",
+        "title": "Льготная ипотека продлена с новыми лимитами",
+        "summary": (
+            "Программа продлена на год, но максимальная сумма кредита снижена для "
+            "отдельных регионов."
         ),
-        "source_name": "Банк России",
-        "published_at": NOW - timedelta(days=4, hours=5),
-        "importance": 71,
+        "what_it_means": (
+            "Застройщики сохраняют спрос, однако высокие ставки по рыночной ипотеке "
+            "сдерживают маржу. Стоит пересмотреть план продаж."
+        ),
+        "source_name": "ДОМ.РФ",
+        "source_url": "https://дом.рф/media/",
+        "published_at": NOW - timedelta(hours=68),
+        "importance": 69,
         "impact": "mixed",
-        "category_ids": [23, 25],
-        "facts": [{"text": "Пилот расширен на B2B-платежи.", "status": "Официально"}],
-    },
-    {
-        "slug": "osago",
-        "title": "Тарифы ОСАГО проиндексированы",
-        "summary": "Средняя стоимость полиса вырастет для отдельных категорий транспорта.",
-        "what_it_means": "Расходы на автопарк увеличатся, стоит проверить условия страхования.",
-        "source_name": "АСН",
-        "published_at": NOW - timedelta(days=4, hours=9),
-        "importance": 55,
-        "impact": "risk",
-        "category_ids": [24],
-        "facts": [{"text": "Тарифы проиндексированы.", "status": "Официально"}],
-    },
-    {
-        "slug": "ai-law",
-        "title": "Принят закон об ответственности за ИИ-контент",
-        "summary": "Документ вводит требования к маркировке и раскрытию использования ИИ.",
-        "what_it_means": "Возможны дополнительные комплаенс-требования к цифровым каналам.",
-        "source_name": "ТАСС",
-        "published_at": NOW - timedelta(days=5),
-        "importance": 60,
-        "impact": "risk",
-        "category_ids": [25],
-        "facts": [{"text": "Закон принят.", "status": "Официально"}],
-    },
-    {
-        "slug": "edtech-attestation",
-        "title": "Введена обязательная аттестация онлайн-курсов",
-        "summary": "Провайдеры образования должны подтвердить качество и содержание программ.",
-        "what_it_means": "Для EdTech это дополнительные издержки, для корпоративных заказчиков — рост качества.",
-        "source_name": "EdTech",
-        "published_at": NOW - timedelta(days=5, hours=4),
-        "importance": 52,
-        "impact": "risk",
-        "category_ids": [26],
-        "facts": [{"text": "Аттестация стала обязательной.", "status": "Официально"}],
-    },
-    {
-        "slug": "drug-marking",
-        "title": "Маркировка лекарств расширена на новую категорию",
-        "summary": "Производители и дистрибьюторы должны перестроить процессы маркировки.",
-        "what_it_means": "Возможны дополнительные затраты и временные ограничения поставок.",
-        "source_name": "GxP News",
-        "published_at": NOW - timedelta(days=5, hours=8),
-        "importance": 57,
-        "impact": "risk",
-        "category_ids": [27],
-        "facts": [{"text": "Маркировка расширена.", "status": "Официально"}],
-    },
-    {
-        "slug": "visa-free",
-        "title": "Расширен список безвизовых стран для туров",
-        "summary": "Новые направления могут увеличить турпоток и спрос на перевозки.",
-        "what_it_means": "Для туристического бизнеса это возможность нарастить выручку.",
-        "source_name": "TourDom",
-        "published_at": NOW - timedelta(days=6),
-        "importance": 63,
-        "impact": "opportunity",
-        "category_ids": [28],
-        "facts": [{"text": "Список стран расширен.", "status": "Официально"}],
-    },
-    {
-        "slug": "clothing-marking",
-        "title": "Маркировка распространена на новую категорию одежды",
-        "summary": "Требование затрагивает производителей и импортёров потребительских товаров.",
-        "what_it_means": "Возможны дополнительные издержки на маркировку и складские процессы.",
-        "source_name": "Минпромторг",
-        "published_at": NOW - timedelta(days=6, hours=4),
-        "importance": 59,
-        "impact": "risk",
-        "category_ids": [29],
-        "facts": [{"text": "Маркировка расширена.", "status": "Официально"}],
-    },
-    {
-        "slug": "credit-ads",
-        "title": "Ограничена реклама кредитов в цифровых каналах",
-        "summary": "Новые правила касаются рекламы займов и условий их выдачи.",
-        "what_it_means": "Финансовые организации и партнёры столкнутся с ростом стоимости привлечения.",
-        "source_name": "Sostav",
-        "published_at": NOW - timedelta(days=6, hours=8),
-        "importance": 62,
-        "impact": "risk",
-        "category_ids": [30, 23],
-        "facts": [{"text": "Ограничения на рекламу введены.", "status": "Официально"}],
-    },
-    {
-        "slug": "procurement-national",
-        "title": "Расширены требования нацрежима в госзакупках",
-        "summary": "Для участия в тендерах потребуется подтвердить происхождение большего числа товаров.",
-        "what_it_means": "Поставщики с импортными позициями могут потерять доступ к части закупок.",
-        "source_name": "Гарант",
-        "published_at": NOW - timedelta(days=7),
-        "importance": 67,
-        "impact": "risk",
-        "category_ids": [11],
-        "facts": [{"text": "Требования нацрежима расширены.", "status": "Официально"}],
-    },
-    {
-        "slug": "utilities-index",
-        "title": "Проиндексированы тарифы ЖКХ для юрлиц",
-        "summary": "Рост тарифов затронет электроэнергию, тепло и водоснабжение.",
-        "what_it_means": "Операционные расходы производственных и офисных объектов вырастут.",
-        "source_name": "ТАСС",
-        "published_at": NOW - timedelta(days=7, hours=5),
-        "importance": 60,
-        "impact": "risk",
-        "category_ids": [10],
-        "facts": [{"text": "Тарифы проиндексированы.", "status": "Официально"}],
+        "category_ids": [14, 1],
+        "facts": [
+            {"text": "Программа продлена на год.", "status": "Официально"},
+            {"text": "Лимиты снижены для отдельных регионов.", "status": "Официально"},
+        ],
+        "impact_metrics": [
+            {
+                "value": "−5%",
+                "note": "Спрос на новостройки\nв отдельных городах",
+                "tone": "negative",
+            },
+            {"value": "+12%", "note": "Стоимость финансирования\nпроекта", "tone": "negative"},
+            {"value": "1 год", "note": "Новый срок\nпрограммы", "tone": "positive"},
+        ],
+        "source_posts": [
+            _post(
+                "ДОМ.РФ",
+                hours=68,
+                tone="official",
+                text="Опубликованы новые условия продления льготной ипотечной программы.",
+                image="construction.jpg",
+                url="https://дом.рф/media/",
+                primary=True,
+            ),
+            _post(
+                "Ведомости",
+                hours=69,
+                tone="media",
+                text="Застройщики ожидают сохранения спроса при снижении лимитов.",
+                image="leasing.jpg",
+                url="https://www.vedomosti.ru/business",
+            ),
+            _post(
+                "Строительный канал",
+                hours=70,
+                tone="telegram",
+                text="Банки пересматривают условия выдачи ипотеки под новые лимиты.",
+                image="rate.jpg",
+                url="https://t.me/construction_channel",
+            ),
+        ],
     },
 ]
 
@@ -395,6 +722,10 @@ def seeded_events() -> list[dict]:
         event = dict(event)
         event["id"] = uuid5(NAMESPACE_URL, f"alfa-future-demo-event-{event['slug']}")
         event["mentioned_company_uids"] = []
-        event["source_url"] = None
+        event.setdefault("source_url", None)
+        event.setdefault("source_posts", [])
+        event.setdefault("impact_metrics", [])
+        event.setdefault("chain_key", None)
+        event.setdefault("update_label", None)
         result.append(event)
     return result

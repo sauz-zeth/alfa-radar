@@ -13,6 +13,12 @@ export const categoryBriefSchema = z.object({
   short_name: z.string(),
 });
 
+export const impactMetricSchema = z.object({
+  value: z.string(),
+  note: z.string().default(""),
+  tone: z.enum(["negative", "positive"]).nullish(),
+});
+
 export const feedItemSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -34,6 +40,7 @@ export const feedItemSchema = z.object({
   source_count: z.number().int().default(1),
   sources: z.array(sourcePostSchema).default([]),
   facts: z.array(unknownRecordSchema).default([]),
+  impact_metrics: z.array(impactMetricSchema).default([]),
   score_breakdown: z.array(scoreComponentSchema).default([]),
   score_why: z.string().default(""),
   impact_share: z.string().default(""),

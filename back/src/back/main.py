@@ -1,8 +1,10 @@
 import logging
+from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from back.api.router import api_router
 from back.api.routes.health import router as health_router
@@ -30,6 +32,12 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(api_router, prefix=settings.api_prefix)
+
+app.mount(
+    "/static",
+    StaticFiles(directory=Path(__file__).resolve().parent / "static"),
+    name="static",
+)
 
 
 @app.get("/")

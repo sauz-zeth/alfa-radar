@@ -1,11 +1,30 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ApiProvider, createQueryClient } from "./api";
-import { PageOutlet } from "./components/PageOutlet";
-import { Nav } from "./components/Nav";
-import { RouterProvider } from "./router";
+import { AuthProvider } from "./auth/AuthProvider";
+import { LoginPage } from "./auth/LoginPage";
+import { RegisterPage } from "./auth/RegisterPage";
+import { Splash } from "./auth/Splash";
+import { useAuth } from "./auth/useAuth";
+import { OnboardingGate } from "./onboarding/OnboardingGate";
+import { Redirect, RouterProvider, useRouter } from "./router";
 import "./index.css";
 
 const queryClient = createQueryClient();
+
+function AppRoutes() {
+  const { status } = useAuth();
+  const { path } = useRouter();
+
+  if (status === "loading") return <Splash />;
+
+  if (status === "anonymous") {
+    return path === "/register" ? <RegisterPage /> : <LoginPage />;
+  }
+
+  if (path === "/login" || path === "/register") return <Redirect to="/" />;
+
+  return <OnboardingGate />;
+}
 
 export function App() {
   return (
@@ -18,12 +37,11 @@ export function App() {
               : localStorage.getItem("token"),
         }}
       >
-        <RouterProvider>
-          <div className="app">
-            <Nav />
-            <PageOutlet />
-          </div>
-        </RouterProvider>
+        <AuthProvider>
+          <RouterProvider>
+            <AppRoutes />
+          </RouterProvider>
+        </AuthProvider>
       </ApiProvider>
     </QueryClientProvider>
   );
