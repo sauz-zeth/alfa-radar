@@ -10,37 +10,84 @@
 
 .bottom-nav__capsule {
   display: flex;
+  width: 100%;
+  max-width: 361px;
+  height: 64px;
   align-items: center;
-  gap: 2.785px;
-  padding: 2.785px;
-  border-radius: 23.942px;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 32px;
+  pointer-events: auto;
+}
+
+.bottom-nav--dark .bottom-nav__capsule {
   background: var(--glass-dark);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.07);
   backdrop-filter: blur(8.356px);
   -webkit-backdrop-filter: blur(8.356px);
-  pointer-events: auto;
+}
+
+.bottom-nav--light .bottom-nav__capsule {
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  background: #f7f7f7;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .bottom-nav__item {
   display: flex;
-  flex: none;
+  flex: 1;
+  height: 56px;
   align-items: center;
   justify-content: center;
-  width: 59.366px;
-  height: 38.997px;
-  border-radius: 19.498px;
-  opacity: 0.7;
+  border-radius: 28px;
 }
 
-.bottom-nav__item.is-active {
-  opacity: 1;
+.bottom-nav--dark .bottom-nav__item.is-active {
+  background: var(--surface);
 }
 
-.bottom-nav__item[aria-disabled="true"] {
-  cursor: default;
+.bottom-nav--light .bottom-nav__item.is-active {
+  background: #202020;
+  box-shadow: 0 2px 2.5px rgba(0, 0, 0, 0.13);
 }
 
 .bottom-nav__icon {
   display: block;
-  flex: none;
+  width: 100%;
+  height: 56px;
+  object-fit: contain;
+}
+
+.bottom-nav__icon--sources {
+  width: 24px;
+  height: 24px;
+  object-fit: none;
+}
+
+.bottom-nav--dark .bottom-nav__item .bottom-nav__icon {
+  filter: brightness(0) invert(1);
+  opacity: 0.55;
+}
+
+.bottom-nav--dark .bottom-nav__item.is-active .bottom-nav__icon {
+  filter: brightness(0);
+  opacity: 1;
+}
+
+.bottom-nav--dark .bottom-nav__item.is-active .bottom-nav__icon--sources {
+  filter: brightness(0);
+}
+
+.bottom-nav--light .bottom-nav__item .bottom-nav__icon {
+  filter: brightness(0);
+  opacity: 0.55;
+}
+
+.bottom-nav--light .bottom-nav__item.is-active .bottom-nav__icon {
+  filter: brightness(0) invert(1);
+  opacity: 1;
+}
+
+.bottom-nav--light .bottom-nav__item.is-active .bottom-nav__icon--sources {
+  filter: none;
 }
