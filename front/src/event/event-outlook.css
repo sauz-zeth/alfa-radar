@@ -1,0 +1,375 @@
+.event-outlook__card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(247, 247, 247, 0.06);
+}
+
+.event-outlook__account {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.event-outlook__account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.event-outlook__title {
+  margin: 0;
+  color: var(--surface);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 21px;
+}
+
+.event-outlook__note {
+  margin: 0;
+  color: var(--muted-soft);
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.event-outlook__connect,
+.event-outlook__form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.event-outlook__connect {
+  margin-top: 4px;
+}
+
+.event-outlook__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.event-outlook__field > span {
+  color: var(--muted-soft);
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.event-outlook__field input,
+.event-outlook__field select,
+.event-outlook__field textarea,
+.event-outlook__connect input {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid var(--glass-stroke);
+  border-radius: 12px;
+  background: rgba(247, 247, 247, 0.08);
+  color: var(--surface);
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  outline: none;
+}
+
+.event-outlook__field textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.event-outlook__field input:focus,
+.event-outlook__field select:focus,
+.event-outlook__field textarea:focus,
+.event-outlook__connect input:focus {
+  border-color: rgba(247, 247, 247, 0.45);
+}
+
+.event-outlook__field select option {
+  color: #202020;
+}
+
+.event-outlook__row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.event-outlook__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.event-outlook__chip {
+  padding: 7px 11px;
+  border-radius: 14px;
+  background: rgba(247, 247, 247, 0.1);
+  color: var(--muted-strong);
+  font-size: 11px;
+  line-height: 14px;
+  cursor: pointer;
+}
+
+.event-outlook__chip:hover {
+  background: rgba(247, 247, 247, 0.16);
+}
+
+.event-outlook__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.event-outlook__button {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 13px;
+  border-radius: 18px;
+  background: rgba(247, 247, 247, 0.12);
+  color: var(--surface);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.event-outlook__button:hover {
+  background: rgba(247, 247, 247, 0.18);
+}
+
+.event-outlook__button--primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.event-outlook__button--primary:hover {
+  background: #d92a1e;
+}
+
+.event-outlook__button--ghost {
+  background: transparent;
+  color: var(--muted-soft);
+}
+
+.event-outlook__button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.event-outlook__error {
+  margin: 0;
+  color: #ff8a80;
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.event-outlook__messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.event-outlook__message {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(247, 247, 247, 0.04);
+}
+
+.event-outlook__message-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.event-outlook__status,
+.event-outlook__flag,
+.event-outlook__attachment {
+  padding: 4px 9px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 13px;
+}
+
+.event-outlook__status {
+  background: rgba(247, 247, 247, 0.12);
+  color: var(--muted-strong);
+}
+
+.event-outlook__status--sent {
+  background: rgba(247, 247, 247, 0.16);
+  color: var(--surface);
+}
+
+.event-outlook__status--delivered {
+  background: rgba(224, 163, 58, 0.18);
+  color: #e0a33a;
+}
+
+.event-outlook__status--read {
+  background: rgba(53, 192, 122, 0.16);
+  color: #35c07a;
+}
+
+.event-outlook__status--replied {
+  background: rgba(53, 192, 122, 0.22);
+  color: #57d693;
+}
+
+.event-outlook__flag {
+  background: rgba(239, 49, 36, 0.16);
+  color: #ff8a80;
+}
+
+.event-outlook__attachment {
+  background: rgba(247, 247, 247, 0.08);
+  color: var(--muted-soft);
+}
+
+.event-outlook__message-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19px;
+}
+
+@media (min-width: 1200px) {
+  .event-outlook__card {
+    padding: 24px;
+    border-radius: 28px;
+    background: #f7f7f7;
+    color: #202020;
+  }
+
+  .event-outlook__title {
+    color: #202020;
+    font-size: 20px;
+    line-height: 26px;
+  }
+
+  .event-outlook__note {
+    color: #737373;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .event-outlook__field > span {
+    color: #737373;
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .event-outlook__field input,
+  .event-outlook__field select,
+  .event-outlook__field textarea,
+  .event-outlook__connect input {
+    border-color: #d7d7d7;
+    background: #fff;
+    color: #202020;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .event-outlook__row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .event-outlook__chip {
+    background: #ededed;
+    color: #202020;
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .event-outlook__button {
+    min-height: 40px;
+    padding: 0 16px;
+    background: #e6e6e6;
+    color: #202020;
+    font-size: 13px;
+    line-height: 17px;
+  }
+
+  .event-outlook__button:hover {
+    background: #dcdcdc;
+  }
+
+  .event-outlook__button--primary {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .event-outlook__button--ghost {
+    background: transparent;
+    color: #737373;
+  }
+
+  .event-outlook__error {
+    color: #c4271c;
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  .event-outlook__message {
+    padding: 18px;
+    border-radius: 20px;
+    background: #fff;
+  }
+
+  .event-outlook__message-title {
+    font-size: 18px;
+    line-height: 24px;
+  }
+
+  .event-outlook__status,
+  .event-outlook__flag,
+  .event-outlook__attachment {
+    font-size: 11px;
+    line-height: 14px;
+  }
+
+  .event-outlook__status {
+    background: #ededed;
+    color: #737373;
+  }
+
+  .event-outlook__status--sent {
+    background: #e6e6e6;
+    color: #202020;
+  }
+
+  .event-outlook__status--delivered {
+    background: #f7ecd8;
+    color: #8a5a12;
+  }
+
+  .event-outlook__status--read,
+  .event-outlook__status--replied {
+    background: #e2f5ea;
+    color: #1a7a4a;
+  }
+
+  .event-outlook__flag {
+    background: #fbe3e0;
+    color: #c4271c;
+  }
+
+  .event-outlook__attachment {
+    background: #ededed;
+    color: #737373;
+  }
+}

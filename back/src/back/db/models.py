@@ -124,6 +124,7 @@ class BusinessProfile(Base):
     sources_initialized: Mapped[bool] = mapped_column(Boolean, default=False)
     search_history: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     notifications: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    outlook_state: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     onboarding_step: Mapped[str] = mapped_column(
         String(48), default=OnboardingStep.REGISTERED.value
     )

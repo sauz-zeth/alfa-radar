@@ -106,6 +106,117 @@ def fallback_extracted(form_type: ReportingForm, text: str) -> dict[str, Any]:
         "key_points": ["Извлечение выполнено без LLM: проверьте ключевые цифры вручную."],
     }
 
+def _money(value: float) -> str:
+    if value >= 1_000_000_000:
+        return f"{value / 1_000_000_000:.1f} млрд ₽".replace(".0 ", " ")
+    if value >= 1_000_000:
+        return f"{value / 1_000_000:.0f} млн ₽"
+    if value >= 1_000:
+        return f"{value / 1_000:.0f} тыс ₽"
+    return f"{value:,.0f} ₽".replace(",", " ")
+
+
+def _cell(value: Any) -> str:
+    return str(value).replace("|", "\\|").replace("\n", " ").strip()
+
+
+def _md_table(headers: tuple[str, ...], rows: list[tuple[Any, ...]]) -> list[str]:
+    if not rows:
+        return []
+    line = "| " + " | ".join(headers) + " |"
+    divider = "| " + " | ".join("---" for _ in headers) + " |"
+    return [line, divider, *["| " + " | ".join(_cell(item) for item in row) + " |" for row in rows]]
+
+
+def form_markdown(form_type: ReportingForm, filename: str, extracted: dict[str, Any]) -> str:
+    """Deterministic Markdown fallback; the LLM may return a richer summary_markdown."""
+    lines = [f"## {REPORTING_FORM_LABELS[form_type]}", "", f"**Файл:** {filename}"]
+    period = extracted.get("period")
+    if period:
+        lines.append(f"**Период:** {period}")
+    lines.append("")
+
+    figures = []
+    for key, label in (
+        ("revenue", "Выручка"),
+        ("profit", "Прибыль"),
+        ("debt", "Долг"),
+        ("interest_expense", "Проценты к уплате"),
+    ):
+        value = extracted.get(key)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            figures.append((label, _money(float(value))))
+    if figures:
+        lines.extend(
+            ["### Ключевые цифры", "", *_md_table(("Показатель", "Значение"), figures), ""]
+        )
+
+    cash = extracted.get("cash_flows")
+    if isinstance(cash, dict):
+        flows = []
+        for key, label in (
+            ("operating", "Операционный поток"),
+            ("investing", "Инвестиционный поток"),
+            ("financing", "Финансовый поток"),
+        ):
+            value = cash.get(key)
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                flows.append((label, _money(float(value))))
+        if flows:
+            lines.extend(
+                ["### Денежные потоки", "", *_md_table(("Поток", "Сумма"), flows), ""]
+            )
+
+    costs = extracted.get("cost_structure")
+    if isinstance(costs, list):
+        rows = []
+        for item in costs:
+            if isinstance(item, dict) and item.get("name"):
+                value = item.get("value")
+                rows.append(
+                    (
+                        item["name"],
+                        _money(float(value))
+                        if isinstance(value, (int, float)) and not isinstance(value, bool)
+                        else value,
+                    )
+                )
+        if rows:
+            lines.extend(["### Структура затрат", "", *_md_table(("Статья", "Сумма"), rows), ""])
+
+    positions = extracted.get("currency_positions")
+    if isinstance(positions, list):
+        rows = []
+        for item in positions:
+            if isinstance(item, dict) and item.get("currency"):
+                rows.append((item["currency"], item.get("amount") or "—"))
+        if rows:
+            lines.extend(["### Валютные позиции", "", *_md_table(("Валюта", "Сумма"), rows), ""])
+
+    points = extracted.get("key_points")
+    if isinstance(points, list):
+        clean = [str(item).strip() for item in points if str(item).strip()]
+        if clean:
+            lines.extend(["### Что важно", "", *[f"- {item}" for item in clean], ""])
+
+    return "\n".join(lines).strip()
+
+
+def _entry_markdown(key: str, entry: dict[str, Any]) -> str:
+    markdown = entry.get("markdown")
+    if isinstance(markdown, str) and markdown.strip():
+        return markdown.strip()
+    data = entry.get("data")
+    if not isinstance(data, dict):
+        return ""
+    try:
+        form_type = ReportingForm(key)
+    except ValueError:
+        return ""
+    markdown = form_markdown(form_type, str(entry.get("filename") or ""), data)
+    entry["markdown"] = markdown
+    return markdown
+
 
 async def process_upload(
     session: AsyncSession,
@@ -135,6 +246,11 @@ async def process_upload(
         except Exception:
             logger.exception("Reporting LLM failed, using fallback extraction")
 
+    explicit_markdown = extracted.pop("summary_markdown", None)
+    markdown = explicit_markdown.strip() if isinstance(explicit_markdown, str) else ""
+    if not markdown:
+        markdown = form_markdown(form_type, filename, extracted)
+
     upload_row = ReportingUpload(
         profile_id=profile.id,
         form_type=form_type.value,
@@ -154,6 +270,7 @@ async def process_upload(
         "filename": filename,
         "upload_id": str(upload_row.id),
         "data": extracted,
+        "markdown": markdown,
     }
     key_points: list[str] = list(summary.get("key_points") or [])
     for point in extracted.get("key_points") or []:
@@ -161,6 +278,15 @@ async def process_upload(
         if point and point not in key_points:
             key_points.append(point)
     period = extracted.get("period") or summary.get("period")
+    summary["markdown"] = "\n\n".join(
+        item
+        for item in (
+            _entry_markdown(key, value)
+            for key, value in forms.items()
+            if isinstance(value, dict)
+        )
+        if item
+    )
     summary.update(
         {
             "period": period,

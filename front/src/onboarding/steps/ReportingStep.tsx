@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ApiError, useApi, useApiMutation, useApiQuery } from "../../api";
-import { formatMoney } from "../format";
+import { MarkdownView } from "../../components/MarkdownView";
+import { reportingMarkdown } from "../../lib/reportingMarkdown";
 import { OnboardingLayout } from "../OnboardingLayout";
 import { useOnboarding } from "../useOnboarding";
 import type { SimpleStepProps } from "./types";
@@ -18,90 +19,6 @@ const formLabels: Record<string, string> = {
   income: "Отчёт о финансовых результатах",
   cash_flow: "Отчёт о движении денежных средств",
 };
-
-type Snapshot = Record<string, unknown>;
-
-function asRecord(value: unknown): Snapshot | null {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-    ? (value as Snapshot)
-    : null;
-}
-
-function asString(value: unknown): string | null {
-  return typeof value === "string" && value.trim() ? value : null;
-}
-
-function asNumber(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function asStringList(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.map(asString).filter((item): item is string => item !== null);
-}
-
-function asPeriod(value: unknown): string | null {
-  if (typeof value === "number" && Number.isFinite(value)) return String(value);
-  return asString(value);
-}
-
-const moneyKeys: [string, string][] = [
-  ["revenue", "Выручка"],
-  ["profit", "Прибыль"],
-  ["debt", "Долг"],
-  ["interest_expense", "Проценты к уплате"],
-];
-
-const cashFlowKeys: [string, string][] = [
-  ["operating", "Операционный поток"],
-  ["investing", "Инвестиционный поток"],
-  ["financing", "Финансовый поток"],
-];
-
-function figures(data: Snapshot | null): { label: string; value: number }[] {
-  if (!data) return [];
-  const result: { label: string; value: number }[] = [];
-  for (const [key, label] of moneyKeys) {
-    const value = asNumber(data[key]);
-    if (value !== null) result.push({ label, value });
-  }
-  const cashFlows = asRecord(data.cash_flows);
-  for (const [key, label] of cashFlowKeys) {
-    const value = asNumber(cashFlows?.[key]);
-    if (value !== null) result.push({ label, value });
-  }
-  if (Array.isArray(data.currency_positions)) {
-    for (const item of data.currency_positions) {
-      const position = asRecord(item);
-      const currency = asString(position?.currency);
-      const amount = asNumber(position?.amount);
-      if (currency && amount !== null) result.push({ label: currency, value: amount });
-    }
-  }
-  return result;
-}
-
-type FormSummary = {
-  label: string;
-  filename: string | null;
-  data: Snapshot | null;
-};
-
-function readForms(summary: Snapshot | undefined): Partial<Record<FormKey, FormSummary>> {
-  const source = asRecord(summary?.forms);
-  const result: Partial<Record<FormKey, FormSummary>> = {};
-  if (!source) return result;
-  for (const form of forms) {
-    const item = asRecord(source[form.key]);
-    if (!item) continue;
-    result[form.key] = {
-      label: asString(item.label) ?? form.label,
-      filename: asString(item.filename),
-      data: asRecord(item.data),
-    };
-  }
-  return result;
-}
 
 export function ReportingStep({ onDone }: SimpleStepProps) {
   const api = useApi();
@@ -126,10 +43,7 @@ export function ReportingStep({ onDone }: SimpleStepProps) {
   const error = upload.error ?? skip.error;
   const uploads = reporting.data?.uploads ?? [];
   const summary = upload.data?.summary ?? reporting.data?.summary;
-  const period = asPeriod(summary?.period);
-  const keyPoints = asStringList(summary?.key_points);
-  const formSummaries = readForms(summary);
-  const hasSummary = Boolean(period || keyPoints.length > 0 || Object.keys(formSummaries).length > 0);
+  const markdown = reportingMarkdown(summary);
   const uploaded = Boolean(upload.data);
 
   if (!state) return null;
@@ -207,42 +121,10 @@ export function ReportingStep({ onDone }: SimpleStepProps) {
         </section>
       ) : null}
 
-      {hasSummary ? (
+      {markdown ? (
         <section className="onboarding-section">
           <h2 className="onboarding-section__title">Что удалось выделить</h2>
-          {period ? <p className="onboarding-note">Период: {period}</p> : null}
-          {keyPoints.length > 0 ? (
-            <ul className="reporting-points">
-              {keyPoints.map((point) => (
-                <li key={point}>{point}</li>
-              ))}
-            </ul>
-          ) : null}
-          {forms.map((form) => {
-            const item = formSummaries[form.key];
-            if (!item) return null;
-            const rows = figures(item.data);
-            return (
-              <article key={form.key} className="reporting-card">
-                <div className="reporting-card__head">
-                  <p className="reporting-card__label">{item.label}</p>
-                  {item.filename ? <p className="reporting-card__file">{item.filename}</p> : null}
-                </div>
-                {rows.length > 0 ? (
-                  <dl className="reporting-card__figures">
-                    {rows.map((row) => (
-                      <div key={row.label} className="reporting-card__figure">
-                        <dt>{row.label}</dt>
-                        <dd>{formatMoney(row.value)}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                ) : (
-                  <p className="onboarding-note">Цифры не распознаны.</p>
-                )}
-              </article>
-            );
-          })}
+          <MarkdownView markdown={markdown} />
         </section>
       ) : null}
     </OnboardingLayout>

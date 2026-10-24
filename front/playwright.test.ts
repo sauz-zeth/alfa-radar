@@ -181,20 +181,25 @@ test("profile reporting summary", async ({ page }) => {
         counterparties_by_direction: {},
         notifications: [],
         reporting: {
-          period: "2025",
-          key_points: ["Выручка выросла на 12%"],
-          forms: {
-            balance: {
-              label: "Бухгалтерский баланс",
-              filename: "balance.xlsx",
-              data: { debt: 250_000_000 },
-            },
-            income: {
-              label: "Отчёт о финансовых результатах",
-              filename: "income.xlsx",
-              data: { revenue: 1_000_000_000, profit: 120_000_000 },
-            },
-          },
+          markdown: [
+            "# Отчётность",
+            "",
+            "**Период:** 2025",
+            "",
+            "| Показатель | Значение |",
+            "| --- | ---: |",
+            "| Выручка | 1 млрд ₽ |",
+            "",
+            "- Выручка выросла на 12%",
+            "",
+            "## Бухгалтерский баланс",
+            "",
+            "**Файл:** balance.xlsx",
+            "",
+            "## Отчёт о движении денежных средств",
+            "",
+            "**Файл:** cash-flow.xlsx",
+          ].join("\n"),
         },
       }),
     }),
@@ -204,9 +209,11 @@ test("profile reporting summary", async ({ page }) => {
   const mobile = page.locator(".profile-mobile");
   await mobile.getByRole("tab", { name: "Отчётность" }).click();
 
+  await mobile.getByRole("heading", { name: "Отчётность" }).waitFor();
   await mobile.getByText("Период: 2025").waitFor();
   await mobile.getByText("Выручка выросла на 12%").waitFor();
-  await mobile.getByText("Бухгалтерский баланс").waitFor();
-  await mobile.getByText("Отчёт о движении денежных средств").waitFor();
-  await mobile.getByText("не загружено").waitFor();
+  await mobile.getByRole("columnheader", { name: "Показатель" }).waitFor();
+  await mobile.getByRole("cell", { name: "1 млрд ₽" }).waitFor();
+  await mobile.getByRole("heading", { name: "Бухгалтерский баланс" }).waitFor();
+  await mobile.getByRole("heading", { name: "Отчёт о движении денежных средств" }).waitFor();
 });

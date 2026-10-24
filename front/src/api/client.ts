@@ -5,6 +5,7 @@ import { createBusinessesEndpoints, type BusinessesApi } from "./endpoints/busin
 import { createFeedEndpoints, type FeedApi } from "./endpoints/feed";
 import { createHealthEndpoints, type HealthApi } from "./endpoints/health";
 import { createOnboardingEndpoints, type OnboardingApi } from "./endpoints/onboarding";
+import { createOutlookEndpoints, type OutlookApi } from "./endpoints/outlook";
 import { createProfileEndpoints, type ProfileApi } from "./endpoints/profile";
 import { createSearchEndpoints, type SearchApi } from "./endpoints/search";
 import { createSourcesEndpoints, type SourcesApi } from "./endpoints/sources";
@@ -65,6 +66,7 @@ export interface ApiClient {
   auth: AuthApi;
   businesses: BusinessesApi;
   onboarding: OnboardingApi;
+  outlook: OutlookApi;
   profile: ProfileApi;
   feed: FeedApi;
   tracked: TrackedApi;
@@ -387,6 +389,7 @@ export function createApiClient(config: ApiClientConfig = {}): ApiClient {
     auth: createAuthEndpoints(request),
     businesses: createBusinessesEndpoints(request),
     onboarding: createOnboardingEndpoints(request),
+    outlook: createOutlookEndpoints(request),
     profile: createProfileEndpoints(request),
     feed: createFeedEndpoints(request, stream),
     tracked: createTrackedEndpoints(request),

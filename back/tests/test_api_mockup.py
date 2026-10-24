@@ -332,6 +332,61 @@ async def test_mockup_api_flow(api_env) -> None:
     resumed = await client.post(f"/api/tracked/{tracked_id}/resume", headers=headers)
     assert resumed.json()["status"] == "active"
 
+    outlook = await client.get(
+        "/api/outlook", headers=headers, params={"event_id": str(ids["risk"])}
+    )
+    assert outlook.status_code == 200
+    assert outlook.json()["connected"] is False
+
+    connected = await client.post(
+        "/api/outlook/connect", headers=headers, json={"email": "owner@company.example"}
+    )
+    assert connected.status_code == 200
+    assert connected.json()["connected"] is True
+    contacts = await client.get("/api/outlook/contacts", headers=headers)
+    assert any(item["email"] == "cfo@company.example" for item in contacts.json()["items"])
+
+    created = await client.post(
+        "/api/outlook/messages",
+        headers=headers,
+        json={
+            "event_id": str(ids["risk"]),
+            "action_id": "action-1",
+            "to": [{"name": "Финансовый директор", "email": "cfo@company.example"}],
+            "subject": "Поручение по пошлине",
+            "body": "Проверьте контракты и сроки.",
+        },
+    )
+    assert created.status_code == 200
+    draft_id = created.json()["id"]
+    assert created.json()["status"] == "draft"
+
+    sent = await client.post(f"/api/outlook/messages/{draft_id}/send", headers=headers)
+    assert sent.json()["status"] == "sent"
+    advanced = await client.post(f"/api/outlook/messages/{draft_id}/advance", headers=headers)
+    assert advanced.json()["status"] == "delivered"
+    reminded = await client.post(f"/api/outlook/messages/{draft_id}/remind", headers=headers)
+    assert reminded.json()["reminder_count"] == 1
+
+    event_messages = await client.get(
+        "/api/outlook", headers=headers, params={"event_id": str(ids["risk"])}
+    )
+    assert event_messages.json()["messages"][0]["subject"] == "Поручение по пошлине"
+
+    disconnected = await client.post("/api/outlook/disconnect", headers=headers)
+    assert disconnected.json()["connected"] is False
+
+    reporting = await client.post(
+        "/api/onboarding/reporting",
+        headers=headers,
+        files={"income": ("income.txt", "Отчёт за 2025\nВыручка 1 000 000 000", "text/plain")},
+    )
+    assert reporting.status_code == 200
+    reporting_summary = reporting.json()["summary"]
+    assert "## Отчёт о финансовых результатах" in reporting_summary["markdown"]
+    assert "| Показатель | Значение |" in reporting_summary["markdown"]
+    assert "| Выручка | 1 млрд ₽ |" in reporting_summary["markdown"]
+
     profile = await client.get("/api/profile", headers=headers)
     assert profile.status_code == 200
     bundle = profile.json()
@@ -342,6 +397,7 @@ async def test_mockup_api_flow(api_env) -> None:
         "background",
         "none",
     }
+    assert "## Отчёт о финансовых результатах" in bundle["reporting"]["markdown"]
     assert bundle["notifications"]
     notifications = await client.patch(
         "/api/profile/notifications", headers=headers, json={"key_rate": False}

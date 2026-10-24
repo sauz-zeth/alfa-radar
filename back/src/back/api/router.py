@@ -6,6 +6,7 @@ from back.api.routes import (
     feed,
     ingest,
     onboarding,
+    outlook,
     profile,
     search,
     sources,
@@ -16,6 +17,7 @@ api_router = APIRouter()
 api_router.include_router(auth.router)
 api_router.include_router(businesses.router)
 api_router.include_router(onboarding.router)
+api_router.include_router(outlook.router)
 api_router.include_router(profile.router)
 api_router.include_router(feed.router)
 api_router.include_router(tracked.router)
