@@ -8,6 +8,7 @@ export const routes: Record<string, ComponentType> = {
   "/tracked": lazy(() => import("../tracked/TrackedScreen")),
   "/tracked/archive": lazy(() => import("../tracked/ArchiveScreen")),
   "/hidden": lazy(() => import("../hidden/HiddenScreen")),
+  "/search": lazy(() => import("../search/SearchScreen")),
   "/event/:id": lazy(() => import("../event/EventScreen")),
 };
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, useApi, useApiMutation, useApiQuery, useQueryClient } from "../api";
 import { useAuth } from "../auth/useAuth";
 import { useMediaQuery } from "../lib/useMediaQuery";
+import { useRouter } from "../router";
 import { FeedDesktop } from "./FeedDesktop";
 import { FeedEnd } from "./FeedEnd";
 import { FeedPost } from "./FeedPost";
@@ -14,6 +15,7 @@ const FEED_LIMIT = 30;
 export function FeedScreen() {
   const api = useApi();
   const queryClient = useQueryClient();
+  const { navigate } = useRouter();
   const { signOut } = useAuth();
   const isDesktop = useMediaQuery("(min-width: 1200px)");
   const [activeFilter, setActiveFilter] = useState("Все");
@@ -130,7 +132,11 @@ export function FeedScreen() {
             {renderedPosts.length === 0 ? (
               <p className="feed-empty">Нет новостей по этому фильтру</p>
             ) : (
-              <FeedEnd hiddenCount={hiddenCount} onRestart={scrollToTop} />
+              <FeedEnd
+                hiddenCount={hiddenCount}
+                onRestart={scrollToTop}
+                onOpenHidden={() => navigate("/hidden")}
+              />
             )}
           </div>
 
@@ -140,8 +146,8 @@ export function FeedScreen() {
             filters={filters}
             activeFilter={activeFilter}
             onFilterChange={changeFilter}
-            onOpenHidden={() => undefined}
-            onSearch={() => undefined}
+            onOpenHidden={() => navigate("/hidden")}
+            onSearch={() => navigate("/search")}
           />
         </>
       )}

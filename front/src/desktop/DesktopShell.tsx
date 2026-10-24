@@ -5,6 +5,7 @@ import "./desktop.css";
 
 const NAV = [
   { label: "Лента", to: "/" },
+  { label: "Поиск", to: "/search" },
   { label: "Отслеживаемое", to: "/tracked" },
   { label: "Источники", to: "/sources" },
   { label: "Профиль", to: "/profile" },
@@ -16,7 +17,7 @@ function isCurrent(path: string, to: string): boolean {
 }
 
 export function DesktopShell({ children }: { children: ReactNode }) {
-  const { path } = useRouter();
+  const { path, navigate } = useRouter();
   const api = useApi();
   const profile = useApiQuery({
     queryKey: ["profile"],
@@ -52,10 +53,16 @@ export function DesktopShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <div className="desktop-topbar__search">
+        <form
+          className="desktop-topbar__search"
+          onSubmit={(event) => {
+            event.preventDefault();
+            navigate("/search");
+          }}
+        >
           <input type="search" placeholder="Поиск по новостям" aria-label="Поиск по новостям" />
           <span>Ctrl K</span>
-        </div>
+        </form>
         <div className="desktop-topbar__user">
           <span className="desktop-topbar__avatar">{avatar}</span>
           <span>
@@ -67,7 +74,12 @@ export function DesktopShell({ children }: { children: ReactNode }) {
 
       <div className="desktop-body">
         <aside className="desktop-tools" aria-label="Инструменты">
-          <button type="button" className="desktop-tools__button" aria-label="Поиск">
+          <button
+            type="button"
+            className="desktop-tools__button"
+            aria-label="Поиск"
+            onClick={() => navigate("/search")}
+          >
             <svg viewBox="0 0 18 18" width="18" height="18" aria-hidden="true">
               <circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
               <path d="M12.5 12.5 16 16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />

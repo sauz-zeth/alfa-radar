@@ -34,11 +34,182 @@ function splitMoney(label: string): [string, string] {
   return space === -1 ? [label, ""] : [label.slice(0, space), label.slice(space + 1)];
 }
 
+type ReportingFormKey = "balance" | "income" | "cash_flow";
+
+type ReportingForm = {
+  label: string;
+  filename: string;
+  data: Record<string, unknown>;
+};
+
+type ParsedReporting = {
+  period: string | null;
+  keyPoints: string[];
+  forms: Partial<Record<ReportingFormKey, ReportingForm>>;
+};
+
+const FORM_LABELS: Record<ReportingFormKey, string> = {
+  balance: "Бухгалтерский баланс",
+  income: "Отчёт о финансовых результатах",
+  cash_flow: "Отчёт о движении денежных средств",
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function asString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function asNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function asArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function asStringList(value: unknown): string[] {
+  return asArray(value).filter((item): item is string => typeof item === "string");
+}
+
+function parseForm(value: unknown, fallbackLabel: string): ReportingForm | null {
+  if (!isRecord(value)) return null;
+  return {
+    label: asString(value.label) ?? fallbackLabel,
+    filename: asString(value.filename) ?? "",
+    data: isRecord(value.data) ? value.data : {},
+  };
+}
+
+function parseReporting(reporting: Record<string, unknown>): ParsedReporting {
+  const source = isRecord(reporting.forms) ? reporting.forms : {};
+  const forms: Partial<Record<ReportingFormKey, ReportingForm>> = {};
+  for (const key of ["balance", "income", "cash_flow"] as const) {
+    const form = parseForm(source[key], FORM_LABELS[key]);
+    if (form) forms[key] = form;
+  }
+  return {
+    period: asString(reporting.period),
+    keyPoints: asStringList(reporting.key_points),
+    forms,
+  };
+}
+
+function formFigures(data: Record<string, unknown>): { label: string; value: string }[] {
+  const figures: { label: string; value: string }[] = [];
+  const moneyFields: [string, string][] = [
+    ["revenue", "Выручка"],
+    ["profit", "Прибыль"],
+    ["debt", "Долг"],
+    ["interest_expense", "Процентные расходы"],
+  ];
+  for (const [key, label] of moneyFields) {
+    const value = asNumber(data[key]);
+    if (value !== null) figures.push({ label, value: formatMoney(value) });
+  }
+
+  if (isRecord(data.cash_flows)) {
+    const flows: [string, string][] = [
+      ["operating", "Операционный поток"],
+      ["investing", "Инвестиционный поток"],
+      ["financing", "Финансовый поток"],
+    ];
+    for (const [key, label] of flows) {
+      const value = asNumber(data.cash_flows[key]);
+      if (value !== null) figures.push({ label, value: formatMoney(value) });
+    }
+  }
+
+  const positions = asArray(data.currency_positions);
+  if (positions.length > 0) {
+    const strings = asStringList(positions);
+    figures.push({
+      label: "Валютные позиции",
+      value: strings.length === positions.length ? strings.join(", ") : String(positions.length),
+    });
+  }
+
+  const costStructure = asArray(data.cost_structure);
+  if (costStructure.length > 0) {
+    figures.push({ label: "Структура затрат", value: String(costStructure.length) });
+  }
+
+  return figures;
+}
+
+function ReportingSummary({ reporting }: { reporting: Record<string, unknown> }) {
+  const report = parseReporting(reporting);
+  const hasContent =
+    report.period !== null ||
+    report.keyPoints.length > 0 ||
+    Object.keys(report.forms).length > 0;
+
+  if (!hasContent) {
+    return (
+      <div className="profile-reporting">
+        <p className="profile-reporting__empty">Отчётность не загружена</p>
+        <p className="profile-reporting__hint">
+          Формы можно загрузить на шаге онбординга «Отчётность».
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="profile-reporting">
+      {report.period ? <p className="profile-reporting__period">Период: {report.period}</p> : null}
+
+      {report.keyPoints.length > 0 ? (
+        <ul className="profile-reporting__points">
+          {report.keyPoints.map((point, index) => (
+            <li key={`${index}-${point}`}>{point}</li>
+          ))}
+        </ul>
+      ) : null}
+
+      <div className="profile-reporting__cards">
+        {(["balance", "income", "cash_flow"] as const).map((key) => {
+          const form = report.forms[key];
+          if (!form) {
+            return (
+              <article key={key} className="profile-reporting__card profile-reporting__card--empty">
+                <p className="profile-reporting__form-title">{FORM_LABELS[key]}</p>
+                <p className="profile-reporting__missing">не загружено</p>
+              </article>
+            );
+          }
+          const figures = formFigures(form.data);
+          return (
+            <article key={key} className="profile-reporting__card">
+              <p className="profile-reporting__form-title">{form.label}</p>
+              {form.filename ? (
+                <p className="profile-reporting__filename">{form.filename}</p>
+              ) : null}
+              {figures.length > 0 ? (
+                <dl className="profile-reporting__figures">
+                  {figures.map((figure) => (
+                    <div key={figure.label} className="profile-reporting__figure">
+                      <dt>{figure.label}</dt>
+                      <dd>{figure.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function Profile() {
   const api = useApi();
   const { signOut } = useAuth();
   const { navigate } = useRouter();
-  const [tab, setTab] = useState<"categories" | "counterparties">("categories");
+  const [tab, setTab] = useState<"categories" | "counterparties" | "reporting">("categories");
   const [cpDirection, setCpDirection] = useState<"supplier" | "buyer">("supplier");
 
   const profile = useApiQuery({
@@ -155,6 +326,15 @@ export default function Profile() {
         >
           Контрагенты
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "reporting"}
+          className={tab === "reporting" ? "profile-tab is-active" : "profile-tab"}
+          onClick={() => setTab("reporting")}
+        >
+          Отчётность
+        </button>
       </div>
 
       {tab === "categories" ? (
@@ -175,7 +355,7 @@ export default function Profile() {
             </div>
           ))}
         </section>
-      ) : (
+      ) : tab === "counterparties" ? (
         <section className="profile-list">
           {directions.map((direction) => {
             const group = counterparties.filter((item) => item.direction === direction);
@@ -202,6 +382,10 @@ export default function Profile() {
           {counterparties.length === 0 ? (
             <p className="profile-hint">По этому бизнесу пока нет платёжных данных.</p>
           ) : null}
+        </section>
+      ) : (
+        <section className="profile-list">
+          <ReportingSummary reporting={data.reporting} />
         </section>
       )}
       </div>
@@ -389,6 +573,11 @@ export default function Profile() {
             </div>
           </aside>
         </div>
+
+        <section className="profile-reporting profile-reporting--desktop">
+          <h2 className="profile-section-title">Отчётность</h2>
+          <ReportingSummary reporting={data.reporting} />
+        </section>
       </div>
     </div>
   );

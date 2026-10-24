@@ -1,10 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { ApiError, useApi, useApiMutation, useApiQuery } from "../../api";
-import { groupCategories } from "../dictionary";
-import { formatWeight } from "../format";
 import { OnboardingLayout } from "../OnboardingLayout";
 import { useOnboarding } from "../useOnboarding";
 import type { SimpleStepProps } from "./types";
+
+const levels = [
+  { key: "direct", label: "Прямое", weight: 1 },
+  { key: "indirect", label: "Косвенное", weight: 0.6 },
+  { key: "none", label: "Не влияет", weight: 0 },
+] as const;
+
+type LevelKey = (typeof levels)[number]["key"];
+
+function levelOf(weight: number): LevelKey {
+  if (weight >= 0.8) return "direct";
+  if (weight >= 0.3) return "indirect";
+  return "none";
+}
 
 export function CategoriesStep({ onDone }: SimpleStepProps) {
   const api = useApi();
@@ -53,7 +65,6 @@ export function CategoriesStep({ onDone }: SimpleStepProps) {
     ...item,
     weight: weights[item.category_id] ?? item.weight,
   }));
-  const groups = groupCategories(items);
   const loading = categories.isPending || suggest.isPending;
 
   if (!state) return null;
@@ -62,7 +73,7 @@ export function CategoriesStep({ onDone }: SimpleStepProps) {
     <OnboardingLayout
       state={state}
       title="Категории влияния"
-      description="Мы рассчитали, какие темы сильнее всего влияют на бизнес. Вес можно поправить — лента будет поднимать более важные новости."
+      description="Мы рассчитали, какие темы влияют на бизнес. Укажите характер влияния — лента будет поднимать более важные новости."
       footer={
         <>
           {save.error ? (
@@ -84,38 +95,49 @@ export function CategoriesStep({ onDone }: SimpleStepProps) {
         <p className="onboarding-note">Не удалось подобрать категории для этого бизнеса.</p>
       ) : null}
 
-      {groups.map((group) => (
-        <section key={group.key} className="onboarding-section">
-          <h2 className="onboarding-section__title">{group.label}</h2>
+      {items.length > 0 ? (
+        <section className="onboarding-section">
           <div className="category-list">
-            {group.items.map((category) => (
-              <div key={category.category_id} className="category-row">
-                <div className="category-row__head">
+            {items.map((category) => {
+              const current = levelOf(category.weight);
+              return (
+                <div key={category.category_id} className="category-row">
                   <div>
                     <p className="category-row__name">{category.name}</p>
                     <p className="category-row__rationale">{category.rationale || category.description}</p>
                   </div>
-                  <span className="category-row__weight">{formatWeight(category.weight)}</span>
+                  <div
+                    className="category-segment"
+                    role="group"
+                    aria-label={`Влияние категории ${category.name}`}
+                  >
+                    {levels.map((level) => (
+                      <button
+                        key={level.key}
+                        type="button"
+                        aria-pressed={current === level.key}
+                        className={
+                          current === level.key
+                            ? "category-segment__button is-active"
+                            : "category-segment__button"
+                        }
+                        onClick={() =>
+                          setWeights((values) => ({
+                            ...values,
+                            [category.category_id]: level.weight,
+                          }))
+                        }
+                      >
+                        {level.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={Math.round(category.weight * 100)}
-                  onChange={(event) =>
-                    setWeights((current) => ({
-                      ...current,
-                      [category.category_id]: Number(event.target.value) / 100,
-                    }))
-                  }
-                  aria-label={`Вес категории ${category.name}`}
-                />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
-      ))}
+      ) : null}
     </OnboardingLayout>
   );
 }

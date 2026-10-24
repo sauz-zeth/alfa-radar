@@ -17,9 +17,9 @@ export function BusinessStep({ state, onDone }: StepProps) {
   const [selected, setSelected] = useState<string | null>(state.profile?.company_uid ?? null);
 
   const businesses = useApiQuery({
-    queryKey: ["businesses", search],
+    queryKey: ["businesses", "options", search],
     queryFn: (signal) =>
-      api.businesses.list({ search: search.trim() || undefined, limit: 50 }, { signal }),
+      api.businesses.options({ search: search.trim() || undefined, limit: 15 }, { signal }),
   });
 
   const choose = useApiMutation<OnboardingState, string>({
@@ -33,7 +33,7 @@ export function BusinessStep({ state, onDone }: StepProps) {
     <OnboardingLayout
       state={state}
       title="Выберите бизнес"
-      description="Войдите от лица компании из обезличенных данных Альфа-Банка. От этого зависят новости, контрагенты и оценка влияния."
+      description="15 готовых компаний или поиск по UID, городу, ОКВЭД. От выбора зависят новости, контрагенты и оценка влияния."
       footer={
         <>
           {choose.error ? (
@@ -61,9 +61,9 @@ export function BusinessStep({ state, onDone }: StepProps) {
       </label>
 
       <div className="business-list" role="radiogroup" aria-label="Бизнесы">
-        {businesses.isPending ? <p className="onboarding-note">Загружаем бизнесы…</p> : null}
-        {businesses.isError ? <p className="form-error">Не удалось загрузить список бизнесов</p> : null}
-        {!businesses.isPending && items.length === 0 ? (
+        {businesses.isPending ? <p className="onboarding-note">Загружаем компании…</p> : null}
+        {businesses.isError ? <p className="form-error">Не удалось загрузить список компаний</p> : null}
+        {!businesses.isPending && !businesses.isError && items.length === 0 ? (
           <p className="onboarding-note">Ничего не нашлось. Попробуйте другой запрос.</p>
         ) : null}
         {items.map((item) => {

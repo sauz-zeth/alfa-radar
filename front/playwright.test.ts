@@ -139,3 +139,74 @@ test("sources page", async ({ page }) => {
   await page.setViewportSize({ width: 393, height: 1400 });
   await page.screenshot({ path: join(shotBase, "sources-page.png"), fullPage: true });
 });
+
+test("profile reporting summary", async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 1200 });
+  await page.addInitScript((u) => {
+    localStorage.setItem("token", "test-token");
+    localStorage.setItem("auth.user", JSON.stringify(u));
+  }, user);
+
+  await page.route("**/api/auth/me", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        access_token: "test-token",
+        token_type: "bearer",
+        user,
+        onboarding: { completed: true, next_step: "done" },
+      }),
+    }),
+  );
+
+  await page.route("**/api/onboarding/state", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ completed: true, next_step: "done", steps: [], profile }),
+    }),
+  );
+
+  await page.route("**/api/profile", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        profile,
+        stats: { revenue_label: "1 млрд ₽", products: [], tags: [] },
+        category_groups: [],
+        categories,
+        counterparties: [],
+        counterparties_by_direction: {},
+        notifications: [],
+        reporting: {
+          period: "2025",
+          key_points: ["Выручка выросла на 12%"],
+          forms: {
+            balance: {
+              label: "Бухгалтерский баланс",
+              filename: "balance.xlsx",
+              data: { debt: 250_000_000 },
+            },
+            income: {
+              label: "Отчёт о финансовых результатах",
+              filename: "income.xlsx",
+              data: { revenue: 1_000_000_000, profit: 120_000_000 },
+            },
+          },
+        },
+      }),
+    }),
+  );
+
+  await page.goto("/profile", { waitUntil: "networkidle" });
+  const mobile = page.locator(".profile-mobile");
+  await mobile.getByRole("tab", { name: "Отчётность" }).click();
+
+  await mobile.getByText("Период: 2025").waitFor();
+  await mobile.getByText("Выручка выросла на 12%").waitFor();
+  await mobile.getByText("Бухгалтерский баланс").waitFor();
+  await mobile.getByText("Отчёт о движении денежных средств").waitFor();
+  await mobile.getByText("не загружено").waitFor();
+});
