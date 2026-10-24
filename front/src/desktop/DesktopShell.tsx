@@ -24,6 +24,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
     queryFn: (signal) => api.profile.get({ signal }),
   });
   const name = profile.data?.profile.entrepreneur_name ?? "";
+  const role = profile.data?.profile.role_label ?? "";
   const company = profile.data?.profile.business_name ?? "";
   const avatar = name
     .split(/\s+/)
@@ -67,7 +68,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
           <span className="desktop-topbar__avatar">{avatar}</span>
           <span>
             {name ? <strong>{name}</strong> : null}
-            {company ? <small>{company}</small> : null}
+            {role || company ? <small>{role || company}</small> : null}
           </span>
         </div>
       </header>

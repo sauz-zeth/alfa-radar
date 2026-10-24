@@ -9,12 +9,12 @@ import {
 } from "../api";
 import { useAuth } from "../auth/useAuth";
 import { Link, useRouter } from "../router";
-import { MarkdownView } from "../components/MarkdownView";
-import { reportingMarkdown } from "../lib/reportingMarkdown";
 import { pluralRu } from "../lib/plural";
 import { formatMoney, formatShare } from "../onboarding/format";
+import profilePencilIcon from "../assets/icons/profile-edit.svg";
 import "./profile.css";
 import "../profile/mobile.css";
+import "../profile/desktop.css";
 
 function initials(name: string): string {
   const words = name
@@ -79,6 +79,16 @@ function toneFor(groupKey: string, index: number): CategoryTone {
   return sequence[index % sequence.length] ?? "light";
 }
 
+function desktopToneFor(groupKey: string, index: number): CategoryTone {
+  if (groupKey === "direct") return index === 0 ? "dark" : "light";
+  if (groupKey === "indirect") {
+    if (index === 1) return "dark";
+    if (index === 3) return "accent";
+    return "light";
+  }
+  return "light";
+}
+
 function splitMoney(label: string): [string, string] {
   const space = label.indexOf(" ");
   return space === -1 ? [label, ""] : [label.slice(0, space), label.slice(space + 1)];
@@ -117,27 +127,6 @@ function reportingForms(reporting: Record<string, unknown>): ReportForm[] {
 function shareLabel(item: Counterparty, direction: "supplier" | "buyer"): string {
   if (!item.share) return "Доля не указана";
   return `${formatShare(item.share)} ${direction === "supplier" ? "закупок" : "выручки"}`;
-}
-
-function ReportingSummary({ reporting }: { reporting: Record<string, unknown> }) {
-  const markdown = reportingMarkdown(reporting);
-
-  if (!markdown) {
-    return (
-      <div className="profile-reporting">
-        <p className="profile-reporting__empty">Отчётность не загружена</p>
-        <p className="profile-reporting__hint">
-          Формы можно загрузить на шаге онбординга «Отчётность».
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="profile-reporting">
-      <MarkdownView markdown={markdown} />
-    </div>
-  );
 }
 
 export default function Profile() {
@@ -241,6 +230,9 @@ export default function Profile() {
   const industry = stats.industry ?? company?.main_okved_name;
   const city = stats.city ?? company?.city;
   const companyAge = [company?.org_type, stats.age].filter(Boolean).join(" · ");
+  const desktopCompanyMeta = [company?.org_type, stats.age ? `${stats.age} лет на рынке` : null]
+    .filter(Boolean)
+    .join(" · ");
   const businessDisplayName = displayBusinessName(info.business_name);
   const rankedCounterparties = counterparties
     .filter((item) => item.direction === cpDirection)
@@ -251,6 +243,15 @@ export default function Profile() {
     : rankedCounterparties.slice(0, previewCount);
   const hiddenCounterparties = rankedCounterparties.slice(previewCount);
   const hiddenShare = hiddenCounterparties.reduce((total, item) => total + item.share, 0);
+  const desktopPreviewCount = 10;
+  const desktopVisibleCounterparties = cpExpanded
+    ? rankedCounterparties
+    : rankedCounterparties.slice(0, desktopPreviewCount);
+  const desktopHiddenCounterparties = rankedCounterparties.slice(desktopPreviewCount);
+  const desktopHiddenShare = desktopHiddenCounterparties.reduce(
+    (total, item) => total + item.share,
+    0,
+  );
   const counterpartyNoun: [string, string, string] =
     cpDirection === "supplier"
       ? ["поставщик", "поставщика", "поставщиков"]
@@ -603,256 +604,392 @@ export default function Profile() {
           </div>
         )}
 
-        {editing ? (
-          <div
-            className="profile-sheet-backdrop"
-            onMouseDown={(event) => {
-              if (event.target === event.currentTarget) closeEdit();
-            }}
-          >
-            <form
-              className="profile-sheet"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="profile-sheet-title"
-              onSubmit={submitRename}
-            >
-              <div className="profile-sheet__head">
-                <h2 id="profile-sheet-title" className="profile-sheet__title">
-                  Название контрагента
-                </h2>
-                <p className="profile-sheet__subtitle">
-                  {editing.note ? `${editing.note} · ${shareLabel(editing, cpDirection)}` : shareLabel(editing, cpDirection)}
-                </p>
-              </div>
-              <label className="profile-sheet__field">
-                <span className="profile-sheet__label">Новое название</span>
-                <input
-                  className="profile-sheet__input"
-                  value={draft}
-                  maxLength={128}
-                  autoFocus
-                  disabled={rename.isPending}
-                  aria-invalid={sheetError ? true : undefined}
-                  onChange={(event) => {
-                    setDraft(event.target.value);
-                    setFormError(null);
-                    if (rename.isError) rename.reset();
-                  }}
-                />
-              </label>
-              {sheetError ? (
-                <p className="profile-sheet__error" role="alert">
-                  {sheetError}
-                </p>
-              ) : null}
-              <div className="profile-sheet__actions">
-                <button
-                  type="button"
-                  className="profile-sheet__button profile-sheet__button--cancel"
-                  onClick={closeEdit}
-                  disabled={rename.isPending}
-                >
-                  Отмена
-                </button>
-                <button
-                  type="submit"
-                  className="profile-sheet__button profile-sheet__button--save"
-                  disabled={rename.isPending}
-                >
-                  {rename.isPending ? "Сохраняем…" : "Сохранить"}
-                </button>
-              </div>
-            </form>
-          </div>
-        ) : null}
       </div>
+
+      {editing ? (
+        <div
+          className="profile-sheet-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeEdit();
+          }}
+        >
+          <form
+            className="profile-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="profile-sheet-title"
+            onSubmit={submitRename}
+          >
+            <div className="profile-sheet__head">
+              <h2 id="profile-sheet-title" className="profile-sheet__title">
+                Название контрагента
+              </h2>
+              <p className="profile-sheet__subtitle">
+                {editing.note
+                  ? `${editing.note} · ${shareLabel(editing, cpDirection)}`
+                  : shareLabel(editing, cpDirection)}
+              </p>
+            </div>
+            <label className="profile-sheet__field">
+              <span className="profile-sheet__label">Новое название</span>
+              <input
+                className="profile-sheet__input"
+                value={draft}
+                maxLength={128}
+                autoFocus
+                disabled={rename.isPending}
+                aria-invalid={sheetError ? true : undefined}
+                onChange={(event) => {
+                  setDraft(event.target.value);
+                  setFormError(null);
+                  if (rename.isError) rename.reset();
+                }}
+              />
+            </label>
+            {sheetError ? (
+              <p className="profile-sheet__error" role="alert">
+                {sheetError}
+              </p>
+            ) : null}
+            <div className="profile-sheet__actions">
+              <button
+                type="button"
+                className="profile-sheet__button profile-sheet__button--cancel"
+                onClick={closeEdit}
+                disabled={rename.isPending}
+              >
+                Отмена
+              </button>
+              <button
+                type="submit"
+                className="profile-sheet__button profile-sheet__button--save"
+                disabled={rename.isPending}
+              >
+                {rename.isPending ? "Сохраняем…" : "Сохранить"}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
 
       <div className="profile-desktop">
         <h1 className="profile-desktop__title">Профиль</h1>
 
-        <div className="profile-desktop__grid">
-          <aside className="profile-company">
-            <div className="profile-user">
-              <span className="profile-user__avatar" aria-hidden="true">
-                {initials(info.entrepreneur_name)}
-              </span>
-              <span className="profile-user__name">{info.entrepreneur_name}</span>
-            </div>
-
-            <div className="profile-company__card">
-              <div className="profile-company__body">
-                {companyAge ? (
-                  <div className="profile-company__meta">
-                    <span>{companyAge}</span>
-                    {stats.age ? <span className="profile-company__meta-muted">лет на рынке</span> : null}
-                  </div>
-                ) : null}
-                <p className="profile-company__name">{info.business_name}</p>
-                {industry ? <p className="profile-company__line">{industry}</p> : null}
-                {city ? <p className="profile-company__line">{city}</p> : null}
-              </div>
-              <span className="profile-company__monogram" aria-hidden="true">
-                {initials(info.business_name)}
-              </span>
-            </div>
-
-            <div className="profile-money-row">
-              <div className="profile-money profile-money--revenue">
-                <span className="profile-money__label">Выручка</span>
-                <span className="profile-money__amount">
-                  <span className="profile-money__value">{revenueValue}</span>
-                  {revenueUnit ? <span className="profile-money__unit">{revenueUnit}</span> : null}
+        <div className="profile-desktop__layout">
+          <aside className="profile-desk-aside">
+            <div className="profile-desk-passport">
+              <div className="profile-desk-company">
+                <div className="profile-desk-company__body">
+                  {desktopCompanyMeta ? (
+                    <p className="profile-desk-company__meta">{desktopCompanyMeta}</p>
+                  ) : null}
+                  <p className="profile-desk-company__name">{businessDisplayName}</p>
+                  {industry ? <p className="profile-desk-company__line">{industry}</p> : null}
+                  {city ? <p className="profile-desk-company__line">{city}</p> : null}
+                </div>
+                <span className="profile-desk-company__monogram" aria-hidden="true">
+                  {initials(businessDisplayName)
+                    .split("")
+                    .map((letter, index) => (
+                      <span
+                        key={`${letter}-${index}`}
+                        className={index === 1 ? "is-accent" : undefined}
+                      >
+                        {letter}
+                      </span>
+                    ))}
                 </span>
               </div>
-              <div className="profile-money profile-money--scale">
-                <div>
-                  <span className="profile-money__label profile-money__label--muted">Сотрудники</span>
-                  <p className="profile-money__big">{stats.employees ?? "—"}</p>
-                </div>
-                <div className="profile-money__row">
-                  <span className="profile-money__label profile-money__label--muted">ВЭД</span>
-                  <span className="profile-money__ved">{stats.foreign_trade_country ?? "—"}</span>
-                </div>
-              </div>
-            </div>
 
-            <div className="profile-switch">
-              <div className="profile-switch__item">
-                <span>Категории</span>
-                <span className="profile-switch__count">{data.categories.length}</span>
-              </div>
-              <span className="profile-switch__item profile-switch__item--muted">Контрагенты</span>
-            </div>
-
-            <div className="profile-impact">
-              {(["direct", "indirect", "background"] as const).map((key) => {
-                const count = data.category_groups.find((group) => group.key === key)?.items.length ?? 0;
-                return (
-                  <div
-                    key={key}
-                    className={
-                      key === "direct"
-                        ? "profile-impact__tile profile-impact__tile--dark"
-                        : "profile-impact__tile"
-                    }
-                  >
-                    <span className="profile-impact__count">{count}</span>
-                    <span className="profile-impact__label">{GROUP_SHORT[key]}</span>
+              <div className="profile-desk-metrics">
+                <div className="profile-desk-revenue">
+                  <span className="profile-desk-revenue__label">Выручка</span>
+                  <p className="profile-desk-revenue__amount">
+                    <span className="profile-desk-revenue__value">{revenueValue}</span>
+                    {revenueUnit ? (
+                      <span className="profile-desk-revenue__unit">{revenueUnit}</span>
+                    ) : null}
+                  </p>
+                </div>
+                <div className="profile-desk-scale">
+                  <div>
+                    <span className="profile-desk-scale__label">Сотрудники</span>
+                    <p className="profile-desk-scale__value">{stats.employees ?? "—"}</p>
                   </div>
-                );
-              })}
+                  <div className="profile-desk-scale__ved">
+                    <span className="profile-desk-scale__label profile-desk-scale__label--small">
+                      ВЭД
+                    </span>
+                    <span className="profile-desk-scale__country">
+                      {stats.foreign_trade_country ?? "—"}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <p className="profile-note">Данные компании влияют на оценку новостей</p>
-
-            <button
-              type="button"
-              className="profile-logout profile-logout--desktop"
-              onClick={handleSignOut}
-            >
-              Выйти
-            </button>
-          </aside>
-
-          <section className="profile-categories">
-            <h2 className="profile-section-title">Категории · {data.categories.length}</h2>
-            <p className="profile-section-sub">Лента отбирает новости по силе влияния</p>
-
-            <div className="profile-cat-grid">
-              {influenceGroups.map((group) => (
-                <section
-                  key={group.key}
-                  className={
-                    group.key === "direct"
-                      ? "profile-cat-card profile-cat-card--dark"
-                      : "profile-cat-card"
-                  }
+            <section className="profile-desk-summary" aria-labelledby="profile-desk-summary-title">
+              <div className="profile-desk-summary__head">
+                <h2 id="profile-desk-summary-title" className="profile-desk-summary__title">
+                  Саммари отчётов
+                </h2>
+                <span
+                  className="profile-desk-summary__badge"
+                  aria-label={`Загружено файлов: ${reportForms.length}`}
                 >
-                  <h3 className="profile-cat-card__title">
-                    {GROUP_LABELS[group.key] ?? group.name} · {group.items.length}
-                  </h3>
-                  {group.items.map((category) => (
-                    <div
-                      key={category.category_id}
-                      className={
-                        category.is_manual
-                          ? "profile-cat__item profile-cat__item--manual"
-                          : "profile-cat__item"
-                      }
-                    >
-                      <p className="profile-cat__name">{category.short_name || category.name}</p>
-                      {category.rationale ? (
-                        <p className="profile-cat__note">{category.rationale}</p>
-                      ) : null}
-                    </div>
-                  ))}
-                </section>
-              ))}
-            </div>
-
-            {noneGroup && noneGroup.items.length > 0 ? (
-              <details className="profile-none">
-                <summary className="profile-none__summary">
-                  {GROUP_LABELS.none} · {noneGroup.items.length}
-                </summary>
-                <ul className="profile-none__list">
-                  {noneGroup.items.map((category) => (
-                    <li key={category.category_id}>{category.short_name || category.name}</li>
+                  {reportForms.length}
+                </span>
+              </div>
+              {reportForms.length > 0 ? (
+                <ul className="profile-desk-summary__list">
+                  {reportForms.map((form) => (
+                    <li key={form.key}>
+                      <Link
+                        to={`/profile/reports/${form.key}`}
+                        className="profile-desk-summary__link"
+                        aria-label={`${form.label}: ${form.filename}`}
+                      >
+                        <span className="profile-desk-summary__file">{form.filename}</span>
+                        <span className="profile-desk-summary__arrow" aria-hidden="true">
+                          ↗
+                        </span>
+                      </Link>
+                    </li>
                   ))}
                 </ul>
-              </details>
-            ) : null}
-          </section>
-
-          <aside className="profile-counterparties">
-            <div className="profile-cp-panel">
-              <h2 className="profile-section-title">Контрагенты</h2>
-              <p className="profile-section-sub">По данным платежей</p>
-
-              <div className="profile-cp-tabs" role="tablist" aria-label="Контрагенты">
-                {directions.map((item) => {
-                  const count = counterparties.filter((entry) => entry.direction === item).length;
-                  return (
-                    <button
-                      key={item}
-                      type="button"
-                      role="tab"
-                      aria-selected={cpDirection === item}
-                      className={cpDirection === item ? "profile-cp-tab is-active" : "profile-cp-tab"}
-                      onClick={() => setCpDirection(item)}
-                    >
-                      {item === "supplier" ? "Поставщики" : "Покупатели"} · {count}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {rankedCounterparties.length > 0 ? (
-                <div className="profile-cp-list">
-                  {rankedCounterparties.map((item) => (
-                    <div key={item.id} className="profile-cp-row">
-                      <div className="profile-cp-row__main">
-                        <p className="profile-cp-row__name">{item.display_name}</p>
-                        {item.note ? <p className="profile-cp-row__note">{item.note}</p> : null}
-                      </div>
-                      <span className="profile-cp-row__share">
-                        {formatShare(item.share)} {cpDirection === "supplier" ? "закупок" : "продаж"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
               ) : (
-                <p className="profile-cp-empty">По этому бизнесу пока нет платёжных данных.</p>
+                <p className="profile-desk-summary__empty">Отчёты не загружены</p>
               )}
+            </section>
+
+            <div className="profile-desk-actions">
+              <button type="button" className="profile-desk-logout" onClick={handleSignOut}>
+                Выйти
+              </button>
             </div>
           </aside>
-        </div>
 
-        <section className="profile-reporting profile-reporting--desktop">
-          <h2 className="profile-section-title">Отчётность</h2>
-          <ReportingSummary reporting={data.reporting} />
-        </section>
+          <section
+            className={`profile-desktop__main${
+              tab === "counterparties" ? " profile-desktop__main--cp" : ""
+            }`}
+          >
+            <div className="profile-desk-tabsbar">
+              <div className="profile-desk-tabs" role="tablist" aria-label="Профиль бизнеса">
+                <button
+                  id="profile-desk-tab-categories"
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === "categories"}
+                  aria-controls="profile-desk-panel-categories"
+                  className={
+                    tab === "categories"
+                      ? "profile-desk-tab is-active"
+                      : "profile-desk-tab"
+                  }
+                  onClick={() => setTab("categories")}
+                >
+                  <span>Категории</span>
+                  <span className="profile-desk-tabs__count">{data.categories.length}</span>
+                </button>
+                <button
+                  id="profile-desk-tab-counterparties"
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === "counterparties"}
+                  aria-controls="profile-desk-panel-counterparties"
+                  className={
+                    tab === "counterparties"
+                      ? "profile-desk-tab is-active"
+                      : "profile-desk-tab"
+                  }
+                  onClick={() => setTab("counterparties")}
+                >
+                  Контрагенты
+                </button>
+              </div>
+            </div>
+
+            {tab === "categories" ? (
+              <div
+                id="profile-desk-panel-categories"
+                role="tabpanel"
+                aria-labelledby="profile-desk-tab-categories"
+                className="profile-desk-cats"
+              >
+                {hasCategories ? (
+                  <>
+                    <div className="profile-desk-cats__grid">
+                      {(["direct", "indirect", "background"] as const).map((key) => {
+                        const group = data.category_groups.find((item) => item.key === key);
+                        const items = group?.items ?? [];
+                        return (
+                          <section
+                            key={key}
+                            className="profile-desk-cat-group"
+                            aria-labelledby={`profile-desk-cat-${key}`}
+                          >
+                            <header className="profile-desk-cat-group__head">
+                              <h3
+                                id={`profile-desk-cat-${key}`}
+                                className="profile-desk-cat-group__title"
+                              >
+                                {GROUP_LABELS[key] ?? group?.name ?? key}
+                              </h3>
+                              <span className="profile-desk-cat-group__count">{items.length}</span>
+                            </header>
+                            <div className="profile-desk-cat-group__items">
+                              {items.map((category, index) => {
+                                const tone = desktopToneFor(key, index);
+                                return (
+                                  <article
+                                    key={category.category_id}
+                                    className={`profile-desk-cat-card profile-desk-cat-card--${tone}`}
+                                  >
+                                    <p className="profile-desk-cat-card__name">{category.name}</p>
+                                    {category.rationale ? (
+                                      <p className="profile-desk-cat-card__note">
+                                        {category.rationale}
+                                      </p>
+                                    ) : null}
+                                  </article>
+                                );
+                              })}
+                            </div>
+                          </section>
+                        );
+                      })}
+                    </div>
+
+                    {noneGroup && noneGroup.items.length > 0 ? (
+                      <div className="profile-desk-none">
+                        <button
+                          type="button"
+                          className="profile-desk-none__toggle"
+                          aria-expanded={noneOpen}
+                          aria-controls="profile-desk-none-list"
+                          onClick={() => setNoneOpen((value) => !value)}
+                        >
+                          {GROUP_LABELS.none} · {noneGroup.items.length}
+                        </button>
+                        <ul
+                          id="profile-desk-none-list"
+                          className="profile-desk-none__list"
+                          hidden={!noneOpen}
+                        >
+                          {noneGroup.items.map((category) => (
+                            <li key={category.category_id}>
+                              {category.short_name || category.name}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="profile-desk-empty">По этому бизнесу пока нет категорий.</p>
+                )}
+              </div>
+            ) : (
+              <div
+                id="profile-desk-panel-counterparties"
+                role="tabpanel"
+                aria-labelledby="profile-desk-tab-counterparties"
+                className="profile-desk-cp"
+              >
+                <div className="profile-desk-cp__head">
+                  <div
+                    className="profile-desk-cp__directions"
+                    role="tablist"
+                    aria-label="Направление контрагентов"
+                  >
+                    {directions.map((direction) => {
+                      const count = counterparties.filter(
+                        (item) => item.direction === direction,
+                      ).length;
+                      return (
+                        <button
+                          key={direction}
+                          type="button"
+                          role="tab"
+                          aria-selected={cpDirection === direction}
+                          className={
+                            cpDirection === direction
+                              ? "profile-desk-cp__direction is-active"
+                              : "profile-desk-cp__direction"
+                          }
+                          onClick={() => {
+                            setCpDirection(direction);
+                            setCpExpanded(false);
+                          }}
+                        >
+                          {direction === "supplier" ? "Поставщики" : "Покупатели"}
+                          <span className="profile-desk-cp__dir-count">{count}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <span className="profile-desk-cp__col">Деятельность</span>
+                  <span className="profile-desk-cp__col profile-desk-cp__col--share">
+                    Доля
+                  </span>
+                </div>
+
+                {rankedCounterparties.length > 0 ? (
+                  <ul className="profile-desk-cp__list">
+                    {desktopVisibleCounterparties.map((item) => (
+                      <li key={item.id}>
+                        <button
+                          type="button"
+                          className="profile-desk-cp__row"
+                          onClick={() => openEdit(item)}
+                          aria-label={`Изменить название контрагента ${item.display_name}`}
+                        >
+                          <span className="profile-desk-cp__company">
+                            <span className="profile-desk-cp__name">{item.display_name}</span>
+                            <img
+                              className="profile-desk-cp__edit"
+                              src={profilePencilIcon}
+                              alt=""
+                              aria-hidden="true"
+                            />
+                          </span>
+                          <span className="profile-desk-cp__activity">{item.note || "—"}</span>
+                          <span className="profile-desk-cp__share">
+                            {shareLabel(item, cpDirection)}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="profile-desk-empty">По этому бизнесу пока нет платёжных данных.</p>
+                )}
+
+                {desktopHiddenCounterparties.length > 0 ? (
+                  <div className="profile-desk-cp__more-row">
+                    <button
+                      type="button"
+                      className="profile-desk-cp__more"
+                      aria-expanded={cpExpanded}
+                      onClick={() => setCpExpanded((value) => !value)}
+                    >
+                      {cpExpanded
+                        ? "Свернуть"
+                        : `Ещё ${pluralRu(
+                            desktopHiddenCounterparties.length,
+                            counterpartyNoun,
+                          )}${
+                            desktopHiddenShare > 0 ? ` · ${formatShare(desktopHiddenShare)}` : ""
+                          }`}
+                      <span aria-hidden="true">{cpExpanded ? "↑" : "↓"}</span>
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );

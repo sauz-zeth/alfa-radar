@@ -1,7 +1,10 @@
+import { useCallback, useEffect, type ReactNode } from "react";
 import { ApiError, useApi, useApiQuery, type ProfileStats } from "../api";
 import { MarkdownView } from "../components/MarkdownView";
+import { useMediaQuery } from "../lib/useMediaQuery";
 import { formatMoney } from "../onboarding/format";
 import { reportingMarkdown } from "../lib/reportingMarkdown";
+import ProfilePage from "../pages/Profile";
 import { Link, useRouter } from "../router";
 import "./report-summary.css";
 
@@ -17,8 +20,14 @@ const FORM_LABELS: Record<FormKey, string> = {
 
 const KEY_TITLES: Record<FormKey, string> = {
   balance: "Данные из отчёта",
-  income: "Доли выручки",
-  cash_flow: "Доли закупок",
+  income: "Доли закупок",
+  cash_flow: "Доли выручки",
+};
+
+const PROFILE_NOTES: Record<FormKey, string> = {
+  balance: "Эти данные помогают определить, какие события важны для компании.",
+  income: "Закупки связывают профиль с сырьём, энергией и логистикой.",
+  cash_flow: "Состав покупателей помогает учитывать спрос в связанных отраслях.",
 };
 
 type KeyRow = { name: string; value: string; share?: number };
@@ -58,6 +67,24 @@ function stripLeadingHeading(markdown: string, label: string): string {
   const fileLine = result.match(/^\*\*Файл:\*\*[^\n]*\r?\n*/);
   if (fileLine) result = result.slice(fileLine[0].length).trim();
   return result;
+}
+
+function stripFigureSections(markdown: string): string {
+  const lines = markdown.split("\n");
+  const kept: string[] = [];
+  let skipping = false;
+  for (const line of lines) {
+    const heading = line.match(/^#{1,6}\s+(.+?)\s*$/);
+    if (heading) {
+      const title = heading[1]?.replace(/\s+#+\s*$/, "").trim() ?? "";
+      skipping = /^(Ключевые цифры|Денежные потоки|Структура затрат|Валютные позиции)$/i.test(
+        title,
+      );
+      if (skipping) continue;
+    }
+    if (!skipping) kept.push(line);
+  }
+  return kept.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 function findExportShare(value: unknown, depth = 0): string | null {
@@ -200,32 +227,112 @@ function StateScreen({ message, retry }: { message: string; retry?: () => void }
   );
 }
 
+function DesktopReportModal({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [onClose]);
+
+  return (
+    <>
+      <div className="report-summary-background" aria-hidden="true" inert>
+        <ProfilePage />
+      </div>
+      <div
+        className="report-summary-backdrop"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) onClose();
+        }}
+      >
+        <section
+          className="report-summary-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="report-summary-modal-title"
+        >
+          <header className="report-summary-modal__head">
+            <div className="report-summary-modal__head-text">
+              <p className="report-summary-modal__eyebrow">Саммари отчёта</p>
+              <h2 id="report-summary-modal-title" className="report-summary-modal__filename">
+                {title}
+              </h2>
+            </div>
+            <button
+              type="button"
+              className="report-summary-modal__close"
+              aria-label="Закрыть саммари"
+              onClick={onClose}
+            >
+              ×
+            </button>
+          </header>
+          {children}
+        </section>
+      </div>
+    </>
+  );
+}
+
 export default function ReportSummaryScreen() {
   const api = useApi();
-  const { path } = useRouter();
+  const { path, navigate } = useRouter();
+  const isDesktop = useMediaQuery("(min-width: 1200px)");
   const formParam = path.split("/")[3] ?? "";
   const form = isFormKey(formParam) ? formParam : null;
+  const close = useCallback(() => navigate("/profile", { replace: true }), [navigate]);
 
   const profile = useApiQuery({
     queryKey: ["profile"],
     queryFn: (signal) => api.profile.get({ signal }),
   });
 
+  const desktopTitle = form ? FORM_LABELS[form] : "Саммари отчёта";
+
   if (profile.isPending) {
+    if (isDesktop) {
+      return (
+        <DesktopReportModal title={desktopTitle} onClose={close}>
+          <div className="report-summary-modal__body report-summary-modal__body--state">
+            <p>Загружаем саммари…</p>
+          </div>
+        </DesktopReportModal>
+      );
+    }
     return <StateScreen message="Загружаем саммари…" />;
   }
 
   if (profile.isError || !profile.data) {
-    return (
-      <StateScreen
-        message={
-          profile.error instanceof ApiError
-            ? profile.error.detail
-            : "Не удалось загрузить профиль"
-        }
-        retry={() => profile.refetch()}
-      />
-    );
+    const message =
+      profile.error instanceof ApiError ? profile.error.detail : "Не удалось загрузить профиль";
+    if (isDesktop) {
+      return (
+        <DesktopReportModal title={desktopTitle} onClose={close}>
+          <div className="report-summary-modal__body report-summary-modal__body--state">
+            <p>{message}</p>
+            <button type="button" className="report-summary__retry" onClick={() => profile.refetch()}>
+              Повторить
+            </button>
+          </div>
+        </DesktopReportModal>
+      );
+    }
+    return <StateScreen message={message} retry={() => profile.refetch()} />;
   }
 
   const data = profile.data;
@@ -234,6 +341,18 @@ export default function ReportSummaryScreen() {
   const entry = form && forms ? asRecord(forms[form]) : null;
 
   if (!form || !entry) {
+    if (isDesktop) {
+      return (
+        <DesktopReportModal title={desktopTitle} onClose={close}>
+          <div className="report-summary-modal__body report-summary-modal__body--state">
+            <p>Этот отчёт ещё не загружен.</p>
+            <Link to="/profile" className="report-summary__retry">
+              Вернуться в профиль
+            </Link>
+          </div>
+        </DesktopReportModal>
+      );
+    }
     return <StateScreen message="Этот отчёт ещё не загружен." />;
   }
 
@@ -243,12 +362,88 @@ export default function ReportSummaryScreen() {
   const rawMarkdown =
     asString(entry.markdown) ?? reportingMarkdown({ forms: { [form]: entry } });
   const markdown = stripLeadingHeading(rawMarkdown, label);
+  const desktopMarkdown = stripFigureSections(markdown) || markdown;
   const entryData = asRecord(entry.data);
   const keyBlock =
     form === "balance" ? balanceBlock(entryData, stats, reporting) : sharesBlock(form, entryData);
   const profileFacts = [stats.industry, stats.city, stats.revenue_label, data.profile.role_label]
     .filter((item): item is string => Boolean(item))
     .join(" · ");
+
+  if (isDesktop) {
+    const balanceRows = form === "balance" ? (keyBlock?.rows ?? []) : [];
+    const balanceValue = (name: string) =>
+      balanceRows.find((row) => row.name === name)?.value ?? "—";
+    const figures =
+      form === "balance" ? (
+        <div className="report-summary-modal__figures">
+          <div className="report-summary-modal__figure">
+            <span className="report-summary-modal__figure-label">Выручка</span>
+            <p className="report-summary-modal__revenue">{balanceValue("Выручка")}</p>
+          </div>
+          <div className="report-summary-modal__divider" />
+          <div className="report-summary-modal__scale">
+            <div className="report-summary-modal__scale-item">
+              <p className="report-summary-modal__scale-value">{balanceValue("Сотрудники")}</p>
+              <span className="report-summary-modal__figure-label">Сотрудники</span>
+            </div>
+            <div className="report-summary-modal__scale-item">
+              <p className="report-summary-modal__scale-value">{balanceValue("Доля экспорта")}</p>
+              <span className="report-summary-modal__figure-label">Доля экспорта</span>
+            </div>
+          </div>
+        </div>
+      ) : keyBlock && keyBlock.rows.length > 0 ? (
+        <div className="report-summary-modal__figures">
+          <h3 className="report-summary-modal__group-title">{keyBlock.title}</h3>
+          <div className="report-summary-modal__shares">
+            {keyBlock.rows.slice(0, 3).map((row, index) => (
+              <div key={`${row.name}-${index}`} className="report-summary-modal__share">
+                <div className="report-summary-modal__share-head">
+                  <span className="report-summary-modal__share-name">{row.name}</span>
+                  <span className="report-summary-modal__share-value">{row.value}</span>
+                </div>
+                {keyBlock.bars && row.share !== undefined ? (
+                  <div className="report-summary-modal__share-bar" aria-hidden="true">
+                    <span
+                      style={{ width: `${Math.min(100, Math.max(0, row.share * 100))}%` }}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null;
+
+    return (
+      <DesktopReportModal title={filename} onClose={close}>
+        <div
+          className={
+            figures
+              ? "report-summary-modal__body"
+              : "report-summary-modal__body report-summary-modal__body--solo"
+          }
+        >
+          <div className="report-summary-modal__summary">
+            {desktopMarkdown ? (
+              <MarkdownView
+                markdown={desktopMarkdown}
+                className="report-summary__markdown report-summary-modal__markdown"
+              />
+            ) : (
+              <p className="report-summary__empty">В отчёте пока нет данных для выжимки.</p>
+            )}
+            <div className="report-summary-modal__profile">
+              <p className="report-summary-modal__profile-label">Учтено в профиле</p>
+              <p className="report-summary-modal__profile-text">{PROFILE_NOTES[form]}</p>
+            </div>
+          </div>
+          {figures}
+        </div>
+      </DesktopReportModal>
+    );
+  }
 
   return (
     <div className="report-summary">

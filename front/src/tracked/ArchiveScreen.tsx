@@ -9,6 +9,7 @@ type ArchiveRow = {
   title: string;
   events: number;
   days: number;
+  lastEvent: string;
 };
 
 function daysWithoutNews(iso: string): number {
@@ -18,6 +19,10 @@ function daysWithoutNews(iso: string): number {
 
 function daysLabel(days: number): string {
   return `${days} ${pluralRu(days, ["день", "дня", "дней"])} без новостей`;
+}
+
+function eventDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
 }
 
 export default function ArchiveScreen() {
@@ -47,6 +52,7 @@ export default function ArchiveScreen() {
           title: item.title ?? item.event.title,
           events: Math.max(1, item.events.length),
           days: daysWithoutNews(latest),
+          lastEvent: eventDate(latest),
         };
       }),
     [tracked.data],
@@ -61,8 +67,14 @@ export default function ArchiveScreen() {
         <header className="archive-head">
           <Link to="/tracked" className="archive-back" aria-label="Назад к отслеживаемому">
             <span aria-hidden="true">←</span>
+            <span className="archive-back__text">Отслеживаемое</span>
           </Link>
-          <h1 className="archive-head__title">Архив</h1>
+          <div className="archive-head__titlewrap">
+            <h1 className="archive-head__title">Архив</h1>
+            <span className="archive-head__count" aria-label={`Архивных тем: ${rows.length}`}>
+              {rows.length}
+            </span>
+          </div>
           <span className="archive-head__spacer" aria-hidden="true" />
         </header>
 
@@ -102,7 +114,12 @@ export default function ArchiveScreen() {
                     <div className="archive-card__main">
                       <div className="archive-card__text">
                         <h2 className="archive-card__title">{row.title}</h2>
-                        <p className="archive-card__meta">{daysLabel(row.days)}</p>
+                        <p className="archive-card__meta">
+                          <span className="archive-card__last">
+                            Последнее событие {row.lastEvent} ·{" "}
+                          </span>
+                          {daysLabel(row.days)}
+                        </p>
                       </div>
                       {rowError ? (
                         <p className="archive-card__error" id={errorId} role="alert">
