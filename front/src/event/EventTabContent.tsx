@@ -1,7 +1,7 @@
 import type { FeedItemDetail } from "../api";
 import { ActionsTab } from "./ActionsTab";
 import { AnalysisTab } from "./AnalysisTab";
-import { ChatTab } from "./ChatTab";
+import { ChatTab, type ChatStreamMessage } from "./ChatTab";
 import type { EventModel } from "./eventModel";
 import type { EventTab } from "./EventTabs";
 import { InfluenceTab } from "./InfluenceTab";
@@ -13,7 +13,7 @@ type EventTabContentProps = {
   event: EventModel;
   onAsk: (text: string) => void;
   onAskFocus: () => void;
-  askPending: boolean;
+  streams: ChatStreamMessage[];
 };
 
 export function EventTabContent({
@@ -22,7 +22,7 @@ export function EventTabContent({
   event,
   onAsk,
   onAskFocus,
-  askPending,
+  streams,
 }: EventTabContentProps) {
   if (tab === "Влияние") {
     return <InfluenceTab detail={detail} />;
@@ -40,5 +40,5 @@ export function EventTabContent({
     return <AnalysisTab detail={detail} />;
   }
 
-  return <ChatTab detail={detail} askPending={askPending} onAsk={onAsk} />;
+  return <ChatTab detail={detail} streams={streams} onAsk={onAsk} />;
 }

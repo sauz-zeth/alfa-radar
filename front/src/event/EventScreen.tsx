@@ -1,14 +1,8 @@
 import { useMemo, useRef, useState } from "react";
-import {
-  ApiError,
-  useApi,
-  useApiMutation,
-  useApiQuery,
-  useQueryClient,
-  type FeedItemDetail,
-} from "../api";
+import { ApiError, useApi, useApiMutation, useApiQuery, useQueryClient } from "../api";
 import { useRouter } from "../router";
 import { AskBar } from "./AskBar";
+import type { ChatStreamMessage } from "./ChatTab";
 import { CompanyImpact } from "./CompanyImpact";
 import { EventChangeCard } from "./EventChangeCard";
 import { EventHeader } from "./EventHeader";
@@ -25,6 +19,15 @@ import { TextListCard } from "./TextListCard";
 import { toEvent } from "./eventModel";
 import "./event.css";
 
+const FEEDBACK_QUESTIONS: Record<string, string> = {
+  "Ошибка в факте":
+    "В разборе возможна ошибка в факте. Проверь факты по этому событию и укажи, что может быть неточно.",
+  "Оценка неточна":
+    "Оценка влияния кажется неточной. Перепроверь её и объясни, из чего она складывается.",
+  "Не касается нас":
+    "Событие может не касаться нашей компании. Перепроверь релевантность и объясни вывод.",
+};
+
 export default function EventScreen() {
   const api = useApi();
   const queryClient = useQueryClient();
@@ -32,6 +35,7 @@ export default function EventScreen() {
   const eventId = path.split("/")[2] ?? "";
   const [tab, setTab] = useState<EventTab>("Разбор");
   const [question, setQuestion] = useState("");
+  const [streams, setStreams] = useState<ChatStreamMessage[]>([]);
   const [trackedOverride, setTrackedOverride] = useState<boolean | null>(null);
   const askRef = useRef<HTMLInputElement | null>(null);
 
@@ -85,6 +89,8 @@ export default function EventScreen() {
 
   const submitFeedback = async (reason: string) => {
     await feedbackMutation.mutateAsync(reason);
+    const prompt = FEEDBACK_QUESTIONS[reason];
+    if (prompt) submitQuestion(prompt);
   };
 
   const goBack = () => {
@@ -94,24 +100,39 @@ export default function EventScreen() {
 
   const focusAsk = () => askRef.current?.focus();
 
-  const askMutation = useApiMutation<FeedItemDetail, string>({
-    mutationFn: (text) => api.feed.askQuestion(eventId, { question: text }),
-    onSuccess: (data) => {
-      queryClient.setQueryData(["event", eventId], data);
-      setQuestion("");
+  const runStream = async (id: string, text: string) => {
+    try {
+      for await (const delta of api.feed.askQuestionStream(eventId, { question: text })) {
+        setStreams((current) =>
+          current.map((item) =>
+            item.id === id
+              ? { ...item, answer: item.answer + delta, status: "streaming" }
+              : item,
+          ),
+        );
+      }
+      await queryClient.invalidateQueries({ queryKey: ["event", eventId] });
       void queryClient.invalidateQueries({ queryKey: ["tracked"] });
-    },
-  });
+      setStreams((current) => current.filter((item) => item.id !== id));
+    } catch {
+      setStreams((current) =>
+        current.map((item) => (item.id === id ? { ...item, status: "error" } : item)),
+      );
+    }
+  };
 
   const submitQuestion = (text: string) => {
     const value = text.trim();
-    if (value) askMutation.mutate(value);
+    if (!value) return;
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    setStreams((current) => [
+      ...current,
+      { id, question: value, answer: "", status: "pending" },
+    ]);
+    setQuestion("");
+    setTab("Чат");
+    void runStream(id, value);
   };
-  const askError = askMutation.error
-    ? askMutation.error instanceof ApiError
-      ? askMutation.error.detail
-      : "Не удалось получить ответ"
-    : null;
 
   return (
     <div className="event-page">
@@ -188,7 +209,7 @@ export default function EventScreen() {
                 event={event}
                 onAsk={submitQuestion}
                 onAskFocus={focusAsk}
-                askPending={askMutation.isPending}
+                streams={streams}
               />
             )}
 
@@ -214,8 +235,6 @@ export default function EventScreen() {
         inputRef={askRef}
         value={question}
         onChange={setQuestion}
-        pending={askMutation.isPending}
-        error={askError}
         onSubmit={() => submitQuestion(question)}
       />
     </div>

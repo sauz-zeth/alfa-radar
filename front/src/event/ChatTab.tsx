@@ -1,14 +1,21 @@
 import type { FeedItemDetail } from "../api";
 
+export type ChatStreamMessage = {
+  id: string;
+  question: string;
+  answer: string;
+  status: "pending" | "streaming" | "error";
+};
+
 type ChatTabProps = {
   detail: FeedItemDetail;
-  askPending: boolean;
+  streams: ChatStreamMessage[];
   onAsk: (text: string) => void;
 };
 
 const QUICK_QUESTION = "Покажи эффект по кварталам";
 
-export function ChatTab({ detail, askPending, onAsk }: ChatTabProps) {
+export function ChatTab({ detail, streams, onAsk }: ChatTabProps) {
   const featured =
     detail.open_questions.find((question) => !question.answer)?.text ??
     detail.open_questions[0]?.text ??
@@ -28,7 +35,6 @@ export function ChatTab({ detail, askPending, onAsk }: ChatTabProps) {
         <button
           type="button"
           className="event-chat__question"
-          disabled={askPending}
           onClick={() => onAsk(featured)}
         >
           <span className="event-chat__question-text">{featured}</span>
@@ -42,7 +48,6 @@ export function ChatTab({ detail, askPending, onAsk }: ChatTabProps) {
         <button
           type="button"
           className="event-chat__card"
-          disabled={askPending}
           onClick={() => onAsk(QUICK_QUESTION)}
         >
           <svg viewBox="0 0 30 30" width="30" height="30" aria-hidden="true">
@@ -80,7 +85,7 @@ export function ChatTab({ detail, askPending, onAsk }: ChatTabProps) {
         ) : null}
       </div>
 
-      {detail.chat.length > 0 ? (
+      {detail.chat.length > 0 || streams.length > 0 ? (
         <div className="event-chat__thread">
           {detail.chat.map((message, index) => (
             <article key={`${message.question}-${index}`} className="event-chat__message">
@@ -93,6 +98,34 @@ export function ChatTab({ detail, askPending, onAsk }: ChatTabProps) {
               ) : (
                 <p className="event-chat__message-pending">
                   Ответ не получен. Попробуйте спросить ещё раз.
+                </p>
+              )}
+            </article>
+          ))}
+          {streams.map((message) => (
+            <article key={message.id} className="event-chat__message">
+              <p className="event-chat__message-question">{message.question}</p>
+              {message.status === "error" ? (
+                <p className="event-chat__message-pending">
+                  Не удалось получить ответ. Попробуйте ещё раз.
+                </p>
+              ) : message.answer ? (
+                <>
+                  <p
+                    className={
+                      message.status === "streaming"
+                        ? "event-chat__message-answer is-streaming"
+                        : "event-chat__message-answer"
+                    }
+                  >
+                    {message.answer}
+                  </p>
+                  <p className="event-chat__message-origin">Анализ AI</p>
+                </>
+              ) : (
+                <p className="event-chat__message-skeleton" aria-label="Готовим ответ">
+                  <span />
+                  <span />
                 </p>
               )}
             </article>

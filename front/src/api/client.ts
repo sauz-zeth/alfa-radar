@@ -47,8 +47,21 @@ export interface RequestOptions<T> {
 
 export type Requester = <T>(options: RequestOptions<T>) => Promise<T>;
 
+export interface StreamRequestOptions {
+  path: string;
+  method?: HttpMethod;
+  body?: unknown;
+  bodySchema?: z.ZodType;
+  signal?: AbortSignal;
+}
+
+export type Streamer = (
+  options: StreamRequestOptions,
+) => AsyncGenerator<string, void, unknown>;
+
 export interface ApiClient {
   request: Requester;
+  stream: Streamer;
   auth: AuthApi;
   businesses: BusinessesApi;
   onboarding: OnboardingApi;
@@ -270,15 +283,112 @@ function createRequester(config: ApiClientConfig): Requester {
   };
 }
 
+function createStreamer(config: ApiClientConfig): Streamer {
+  const baseUrl = normalizeBaseUrl(config.baseUrl ?? "");
+  const getToken = config.getToken;
+  const fetchImpl =
+    config.fetch ??
+    ((input: RequestInfo | URL, init?: RequestInit) =>
+      globalThis.fetch(input, init));
+
+  return async function* stream(options: StreamRequestOptions) {
+    let bodyValue = options.body;
+    if (options.bodySchema) {
+      const parsed = options.bodySchema.safeParse(options.body);
+      if (!parsed.success) {
+        throw new ApiError({
+          status: 0,
+          detail: `Невалидные данные запроса: ${formatIssues(parsed.error)}`,
+          url: options.path,
+          payload: options.body,
+        });
+      }
+      bodyValue = parsed.data;
+    }
+
+    const url = `${baseUrl}${options.path}`;
+    const headers = new Headers({ Accept: "text/event-stream" });
+    if (bodyValue !== undefined) {
+      headers.set("Content-Type", JSON_CONTENT_TYPE);
+    }
+    if (getToken) {
+      const token = await getToken();
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+    }
+
+    const response = await fetchImpl(url, {
+      method: options.method ?? "POST",
+      headers,
+      body: bodyValue === undefined ? undefined : JSON.stringify(bodyValue),
+      signal: options.signal,
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      const payload = parsePayload(text);
+      throw new ApiError({
+        status: response.status,
+        detail: extractDetail(payload, response.statusText),
+        url,
+        payload,
+      });
+    }
+    if (!response.body) {
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
+        let boundary = buffer.indexOf("\n\n");
+        while (boundary >= 0) {
+          const raw = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          for (const line of raw.split("\n")) {
+            if (!line.startsWith("data:")) continue;
+            const payload = line.slice(5).trim();
+            if (!payload || payload === "[DONE]") return;
+            let data: unknown;
+            try {
+              data = JSON.parse(payload);
+            } catch {
+              continue;
+            }
+            if (data && typeof data === "object" && "delta" in data) {
+              const delta = (data as { delta: unknown }).delta;
+              if (typeof delta === "string" && delta) yield delta;
+            }
+            if (data && typeof data === "object" && (data as { done?: boolean }).done) {
+              return;
+            }
+          }
+          boundary = buffer.indexOf("\n\n");
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  };
+}
+
 export function createApiClient(config: ApiClientConfig = {}): ApiClient {
   const request = createRequester(config);
+  const stream = createStreamer(config);
   return {
     request,
+    stream,
     auth: createAuthEndpoints(request),
     businesses: createBusinessesEndpoints(request),
     onboarding: createOnboardingEndpoints(request),
     profile: createProfileEndpoints(request),
-    feed: createFeedEndpoints(request),
+    feed: createFeedEndpoints(request, stream),
     tracked: createTrackedEndpoints(request),
     sources: createSourcesEndpoints(request),
     search: createSearchEndpoints(request),

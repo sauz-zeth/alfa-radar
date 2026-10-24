@@ -1,8 +1,12 @@
+import asyncio
+import json
+from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,7 +21,7 @@ from back.db.models import (
     NewsEvent,
     TrackedItem,
 )
-from back.db.session import get_session
+from back.db.session import SessionLocal, get_session
 from back.schemas.common import Page
 from back.schemas.feed import (
     FeedbackOut,
@@ -34,8 +38,8 @@ from back.schemas.feed import (
     TrackToggleResponse,
 )
 from back.schemas.insights import ChatMessageOut, QuestionOut, ScenarioSetOut
-from back.services.agent import analyze_event
-from back.services.chat import answer_question
+from back.services.agent import analyze_event, chat_context
+from back.services.chat import answer_question, stream_answer
 from back.services.feed import MatchResult, event_to_feed_item, match_event, recency_key
 from back.services.insights import (
     build_insight,
@@ -112,9 +116,7 @@ async def _decorate_detail(
 
     feedback_row = (
         await session.execute(
-            select(Feedback).where(
-                Feedback.profile_id == profile.id, Feedback.event_id == event.id
-            )
+            select(Feedback).where(Feedback.profile_id == profile.id, Feedback.event_id == event.id)
         )
     ).scalar_one_or_none()
     if feedback_row is not None:
@@ -554,6 +556,72 @@ async def ask_question(
     )
     assert isinstance(item, FeedItemDetail)
     return await _decorate_detail(session, profile, item, event)
+
+
+def _sse(payload: dict[str, Any]) -> str:
+    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+
+async def _persist_stream_answer(question_id: UUID, text: str) -> None:
+    async with SessionLocal() as session:
+        question = await session.get(EventQuestion, question_id)
+        if question is None or question.status == "answered":
+            return
+        question.answer = text
+        question.status = "answered"
+        question.source = "Анализ AI"
+        question.date = datetime.now(UTC).strftime("%d.%m")
+        await session.commit()
+
+
+@router.post("/{event_id}/questions/stream")
+async def ask_question_stream(
+    event_id: UUID,
+    payload: FeedQuestionRequest,
+    profile: BusinessProfile = Depends(get_current_profile),
+    session: AsyncSession = Depends(get_session),
+) -> StreamingResponse:
+    event = await session.get(NewsEvent, event_id)
+    if event is None or not event.is_active:
+        raise HTTPException(status_code=404, detail="Новость не найдена")
+    text = payload.question.strip()
+    question = EventQuestion(
+        profile_id=profile.id,
+        event_id=event.id,
+        text=text,
+        status="waiting",
+    )
+    session.add(question)
+
+    categories = await load_categories(session, profile)
+    counterparties = await load_counterparties(session, profile)
+    report = await _tracked_report(session, profile, event.id)
+    context = chat_context(profile, event, categories, counterparties, report)
+    await session.commit()
+    question_id = question.id
+
+    async def events() -> AsyncIterator[str]:
+        parts: list[str] = []
+        try:
+            async for chunk in stream_answer(context, text):
+                parts.append(chunk)
+                yield _sse({"delta": chunk})
+        except asyncio.CancelledError:
+            if parts:
+                await _persist_stream_answer(question_id, "".join(parts).strip())
+            raise
+        except Exception:
+            pass
+        answer = "".join(parts).strip()
+        if answer:
+            await _persist_stream_answer(question_id, answer)
+        yield _sse({"done": True})
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.post("/{event_id}/track", response_model=TrackedItemOut)

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { EndpointOptions, Requester } from "../client";
+import type { EndpointOptions, Requester, Streamer } from "../client";
 import {
   feedbackRequestSchema,
   feedItemDetailSchema,
@@ -22,7 +22,7 @@ import {
   type ScenariosQuery,
 } from "../schemas";
 
-export function createFeedEndpoints(request: Requester) {
+export function createFeedEndpoints(request: Requester, stream: Streamer) {
   return {
     list: (query: FeedListQuery = {}, options: EndpointOptions = {}) =>
       request({
@@ -115,6 +115,19 @@ export function createFeedEndpoints(request: Requester) {
         body,
         bodySchema: feedQuestionRequestSchema,
         responseSchema: feedItemDetailSchema,
+        signal: options.signal,
+      }),
+
+    askQuestionStream: (
+      eventId: string,
+      body: FeedQuestionRequest,
+      options: EndpointOptions = {},
+    ) =>
+      stream({
+        method: "POST",
+        path: `/api/feed/${encodeURIComponent(eventId)}/questions/stream`,
+        body,
+        bodySchema: feedQuestionRequestSchema,
         signal: options.signal,
       }),
 

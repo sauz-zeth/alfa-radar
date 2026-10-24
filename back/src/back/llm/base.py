@@ -1,6 +1,7 @@
 import json
 import re
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 from typing import Any
 
 
@@ -42,6 +43,23 @@ class BaseLLM(ABC):
         temperature: float | None = None,
     ) -> str:
         raise NotImplementedError
+
+    async def stream_text(
+        self,
+        *,
+        system: str,
+        user: str,
+        model: str | None = None,
+        temperature: float | None = None,
+    ) -> AsyncIterator[str]:
+        text = await self.complete_text(
+            system=system,
+            user=user,
+            model=model,
+            temperature=temperature,
+        )
+        if text:
+            yield text
 
     async def complete_json(
         self,

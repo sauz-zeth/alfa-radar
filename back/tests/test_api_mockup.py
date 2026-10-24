@@ -306,6 +306,18 @@ async def test_mockup_api_flow(api_env) -> None:
     assert question.status_code == 200
     assert any(item["text"] == "Касается ли пошлина ЕАЭС?" for item in question.json()["questions"])
 
+    streamed = await client.post(
+        f"/api/feed/{ids['risk']}/questions/stream",
+        headers=headers,
+        json={"question": "Что изменилось по пошлине?"},
+    )
+    assert streamed.status_code == 200
+    assert streamed.headers["content-type"].startswith("text/event-stream")
+    assert '"done": true' in streamed.text
+    with_question = await client.get(f"/api/feed/{ids['risk']}", headers=headers)
+    asked = with_question.json()["open_questions"]
+    assert any(item["text"] == "Что изменилось по пошлине?" for item in asked)
+
     archived = await client.post(f"/api/tracked/{tracked_id}/archive", headers=headers)
     assert archived.json()["status"] == "archived"
     archived_list = await client.get("/api/tracked?status=archived", headers=headers)

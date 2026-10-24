@@ -1,4 +1,5 @@
 import logging
+from collections.abc import AsyncIterator
 from typing import Any
 
 from back.config import get_settings
@@ -34,3 +35,17 @@ async def answer_question(
     if cleaned.startswith("```"):
         cleaned = cleaned.strip("`").strip()
     return cleaned or None
+
+
+async def stream_answer(context: dict[str, Any], question: str) -> AsyncIterator[str]:
+    if not get_settings().llm_agent_enabled:
+        return
+    try:
+        async for chunk in get_llm().stream_text(
+            system=CHAT_SYSTEM,
+            user=chat_prompt(context, question),
+            temperature=0.2,
+        ):
+            yield chunk
+    except Exception:
+        logger.exception("Chat LLM stream failed, leaving the question waiting")

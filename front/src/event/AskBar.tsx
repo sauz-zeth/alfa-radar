@@ -5,11 +5,9 @@ type AskBarProps = {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
-  pending?: boolean;
-  error?: string | null;
 };
 
-export function AskBar({ inputRef, value, onChange, onSubmit, pending, error }: AskBarProps) {
+export function AskBar({ inputRef, value, onChange, onSubmit }: AskBarProps) {
   return (
     <form
       className="event-ask"
@@ -18,7 +16,6 @@ export function AskBar({ inputRef, value, onChange, onSubmit, pending, error }: 
         if (value.trim()) onSubmit();
       }}
     >
-      {error ? <p className="event-ask__error">{error}</p> : null}
       <input
         ref={inputRef}
         className="event-ask__input"
@@ -27,21 +24,17 @@ export function AskBar({ inputRef, value, onChange, onSubmit, pending, error }: 
         placeholder="Спросить про эту историю"
         aria-label="Спросить про эту историю"
       />
-      <button type="submit" className="event-ask__submit" disabled={pending || !value.trim()}>
-        {pending ? (
-          "…"
-        ) : (
-          <svg viewBox="0 0 13.7 13.7" width="14" height="14" aria-hidden="true">
-            <path
-              d="M6.85 12.85V0.85M12.85 6.85 6.85 0.85 0.85 6.85"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        )}
+      <button type="submit" className="event-ask__submit" disabled={!value.trim()}>
+        <svg viewBox="0 0 13.7 13.7" width="14" height="14" aria-hidden="true">
+          <path
+            d="M6.85 12.85V0.85M12.85 6.85 6.85 0.85 0.85 6.85"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </button>
     </form>
   );
