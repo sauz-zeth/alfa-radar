@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 import asyncpg
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
@@ -16,6 +17,7 @@ from back.db.models import (
     BusinessProfile,
     Category,
     Company,
+    EventAnalysis,
     NewsEvent,
     User,
 )
@@ -194,14 +196,14 @@ async def api_env():
     token = create_access_token(str(ids["user"]))
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client, ids, {"Authorization": f"Bearer {token}"}
+        yield client, ids, {"Authorization": f"Bearer {token}"}, session_factory
 
     app.dependency_overrides.clear()
     await engine.dispose()
 
 
 async def test_mockup_api_flow(api_env) -> None:
-    client, ids, headers = api_env
+    client, ids, headers, session_factory = api_env
 
     feed = await client.get("/api/feed", headers=headers)
     assert feed.status_code == 200
@@ -242,9 +244,14 @@ async def test_mockup_api_flow(api_env) -> None:
     assert payload["scenarios"]["scenarios"][1]["effect"] != 0
     assert payload["theses"]
     assert payload["alfa"] is None
-    assert payload["actions"] == []
-    assert payload["agent_log"] == []
+    assert payload["actions"]
+    assert payload["agent_log"]
     assert payload["impact_tiles"] == []
+    async with session_factory() as session:
+        stored = await session.scalar(
+            select(EventAnalysis).where(EventAnalysis.event_id == ids["risk"])
+        )
+        assert stored is not None and stored.report
     scenarios = await client.get(f"/api/feed/{ids['risk']}/scenarios?horizon=3m", headers=headers)
     assert scenarios.status_code == 200
     assert scenarios.json()["horizon"] == "3m"
@@ -346,7 +353,7 @@ async def test_mockup_api_flow(api_env) -> None:
 
 
 async def test_ingest_pipeline_api(api_env) -> None:
-    client, ids, headers = api_env
+    client, ids, headers, session_factory = api_env
     profile_id = str(ids["profile"])
     text = "Минфин повысил экспортную пошлину на металлопрокат до 7 процентов."
 

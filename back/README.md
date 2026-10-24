@@ -267,6 +267,25 @@ curl -s -X POST http://127.0.0.1:8000/api/ingest/posts \
 curl -s http://127.0.0.1:8000/api/ingest/posts/<post_id>
 ```
 
+### RSS/Atom
+
+`services/rss.py` читает RSS 2.0 и Atom через `httpx` (stdlib `ElementTree`, без новых
+зависимостей), чистит HTML, нормализует даты и отправляет каждый новый пост в тот же
+пайплайн. Дубли отсекаются по `url`.
+
+```bash
+# URL из RSS_FEEDS (.env, через запятую) или аргументами
+uv run python scripts/ingest_rss.py
+uv run python scripts/ingest_rss.py https://example.com/rss https://example.com/atom
+```
+
+### Ленивый разбор события
+
+`GET /api/feed/{id}` при первом открытии строит отчёт агента (LLM при
+`LLM_AGENT_ENABLED=true`, иначе детерминированный fallback) и сохраняет его в
+`event_analyses` по паре `profile_id + event_id`. Повторные открытия, сценарии и чат
+читают кэш; `POST /track` переиспользует тот же отчёт.
+
 ## API
 
 Все защищённые ручки — `Authorization: Bearer <token>`.

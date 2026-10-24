@@ -15,6 +15,7 @@ from back.config import get_settings
 from back.core.constants import Impact
 from back.db.models import (
     BusinessProfile,
+    EventAnalysis,
     EventLike,
     EventQuestion,
     Feedback,
@@ -128,10 +129,20 @@ async def _decorate_detail(
     return item
 
 
-async def _tracked_report(
+async def _event_report(
     session: AsyncSession, profile: BusinessProfile, event_id: UUID
 ) -> dict[str, Any] | None:
-    row = (
+    analysis = (
+        await session.execute(
+            select(EventAnalysis).where(
+                EventAnalysis.profile_id == profile.id,
+                EventAnalysis.event_id == event_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if analysis is not None:
+        return analysis.report
+    tracked = (
         await session.execute(
             select(TrackedItem).where(
                 TrackedItem.profile_id == profile.id,
@@ -139,7 +150,32 @@ async def _tracked_report(
             )
         )
     ).scalar_one_or_none()
-    return row.report if row is not None else None
+    return tracked.report if tracked is not None else None
+
+
+async def _ensure_event_analysis(
+    session: AsyncSession,
+    profile: BusinessProfile,
+    event: NewsEvent,
+    categories,
+    counterparties,
+    match: MatchResult,
+) -> dict[str, Any]:
+    report = await _event_report(session, profile, event.id)
+    if report is not None:
+        return report
+    report = await analyze_event(
+        profile=profile,
+        event=event,
+        business_categories=categories,
+        counterparties=counterparties,
+        match_importance=match.importance,
+        matched_counterparties=match.matched_counterparties,
+        use_llm=get_settings().llm_agent_enabled,
+    )
+    session.add(EventAnalysis(profile_id=profile.id, event_id=event.id, report=report))
+    await session.commit()
+    return report
 
 
 router = APIRouter(prefix="/feed", tags=["feed"])
@@ -470,7 +506,7 @@ async def get_scenarios(
     event = await session.get(NewsEvent, event_id)
     if event is None or not event.is_active:
         raise HTTPException(status_code=404, detail="Новость не найдена")
-    report = await _tracked_report(session, profile, event.id)
+    report = await _event_report(session, profile, event.id)
     return scenarios(event, profile, horizon, report)
 
 
@@ -488,7 +524,9 @@ async def get_event(
     tracked_ids = await load_tracked_ids(session, profile)
     match = match_event(event, categories, counterparties)
     counts, liked_ids = await _like_maps(session, profile, [event.id])
-    report = await _tracked_report(session, profile, event.id)
+    report = await _ensure_event_analysis(
+        session, profile, event, categories, counterparties, match
+    )
     item = event_to_feed_item(
         event,
         match,
@@ -527,7 +565,7 @@ async def ask_question(
     tracked_ids = await load_tracked_ids(session, profile)
     match = match_event(event, categories, counterparties)
     counts, liked_ids = await _like_maps(session, profile, [event.id])
-    report = await _tracked_report(session, profile, event.id)
+    report = await _event_report(session, profile, event.id)
 
     answer = await answer_question(
         profile,
@@ -595,7 +633,7 @@ async def ask_question_stream(
 
     categories = await load_categories(session, profile)
     counterparties = await load_counterparties(session, profile)
-    report = await _tracked_report(session, profile, event.id)
+    report = await _event_report(session, profile, event.id)
     context = chat_context(profile, event, categories, counterparties, report)
     await session.commit()
     question_id = question.id
@@ -647,14 +685,8 @@ async def track_event(
     match = match_event(event, categories, counterparties)
 
     if existing is None:
-        report = await analyze_event(
-            profile=profile,
-            event=event,
-            business_categories=categories,
-            counterparties=counterparties,
-            match_importance=match.importance,
-            matched_counterparties=match.matched_counterparties,
-            use_llm=get_settings().llm_agent_enabled,
+        report = await _ensure_event_analysis(
+            session, profile, event, categories, counterparties, match
         )
         existing = TrackedItem(
             profile_id=profile.id,

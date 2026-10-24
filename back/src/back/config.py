@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     # Optional shared secret for internal ingestion endpoints (X-Ingest-Token).
     ingest_token: str = ""
 
+    # Comma-separated RSS/Atom feeds polled by scripts/ingest_rss.py.
+    rss_feeds: str = ""
+
     data_dir: Path = Path("data")
     seed_company_limit: int = 0
     seed_with_payments: bool = True
@@ -61,6 +64,10 @@ class Settings(BaseSettings):
     @property
     def strong_model(self) -> str:
         return self.llm_strong_model or self.llm_model
+
+    @property
+    def rss_feed_list(self) -> list[str]:
+        return [item.strip() for item in self.rss_feeds.split(",") if item.strip()]
 
     @property
     def sync_database_url(self) -> str:

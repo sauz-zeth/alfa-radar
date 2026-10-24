@@ -351,6 +351,24 @@ class EventLike(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class EventAnalysis(Base):
+    __tablename__ = "event_analyses"
+    __table_args__ = (UniqueConstraint("profile_id", "event_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("business_profiles.id", ondelete="CASCADE"), index=True
+    )
+    event_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("news_events.id", ondelete="CASCADE"), index=True
+    )
+    report: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 class EventQuestion(Base):
     __tablename__ = "event_questions"
     __table_args__ = (Index("ix_event_questions_profile_event", "profile_id", "event_id"),)
