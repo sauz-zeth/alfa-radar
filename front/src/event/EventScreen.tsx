@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { ApiError, useApi, useApiMutation, useApiQuery, useQueryClient } from "../api";
+import { useMediaQuery } from "../lib/useMediaQuery";
 import { useRouter } from "../router";
 import { AskBar } from "./AskBar";
 import type { ChatStreamMessage } from "./ChatTab";
@@ -32,6 +33,7 @@ export default function EventScreen() {
   const api = useApi();
   const queryClient = useQueryClient();
   const { path, navigate } = useRouter();
+  const isDesktop = useMediaQuery("(min-width: 1200px)");
   const eventId = path.split("/")[2] ?? "";
   const [tab, setTab] = useState<EventTab>("Разбор");
   const [question, setQuestion] = useState("");
@@ -80,6 +82,16 @@ export default function EventScreen() {
 
   const event = useMemo(() => (detail.data ? toEvent(detail.data) : null), [detail.data]);
   const tracked = trackedOverride ?? detail.data?.is_tracked ?? false;
+  const comparison = detail.data?.comparison;
+  const compareGroups = [
+    {
+      label: "Сходятся",
+      tone: "",
+      lines: comparison?.agree.length ? comparison.agree : event ? [event.agree.text] : [],
+    },
+    { label: "Расходятся", tone: "differ", lines: comparison?.differ ?? [] },
+    { label: "Пишет один источник", tone: "single", lines: comparison?.single ?? [] },
+  ].filter((group) => group.lines.length > 0);
 
   const toggleTracked = () => {
     const next = !tracked;
@@ -168,39 +180,71 @@ export default function EventScreen() {
 
         {event && detail.data ? (
           <div className="event-body">
-            <EventTabs active={tab} onChange={setTab} />
+            <EventTabs
+              active={tab}
+              onChange={setTab}
+              onAllStories={() => navigate("/tracked")}
+            />
 
             {tab === "Разбор" ? (
               <>
-                <section className="event-section">
-                  <SectionHeader title="Что произошло" />
-                  <FactCard {...event.fact} />
-                  <TextListCard items={event.changes} />
-                </section>
+                <div className="event-razbor">
+                  <section className="event-section event-razbor__main">
+                    <SectionHeader title="Что произошло" />
+                    <FactCard
+                      {...event.fact}
+                      image={detail.data.sources[0]?.image_url ?? undefined}
+                    />
+                    <TextListCard items={event.changes} />
+                  </section>
 
-                <section className="event-section">
-                  <SectionHeader title="Сравнение источников" />
-                  <FactCard {...event.agree} />
-                  <TextListCard items={event.differ} />
-                </section>
+                  <section className="event-section event-razbor__aside">
+                    <SectionHeader title="Сравнение источников" />
+                    <div className="event-compare">
+                      <div className="event-compare__mobile">
+                        <FactCard {...event.agree} />
+                        <TextListCard items={event.differ} />
+                      </div>
+                      <div className="event-compare__desktop">
+                        {compareGroups.map((group) => (
+                          <div
+                            key={group.label}
+                            className={`event-compare__group ${group.tone ? `is-${group.tone}` : ""}`}
+                          >
+                            <p className="event-compare__label">{group.label}</p>
+                            {group.lines.map((line, index) => (
+                              <p key={index} className="event-compare__text">
+                                {line}
+                              </p>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </section>
+                </div>
 
-                <section className="event-section">
-                  <SectionHeader title="Для компании изменился расчёт" />
-                  <CompanyImpact
-                    metrics={event.metrics}
-                    note={event.companyNote}
-                    scoreBreakdown={detail.data.score_breakdown}
+                <div className="event-razbor__extra">
+                  <section className="event-section">
+                    <SectionHeader title="Для компании изменился расчёт" />
+                    <CompanyImpact
+                      metrics={event.metrics}
+                      note={event.companyNote}
+                      scoreBreakdown={detail.data.score_breakdown}
+                    />
+                  </section>
+
+                  <QuestionsSection
+                    questions={event.questions}
+                    answeredCount={event.answeredCount}
+                    waitingCount={event.waitingCount}
+                    onAsk={focusAsk}
                   />
-                </section>
+                </div>
 
-                <QuestionsSection
-                  questions={event.questions}
-                  answeredCount={event.answeredCount}
-                  waitingCount={event.waitingCount}
-                  onAsk={focusAsk}
-                />
-
-                <SourcesSection sources={event.sources} />
+                <div className="event-razbor__sources">
+                  <SourcesSection sources={event.sources} />
+                </div>
               </>
             ) : (
               <EventTabContent
@@ -213,30 +257,43 @@ export default function EventScreen() {
               />
             )}
 
-            <FeedbackSection
-              initialReason={event.feedback?.reason ?? null}
-              onFeedback={submitFeedback}
-              pending={feedbackMutation.isPending}
-              error={
-                feedbackMutation.error
-                  ? feedbackMutation.error instanceof ApiError
-                    ? feedbackMutation.error.detail
-                    : "Не удалось отправить отзыв"
-                  : null
-              }
-            />
+            <div className="event-footer">
+              {isDesktop ? (
+                <AskBar
+                  inputRef={askRef}
+                  value={question}
+                  onChange={setQuestion}
+                  onSubmit={() => submitQuestion(question)}
+                />
+              ) : null}
+
+              <FeedbackSection
+                initialReason={event.feedback?.reason ?? null}
+                onFeedback={submitFeedback}
+                pending={feedbackMutation.isPending}
+                error={
+                  feedbackMutation.error
+                    ? feedbackMutation.error instanceof ApiError
+                      ? feedbackMutation.error.detail
+                      : "Не удалось отправить отзыв"
+                    : null
+                }
+              />
+            </div>
 
             <div className="event-ask-spacer" />
           </div>
         ) : null}
       </div>
 
-      <AskBar
-        inputRef={askRef}
-        value={question}
-        onChange={setQuestion}
-        onSubmit={() => submitQuestion(question)}
-      />
+      {isDesktop ? null : (
+        <AskBar
+          inputRef={askRef}
+          value={question}
+          onChange={setQuestion}
+          onSubmit={() => submitQuestion(question)}
+        />
+      )}
     </div>
   );
 }

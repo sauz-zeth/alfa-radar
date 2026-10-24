@@ -1,5 +1,6 @@
 import type { FeedItemDetail } from "../api";
 import { SectionHeader } from "./SectionHeader";
+import "./event-actions.css";
 
 type ActionsTabProps = {
   detail: FeedItemDetail;
@@ -18,19 +19,21 @@ export function ActionsTab({ detail }: ActionsTabProps) {
   const product = detail.product;
 
   return (
-    <>
+    <div className="event-actions">
       <section className="event-section">
         <SectionHeader title="Что сделать" tight />
 
         {hero ? (
-          <>
-            <article className="event-action-hero">
+          <div className="event-actions__plan">
+            <article
+              className={`event-action-hero${hero.is_primary ? " is-primary" : ""}`}
+            >
               <p className="event-action-hero__title">{hero.title}</p>
               {hero.description ? (
                 <p className="event-action-hero__text">{hero.description}</p>
               ) : null}
               {hero.deadline_label || hero.deadline ? (
-                <p className="event-action-hero__text">
+                <p className="event-action-hero__text event-action-deadline">
                   Срок: {hero.deadline_label ?? hero.deadline}
                 </p>
               ) : null}
@@ -44,14 +47,14 @@ export function ActionsTab({ detail }: ActionsTabProps) {
                 {rest.map((action, index) => (
                   <article
                     key={action.id ?? `${action.title}-${index}`}
-                    className="event-action-card"
+                    className={`event-action-card${action.is_primary ? " is-primary" : ""}`}
                   >
                     <p className="event-action-card__title">{action.title}</p>
                     {action.description ? (
                       <p className="event-action-card__text">{action.description}</p>
                     ) : null}
                     {action.deadline_label || action.deadline ? (
-                      <p className="event-action-card__text">
+                      <p className="event-action-card__text event-action-deadline">
                         Срок: {action.deadline_label ?? action.deadline}
                       </p>
                     ) : null}
@@ -62,14 +65,14 @@ export function ActionsTab({ detail }: ActionsTabProps) {
                 ))}
               </div>
             ) : null}
-          </>
+          </div>
         ) : (
           <p className="event-stub">Пока нет данных по этому разделу</p>
         )}
       </section>
 
       {detail.checklist.length > 0 ? (
-        <section className="event-section">
+        <section className="event-section event-actions__checks">
           <SectionHeader title="Проверить дополнительно" tight />
           <div className="event-checklist">
             <span className="event-checklist__accent" aria-hidden="true" />
@@ -85,7 +88,7 @@ export function ActionsTab({ detail }: ActionsTabProps) {
       ) : null}
 
       {product ? (
-        <section className="event-section">
+        <section className="event-section event-actions__product">
           <article className="event-product">
             <p className="event-product__eyebrow">Продукт Альфа-Банка</p>
             <p className="event-product__title">{product.name}</p>
@@ -94,6 +97,6 @@ export function ActionsTab({ detail }: ActionsTabProps) {
           </article>
         </section>
       ) : null}
-    </>
+    </div>
   );
 }

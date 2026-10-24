@@ -1,0 +1,15 @@
+import { chromium } from "playwright";
+const login = await fetch("http://127.0.0.1:8000/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ login: "demo_full", password: "demo" }) }).then((r) => r.json());
+const feed = await fetch("http://127.0.0.1:8000/api/feed?limit=1", { headers: { Authorization: `Bearer ${login.access_token}` } }).then((r) => r.json());
+const id = feed.items[0].id;
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+await page.addInitScript(([token, user]) => { localStorage.setItem("token", token); localStorage.setItem("auth.user", JSON.stringify(user)); }, [login.access_token, login.user]);
+await page.goto(`http://localhost:3000/event/${id}`, { waitUntil: "networkidle" });
+await page.getByRole("tab", { name: "Влияние" }).click();
+await page.waitForTimeout(1200);
+const pad = await page.locator(".event-influence__chain").evaluate((el) => getComputedStyle(el).padding);
+const pad2 = await page.locator(".event-influence__profile").evaluate((el) => getComputedStyle(el).padding);
+console.log("chain", pad, "profile", pad2);
+await page.screenshot({ path: "/tmp/alfa-figma/impl-influence3.png", fullPage: true });
+await browser.close();

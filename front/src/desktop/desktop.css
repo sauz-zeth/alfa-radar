@@ -1,0 +1,164 @@
+.desktop-shell {
+  display: none;
+}
+
+@media (min-width: 1200px) {
+  .desktop-shell {
+    display: block;
+    min-height: 100dvh;
+    background: #ebebeb;
+    color: #202020;
+  }
+
+  .desktop-topbar {
+    position: sticky;
+    top: 16px;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    height: 68px;
+    margin: 16px 16px 0;
+    padding: 0 12px 0 20px;
+    border-radius: 24px;
+    background: #f7f7f7;
+  }
+
+  .desktop-topbar__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .desktop-topbar__logo {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .desktop-topbar__nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .desktop-topbar__link {
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+
+  .desktop-topbar__link.is-active {
+    background: #202020;
+    color: #f7f7f7;
+  }
+
+  .desktop-topbar__search {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 44px;
+    margin-left: auto;
+    padding: 0 16px;
+    border-radius: 22px;
+    background: #ededed;
+  }
+
+  .desktop-topbar__search input {
+    width: 180px;
+    border: 0;
+    background: transparent;
+    color: #202020;
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+  }
+
+  .desktop-topbar__search span {
+    color: #8b8b8b;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .desktop-topbar__user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+  }
+
+  .desktop-topbar__avatar {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border-radius: 50%;
+    background: #202020;
+    color: #f7f7f7;
+    font-size: 12px;
+  }
+
+  .desktop-topbar__user strong,
+  .desktop-topbar__user small {
+    display: block;
+  }
+
+  .desktop-topbar__user strong {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .desktop-topbar__user small {
+    color: #7b7b7b;
+    font-size: 12px;
+  }
+
+  .desktop-body {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .desktop-tools {
+    position: sticky;
+    top: 100px;
+    display: flex;
+    width: 64px;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    align-self: flex-start;
+  }
+
+  .desktop-tools__button {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border-radius: 50%;
+    background: #f7f7f7;
+    color: #202020;
+  }
+
+  .desktop-tools__button.is-active {
+    background: #202020;
+    color: #f7f7f7;
+  }
+
+  .desktop-main {
+    min-width: 0;
+    flex: 1;
+  }
+}

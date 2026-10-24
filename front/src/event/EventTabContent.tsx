@@ -29,7 +29,7 @@ export function EventTabContent({
   }
 
   if (tab === "Сценарии") {
-    return <ScenariosTab detail={detail} event={event} onAskFocus={onAskFocus} />;
+    return <ScenariosTab detail={detail} event={event} onAsk={onAsk} onAskFocus={onAskFocus} />;
   }
 
   if (tab === "Действия") {

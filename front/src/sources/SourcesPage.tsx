@@ -8,15 +8,19 @@ import {
   type Channel,
   type SourcesState,
 } from "../api";
+import { channelCountLabel, pluralRu } from "../lib/plural";
+import { useMediaQuery } from "../lib/useMediaQuery";
 import { ChannelCard } from "./ChannelCard";
 import { channelInitials, channelTone } from "./channelVisuals";
 import { MoreCard } from "./MoreCard";
+import { officialSources } from "./officialSources";
 import { SourcesHeader, type SourcesTab } from "./SourcesHeader";
 import "./sources.css";
 
 export default function SourcesPage() {
   const api = useApi();
   const queryClient = useQueryClient();
+  const isDesktop = useMediaQuery("(min-width: 1200px)");
   const [tab, setTab] = useState<SourcesTab>("channels");
   const [query, setQuery] = useState("");
 
@@ -104,6 +108,196 @@ export default function SourcesPage() {
     );
   }
 
+  const catalogView = (
+    <div className="sources-catalog">
+      <label className="field sources-search">
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Поиск канала или @handle"
+          autoFocus
+        />
+      </label>
+
+      {catalog.isPending ? <p className="sources-note">Ищем каналы…</p> : null}
+      {catalog.isError ? <p className="form-error">Не удалось загрузить каталог</p> : null}
+
+      <ul className="catalog-list">
+        {(catalog.data?.items ?? []).map((channel) => (
+          <li key={channel.id}>
+            <button
+              type="button"
+              className="catalog-row"
+              aria-pressed={channel.subscribed}
+              disabled={pending}
+              onClick={() => toggleChannel(channel)}
+            >
+              <span className="catalog-avatar" data-tone={channelTone(channel)} aria-hidden="true">
+                {channelInitials(channel.name)}
+              </span>
+              <span className="catalog-body">
+                <span className="catalog-name">{channel.name}</span>
+                <span className="catalog-topics">{channel.handle ?? channel.topics}</span>
+              </span>
+              <span className={channel.subscribed ? "catalog-action is-subscribed" : "catalog-action"}>
+                {channel.subscribed ? "✓" : "+"}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      {catalog.data && catalog.data.items.length === 0 ? (
+        <p className="sources-note">Ничего не нашлось. Попробуйте другой запрос.</p>
+      ) : null}
+    </div>
+  );
+
+  const emptyView = (
+    <div className="sources-empty">
+      <p>Все каналы отключены.</p>
+      <button
+        type="button"
+        className="sources-restore"
+        onClick={() => restore.mutate()}
+        disabled={restore.isPending}
+      >
+        Вернуть рекомендованные
+      </button>
+    </div>
+  );
+
+  if (isDesktop) {
+    const officialLabel = pluralRu(officialSources.length, [
+      "официальный источник",
+      "официальных источника",
+      "официальных источников",
+    ]);
+
+    return (
+      <div className="sources-page sources-page--desktop">
+        <SourcesHeader
+          variant="desktop"
+          tab={tab}
+          channelCount={channels.length}
+          catalogCount={data.catalog_total}
+          onTabChange={setTab}
+          subtitle={`${channelCountLabel(channels.length)} · ${officialLabel}`}
+          query={query}
+          onQueryChange={setQuery}
+        />
+
+        <div className="sources-desktop-body">
+          <aside className="sources-desktop-aside">
+            <section className="sources-summary">
+              <strong className="sources-summary__count">{channels.length}</strong>
+              <div className="sources-summary__copy">
+                <p className="sources-summary__title">
+                  Подписали вас на {channelCountLabel(channels.length)}
+                </p>
+                <p className="sources-summary__text">
+                  {recommended.length > 0
+                    ? `Подобрали из каталога под профиль «${recommended.join(", ")}». `
+                    : ""}
+                  Отпишитесь от лишних — лента подстроится.
+                </p>
+              </div>
+            </section>
+
+            <section className="sources-official">
+              <h2>Официальные данные</h2>
+              <p className="sources-official__mode">автоматически</p>
+              <ul className="sources-official__list">
+                {officialSources.map((source) => (
+                  <li key={source.name} className="sources-official__item">
+                    <span className="sources-official__body">
+                      <span className="sources-official__name">{source.name}</span>
+                      <span className="sources-official__description">{source.description}</span>
+                    </span>
+                    <span className="sources-official__check" aria-hidden="true">
+                      ✓
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="sources-official__note">
+                Выключенный источник пропадает из ленты, но продолжает проверять факты в карточках.
+              </p>
+            </section>
+
+            <section className="sources-analytics">
+              <span className="sources-analytics__label">
+                {data.alfa_analytics ? "Включено" : "Выключено"}
+              </span>
+              <strong className="sources-analytics__title">Аналитика Альфа-Банка</strong>
+              <span className="sources-analytics__text">Мнение аналитиков банка в каждой новости</span>
+            </section>
+          </aside>
+
+          <section className="sources-panel">
+            {tab === "channels" ? (
+              <>
+                <div className="sources-panel__head">
+                  <h2 className="sources-panel__title">Мои каналы · {channels.length}</h2>
+                  <button
+                    type="button"
+                    className="sources-unsubscribe sources-unsubscribe--desktop"
+                    onClick={() => unsubscribeAll.mutate()}
+                    disabled={unsubscribeAll.isPending}
+                  >
+                    {unsubscribeAll.isPending ? "Отписываемся…" : "Отписаться от всех"}
+                  </button>
+                </div>
+
+                {channels.length === 0 ? (
+                  emptyView
+                ) : (
+                  <ul className="sources-grid sources-grid--desktop">
+                    {channels.map((channel, index) => (
+                      <li key={channel.id}>
+                        <ChannelCard
+                          variant="desktop"
+                          channel={channel}
+                          index={index}
+                          onToggle={toggleChannel}
+                          disabled={pending}
+                        />
+                      </li>
+                    ))}
+
+                    {remaining > 0 ? (
+                      <li>
+                        <MoreCard
+                          variant="desktop"
+                          count={remaining}
+                          onClick={() => setTab("catalog")}
+                        />
+                      </li>
+                    ) : null}
+                  </ul>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="sources-panel__head">
+                  <button
+                    type="button"
+                    className="sources-panel__back"
+                    onClick={() => setTab("channels")}
+                  >
+                    ← Мои каналы
+                  </button>
+                  <h2 className="sources-panel__title">Каталог · {data.catalog_total}</h2>
+                </div>
+                <div className="sources-desktop-catalog">{catalogView}</div>
+              </>
+            )}
+          </section>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="sources-page">
       <div className="sources-top">
@@ -131,17 +325,7 @@ export default function SourcesPage() {
       {tab === "channels" ? (
         <>
           {channels.length === 0 ? (
-            <div className="sources-empty">
-              <p>Все каналы отключены.</p>
-              <button
-                type="button"
-                className="sources-restore"
-                onClick={() => restore.mutate()}
-                disabled={restore.isPending}
-              >
-                Вернуть рекомендованные
-              </button>
-            </div>
+            emptyView
           ) : (
             <section className="sources-collection">
               <ul className="sources-grid">
@@ -175,48 +359,7 @@ export default function SourcesPage() {
           )}
         </>
       ) : (
-        <div className="sources-catalog">
-          <label className="field sources-search">
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Поиск канала или @handle"
-              autoFocus
-            />
-          </label>
-
-          {catalog.isPending ? <p className="sources-note">Ищем каналы…</p> : null}
-          {catalog.isError ? <p className="form-error">Не удалось загрузить каталог</p> : null}
-
-          <ul className="catalog-list">
-            {(catalog.data?.items ?? []).map((channel) => (
-              <li key={channel.id}>
-                <button
-                  type="button"
-                  className="catalog-row"
-                  aria-pressed={channel.subscribed}
-                  disabled={pending}
-                  onClick={() => toggleChannel(channel)}
-                >
-                  <span className="catalog-avatar" data-tone={channelTone(channel)} aria-hidden="true">
-                    {channelInitials(channel.name)}
-                  </span>
-                  <span className="catalog-body">
-                    <span className="catalog-name">{channel.name}</span>
-                    <span className="catalog-topics">{channel.handle ?? channel.topics}</span>
-                  </span>
-                  <span className={channel.subscribed ? "catalog-action is-subscribed" : "catalog-action"}>
-                    {channel.subscribed ? "✓" : "+"}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-
-          {catalog.data && catalog.data.items.length === 0 ? (
-            <p className="sources-note">Ничего не нашлось. Попробуйте другой запрос.</p>
-          ) : null}
-        </div>
+        catalogView
       )}
     </div>
   );

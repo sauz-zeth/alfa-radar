@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { ApiError, useApi, useApiQuery } from "../api";
+import { useMediaQuery } from "../lib/useMediaQuery";
 import { useRouter } from "../router";
 import { TopicCarousel } from "./TopicCarousel";
 import { TrackedHeader } from "./TrackedHeader";
+import { TrackedDesktop } from "./TrackedDesktop";
 import { UnchangedSection } from "./UnchangedSection";
 import { toTopic } from "./mapTracked";
 import { TopicCircleSkeleton } from "./TrackedSkeletons";
@@ -11,6 +13,7 @@ import "./tracked.css";
 export default function TrackedScreen() {
   const api = useApi();
   const { navigate } = useRouter();
+  const isDesktop = useMediaQuery("(min-width: 1200px)");
   const [index, setIndex] = useState(0);
 
   const tracked = useApiQuery({
@@ -65,24 +68,37 @@ export default function TrackedScreen() {
 
   return (
     <div className="tracked-page">
-      <div className="tracked-hero">
-        <TrackedHeader themeCount={topics.length} updatesCount={updatesCount} />
+      {isDesktop ? (
+        <TrackedDesktop
+          topics={topics}
+          archived={archived}
+          onOpen={(topic) => navigate(`/event/${topic.eventId}`)}
+        />
+      ) : (
+        <>
+          <div className="tracked-hero">
+            <TrackedHeader themeCount={topics.length} updatesCount={updatesCount} />
 
-        {topics.length > 0 ? (
-          <TopicCarousel
-            topics={topics}
-            index={selected}
-            onSelect={setIndex}
+            {topics.length > 0 ? (
+              <TopicCarousel
+                topics={topics}
+                index={selected}
+                onSelect={setIndex}
+                onOpen={(topic) => navigate(`/event/${topic.eventId}`)}
+              />
+            ) : (
+              <div className="tracked-empty">
+                <TopicCircleSkeleton />
+              </div>
+            )}
+          </div>
+
+          <UnchangedSection
+            topics={archived}
             onOpen={(topic) => navigate(`/event/${topic.eventId}`)}
           />
-        ) : (
-          <div className="tracked-empty">
-            <TopicCircleSkeleton />
-          </div>
-        )}
-      </div>
-
-      <UnchangedSection topics={archived} onOpen={(topic) => navigate(`/event/${topic.eventId}`)} />
+        </>
+      )}
     </div>
   );
 }

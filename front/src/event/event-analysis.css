@@ -1,0 +1,230 @@
+.event-analysis__layout,
+.event-analysis__main,
+.event-analysis__aside {
+  display: contents;
+}
+
+.event-analysis__summary-title,
+.event-analysis__stat-note,
+.event-analysis__fixes {
+  display: none;
+}
+
+@media (min-width: 1200px) {
+  .desktop-shell .event-analysis {
+    display: grid;
+    grid-template-areas:
+      "head aside"
+      "meta aside"
+      "journal aside"
+      "done aside";
+    grid-template-columns: minmax(0, 1fr) 36.8%;
+    column-gap: 18px;
+    align-items: start;
+    padding: 0;
+  }
+
+  .desktop-shell .event-analysis .event-section-head {
+    grid-area: head;
+    margin-bottom: 16px;
+  }
+
+  .desktop-shell .event-analysis .event-section-head__title {
+    font-size: 30px;
+    font-weight: 500;
+    letter-spacing: -0.9px;
+    line-height: 36px;
+  }
+
+  .desktop-shell .event-analysis__meta {
+    grid-area: meta;
+    margin: 0;
+    padding: 24px 32px 6px;
+    border-radius: 36px 36px 0 0;
+    background: #f7f7f7;
+    color: #737373;
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  .desktop-shell .event-analysis__aside {
+    display: flex;
+    grid-area: aside;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .desktop-shell .event-analysis__summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 24px;
+    margin: 0;
+    padding: 26px 32px 24px;
+    border-radius: 36px;
+    background: #202020;
+    color: #f7f7f7;
+  }
+
+  .desktop-shell .event-analysis__summary-title {
+    display: block;
+    grid-column: 1 / -1;
+    margin: 0 0 4px;
+    font-size: 30px;
+    font-weight: 500;
+    letter-spacing: -0.9px;
+    line-height: 36px;
+  }
+
+  .desktop-shell .event-analysis__stat {
+    width: auto;
+    aspect-ratio: auto;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 2px;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+  }
+
+  .desktop-shell .event-analysis__stat--steps {
+    border-radius: 0;
+  }
+
+  .desktop-shell .event-analysis__stat--fixes,
+  .desktop-shell .event-analysis__stat--fixes:disabled {
+    background: transparent;
+    color: inherit;
+  }
+
+  .desktop-shell .event-analysis__ring {
+    display: none;
+  }
+
+  .desktop-shell .event-analysis__stat-value {
+    color: #f7f7f7;
+    font-size: 64px;
+    font-weight: 500;
+    letter-spacing: -2.4px;
+    line-height: 68px;
+  }
+
+  .desktop-shell .event-analysis__stat--fixes .event-analysis__stat-value {
+    color: #ef3124;
+  }
+
+  .desktop-shell .event-analysis__stat-label {
+    font-size: 16px;
+    line-height: 22px;
+  }
+
+  .desktop-shell .event-analysis__stat-note {
+    display: block;
+    margin-top: 6px;
+    color: rgba(247, 247, 247, 0.5);
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  .desktop-shell .event-analysis__journal {
+    grid-area: journal;
+    gap: 22px;
+    max-height: 690px;
+    margin: 0;
+    padding: 6px 32px 28px;
+    border-radius: 0 0 36px 36px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #cfcfcf transparent;
+  }
+
+  .desktop-shell .event-analysis__journal::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .desktop-shell .event-analysis__journal::-webkit-scrollbar-thumb {
+    border-radius: 2px;
+    background: #cfcfcf;
+  }
+
+  .desktop-shell .event-analysis__step {
+    width: 100%;
+    gap: 20px;
+  }
+
+  .desktop-shell .event-analysis__step.is-correction {
+    display: none;
+  }
+
+  .desktop-shell .event-analysis__rail {
+    width: 16px;
+    gap: 10px;
+  }
+
+  .desktop-shell .event-analysis__dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .desktop-shell .event-analysis__body {
+    gap: 10px;
+  }
+
+  .desktop-shell .event-analysis__label {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .desktop-shell .event-analysis__text {
+    font-size: 18px;
+    line-height: 24px;
+  }
+
+  .desktop-shell .event-analysis .event-stub {
+    grid-area: journal;
+    margin: 0;
+    padding: 24px 32px;
+    border-radius: 0 0 36px 36px;
+    background: #f7f7f7;
+  }
+
+  .desktop-shell .event-analysis__fixes {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 44px;
+  }
+
+  .desktop-shell .event-analysis__fixes-title {
+    margin: 0 0 4px;
+    font-size: 30px;
+    font-weight: 500;
+    letter-spacing: -0.9px;
+    line-height: 36px;
+  }
+
+  .desktop-shell .event-analysis__fix {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px 24px;
+    border-radius: 28px;
+    background: #fff;
+  }
+
+  .desktop-shell .event-analysis__fix .event-analysis__label {
+    color: #ef3124;
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .desktop-shell .event-analysis__fix .event-analysis__text {
+    font-size: 16px;
+    line-height: 22px;
+  }
+
+  .desktop-shell .event-analysis > .event-analysis__done {
+    display: none;
+  }
+}

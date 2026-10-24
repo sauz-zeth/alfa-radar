@@ -2,7 +2,7 @@ import type { FeedItem } from "../api";
 import fallbackPhoto from "../assets/photos/steel-export.png";
 import type { FeedPost, FeedSource, ImpactTone } from "./types";
 
-const avatarColors = ["#4d6070", "#525e72", "#5b4d70", "#4d6b5f", "#6b5a4d"];
+export const avatarColors = ["#4d6070", "#525e72", "#5b4d70", "#4d6b5f", "#6b5a4d"];
 
 const impacts: Record<string, { tone: ImpactTone; label: string }> = {
   risk: { tone: "risk", label: "Риск" },
@@ -11,7 +11,7 @@ const impacts: Record<string, { tone: ImpactTone; label: string }> = {
   neutral: { tone: "neutral", label: "Нейтрально" },
 };
 
-function initials(name: string): string {
+export function initials(name: string): string {
   return (
     name
       .split(/\s+/)
@@ -22,7 +22,7 @@ function initials(name: string): string {
   );
 }
 
-function formatTime(iso: string): string {
+export function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 }
 

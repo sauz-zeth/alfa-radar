@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, useApi, useApiMutation, useApiQuery, useQueryClient } from "../api";
 import { useAuth } from "../auth/useAuth";
+import { useMediaQuery } from "../lib/useMediaQuery";
+import { FeedDesktop } from "./FeedDesktop";
 import { FeedEnd } from "./FeedEnd";
 import { FeedPost } from "./FeedPost";
 import { FeedTopBar } from "./FeedTopBar";
@@ -13,6 +15,7 @@ export function FeedScreen() {
   const api = useApi();
   const queryClient = useQueryClient();
   const { signOut } = useAuth();
+  const isDesktop = useMediaQuery("(min-width: 1200px)");
   const [activeFilter, setActiveFilter] = useState("Все");
   const [trackedOverrides, setTrackedOverrides] = useState<Record<string, boolean>>({});
   const feedRef = useRef<HTMLDivElement>(null);
@@ -109,28 +112,39 @@ export function FeedScreen() {
         <div className="feed-state">
           <p>Загрузка ленты…</p>
         </div>
+      ) : isDesktop ? (
+        <FeedDesktop
+          posts={renderedPosts}
+          hiddenCount={hiddenCount}
+          filters={filters}
+          activeFilter={activeFilter}
+          onFilterChange={changeFilter}
+          onToggleTracked={toggleTracked}
+        />
       ) : (
-        <div className="feed" ref={feedRef}>
-          {renderedPosts.map((post) => (
-            <FeedPost key={post.id} post={post} onToggleTracked={toggleTracked} />
-          ))}
-          {renderedPosts.length === 0 ? (
-            <p className="feed-empty">Нет новостей по этому фильтру</p>
-          ) : (
-            <FeedEnd hiddenCount={hiddenCount} onRestart={scrollToTop} />
-          )}
-        </div>
-      )}
+        <>
+          <div className="feed" ref={feedRef}>
+            {renderedPosts.map((post) => (
+              <FeedPost key={post.id} post={post} onToggleTracked={toggleTracked} />
+            ))}
+            {renderedPosts.length === 0 ? (
+              <p className="feed-empty">Нет новостей по этому фильтру</p>
+            ) : (
+              <FeedEnd hiddenCount={hiddenCount} onRestart={scrollToTop} />
+            )}
+          </div>
 
-      <FeedTopBar
-        hiddenCount={hiddenCount}
-        feedCount={renderedPosts.length}
-        filters={filters}
-        activeFilter={activeFilter}
-        onFilterChange={changeFilter}
-        onOpenHidden={() => undefined}
-        onSearch={() => undefined}
-      />
+          <FeedTopBar
+            hiddenCount={hiddenCount}
+            feedCount={renderedPosts.length}
+            filters={filters}
+            activeFilter={activeFilter}
+            onFilterChange={changeFilter}
+            onOpenHidden={() => undefined}
+            onSearch={() => undefined}
+          />
+        </>
+      )}
     </div>
   );
 }

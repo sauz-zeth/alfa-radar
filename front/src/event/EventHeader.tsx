@@ -21,6 +21,7 @@ export function EventHeader({ onBack, tracked, pending, onToggleTracked }: Event
             strokeLinejoin="round"
           />
         </svg>
+        <span className="event-head__back-text">Назад</span>
       </button>
 
       <span className="event-head__title">История темы</span>

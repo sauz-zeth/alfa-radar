@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import arrowUpRight from "../assets/icons/arrow-up-right.svg";
 
 export const EVENT_TABS = [
   "Разбор",
@@ -14,9 +15,10 @@ export type EventTab = (typeof EVENT_TABS)[number];
 type EventTabsProps = {
   active: EventTab;
   onChange: (tab: EventTab) => void;
+  onAllStories?: () => void;
 };
 
-export function EventTabs({ active, onChange }: EventTabsProps) {
+export function EventTabs({ active, onChange, onAllStories }: EventTabsProps) {
   const listRef = useRef<HTMLDivElement | null>(null);
   const activeRef = useRef<HTMLButtonElement | null>(null);
 
@@ -43,6 +45,12 @@ export function EventTabs({ active, onChange }: EventTabsProps) {
           {tab}
         </button>
       ))}
+      {onAllStories ? (
+        <button type="button" className="event-tabs__all" onClick={onAllStories}>
+          Все истории
+          <img src={arrowUpRight} alt="" width={12} height={12} />
+        </button>
+      ) : null}
     </div>
   );
 }

@@ -7,19 +7,30 @@ type ChannelCardProps = {
   index: number;
   onToggle: (channel: Channel) => void;
   disabled?: boolean;
+  variant?: "mobile" | "desktop";
 };
 
-export function ChannelCard({ channel, index, onToggle, disabled }: ChannelCardProps) {
+export function ChannelCard({ channel, index, onToggle, disabled, variant = "mobile" }: ChannelCardProps) {
+  const isDesktop = variant === "desktop";
+  const meta = isDesktop
+    ? `${channel.recommended ? "по профилю" : "свой"}${channel.topics ? ` · ${channel.topics}` : ""}`
+    : channel.recommended
+      ? "Профиль"
+      : "Свой";
+
   return (
     <button
       type="button"
-      className="channel-card"
+      className={isDesktop ? "channel-card channel-card--desktop" : "channel-card"}
       aria-pressed={channel.subscribed}
       disabled={disabled}
       onClick={() => onToggle(channel)}
     >
-      <span className="channel-folder" data-tone={cardTone(index)}>
-        <span className="channel-folder__avatar" style={{ "--tilt": `${cardTilt(index)}deg` } as CSSProperties}>
+      <span className="channel-folder" data-tone={isDesktop ? "dark" : cardTone(index)}>
+        <span
+          className="channel-folder__avatar"
+          style={{ "--tilt": `${isDesktop ? 10 : cardTilt(index)}deg` } as CSSProperties}
+        >
           {channelInitials(channel.name)}
         </span>
 
@@ -48,7 +59,7 @@ export function ChannelCard({ channel, index, onToggle, disabled }: ChannelCardP
 
       <span className="channel-card__info">
         <span className="channel-card__name">{channel.name}</span>
-        <span className="channel-card__type">{channel.recommended ? "Профиль" : "Свой"}</span>
+        <span className="channel-card__type">{meta}</span>
       </span>
     </button>
   );

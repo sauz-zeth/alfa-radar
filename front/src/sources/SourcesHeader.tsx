@@ -7,9 +7,42 @@ type SourcesHeaderProps = {
   channelCount: number;
   catalogCount: number;
   onTabChange: (tab: SourcesTab) => void;
+  variant?: "mobile" | "desktop";
+  subtitle?: string;
+  query?: string;
+  onQueryChange?: (query: string) => void;
 };
 
-export function SourcesHeader({ tab, channelCount, catalogCount, onTabChange }: SourcesHeaderProps) {
+export function SourcesHeader({
+  tab,
+  channelCount,
+  catalogCount,
+  onTabChange,
+  variant = "mobile",
+  subtitle,
+  query,
+  onQueryChange,
+}: SourcesHeaderProps) {
+  if (variant === "desktop") {
+    return (
+      <header className="sources-head sources-head--desktop">
+        <div className="sources-head__titles">
+          <h1>Источники</h1>
+          {subtitle ? <p className="sources-head__subtitle">{subtitle}</p> : null}
+        </div>
+        <label className="sources-head__search">
+          <input
+            value={query ?? ""}
+            onChange={(event) => onQueryChange?.(event.target.value)}
+            onFocus={() => onTabChange("catalog")}
+            placeholder="Найти канал или вставить ссылку"
+            aria-label="Найти канал или вставить ссылку"
+          />
+        </label>
+      </header>
+    );
+  }
+
   return (
     <>
       <header className="sources-head">
