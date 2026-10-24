@@ -27,8 +27,19 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_model: str = "qwen/qwen3.6-35b-a3b"
     llm_fast_model: str = "google/gemma-4-26b-a4b-it"
+    # Role aliases for the news pipeline. Empty value falls back to the legacy names:
+    # weak -> llm_fast_model, strong -> llm_model.
+    llm_weak_model: str = ""
+    llm_strong_model: str = ""
     llm_timeout_seconds: float = 60.0
     llm_temperature: float = 0.2
+    # The agent may use the LLM; ML-ish helpers (categories, counterparties, reporting)
+    # stay deterministic until explicitly enabled.
+    llm_agent_enabled: bool = True
+    llm_ml_enabled: bool = False
+
+    # Optional shared secret for internal ingestion endpoints (X-Ingest-Token).
+    ingest_token: str = ""
 
     data_dir: Path = Path("data")
     seed_company_limit: int = 0
@@ -42,6 +53,14 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [item.strip() for item in self.cors_origins.split(",") if item.strip()]
+
+    @property
+    def weak_model(self) -> str:
+        return self.llm_weak_model or self.llm_fast_model
+
+    @property
+    def strong_model(self) -> str:
+        return self.llm_strong_model or self.llm_model
 
     @property
     def sync_database_url(self) -> str:

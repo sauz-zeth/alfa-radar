@@ -81,6 +81,21 @@ def _event_context(event: NewsEvent) -> dict[str, Any]:
         "category_ids": event.category_ids,
         "source": event.source_name,
         "facts": event.facts,
+        "impact_metrics": event.impact_metrics,
+    }
+
+
+def chat_context(
+    profile: BusinessProfile,
+    event: NewsEvent,
+    business_categories: list[BusinessCategory],
+    counterparties: list[Counterparty],
+    report: dict[str, Any] | None,
+) -> dict[str, Any]:
+    return {
+        "profile": _profile_context(profile, business_categories, counterparties),
+        "event": _event_context(event),
+        "report": report or {},
     }
 
 
@@ -233,15 +248,28 @@ def _merge_report(fallback: dict[str, Any], llm_result: dict[str, Any]) -> dict[
         cleaned = []
         for action in actions:
             if isinstance(action, dict) and action.get("title"):
+                deadline_label = action.get("deadline_label")
+                description = action.get("description")
                 cleaned.append(
                     {
                         "title": str(action["title"]),
                         "role": str(action.get("role") or "Ответственный"),
+                        "description": str(description) if description else None,
                         "deadline": str(action.get("deadline") or "7 дней"),
+                        "deadline_label": str(deadline_label) if deadline_label else None,
                         "origin": str(action.get("origin") or "AI"),
+                        "is_primary": bool(action.get("is_primary")),
                     }
                 )
         if cleaned:
+            if not any(item["is_primary"] for item in cleaned):
+                cleaned[0]["is_primary"] = True
+            primary_seen = False
+            for item in cleaned:
+                if item["is_primary"]:
+                    if primary_seen:
+                        item["is_primary"] = False
+                    primary_seen = True
             result["actions"] = cleaned
     steps = llm_result.get("agent_steps")
     if isinstance(steps, list) and steps:
@@ -252,10 +280,68 @@ def _merge_report(fallback: dict[str, Any], llm_result: dict[str, Any]) -> dict[
                     {
                         "type": str(step.get("type") or "Шаг"),
                         "text": str(step["text"]),
+                        "is_correction": bool(step.get("is_correction")),
                     }
                 )
         if cleaned_steps:
             result["agent_steps"] = cleaned_steps
+
+    raw_tiles = llm_result.get("impact_tiles")
+    if isinstance(raw_tiles, list) and raw_tiles:
+        tiles = []
+        for tile in raw_tiles:
+            if not isinstance(tile, dict):
+                continue
+            tile_type = str(tile.get("type") or "")
+            label = str(tile.get("label") or "").strip()
+            if tile_type not in {"metric", "statement", "accent"} or not label:
+                continue
+            value = tile.get("value")
+            note = tile.get("note")
+            span = str(tile.get("span") or "half")
+            tiles.append(
+                {
+                    "type": tile_type,
+                    "value": str(value) if value is not None else None,
+                    "label": label,
+                    "note": str(note) if note is not None else None,
+                    "span": span if span in {"half", "full"} else "half",
+                }
+            )
+        if tiles:
+            result["impact_tiles"] = tiles[:8]
+
+    raw_questions = llm_result.get("open_questions")
+    if isinstance(raw_questions, list) and raw_questions:
+        questions = []
+        for question in raw_questions:
+            if not isinstance(question, dict):
+                continue
+            text = str(question.get("text") or "").strip()
+            if not text:
+                continue
+            questions.append(
+                {
+                    "text": text,
+                    "source": str(question["source"]) if question.get("source") else None,
+                }
+            )
+        if questions:
+            result["open_questions"] = questions[:5]
+
+    raw_checklist = llm_result.get("checklist")
+    if isinstance(raw_checklist, list) and raw_checklist:
+        checklist = [str(item).strip() for item in raw_checklist if str(item).strip()]
+        if checklist:
+            result["checklist"] = checklist[:6]
+
+    alfa = llm_result.get("alfa")
+    if isinstance(alfa, dict):
+        text = str(alfa.get("text") or "").strip()
+        if text:
+            author = str(alfa.get("author") or "").strip()
+            result["alfa"] = {"author": author or "Аналитика Альфа-Банка", "text": text}
+
     if isinstance(llm_result.get("reporting_used"), bool):
         result["reporting_used"] = llm_result["reporting_used"]
     return result

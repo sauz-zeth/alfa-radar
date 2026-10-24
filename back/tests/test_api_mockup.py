@@ -241,7 +241,10 @@ async def test_mockup_api_flow(api_env) -> None:
     payload = detail.json()
     assert payload["scenarios"]["scenarios"][1]["effect"] != 0
     assert payload["theses"]
-    assert payload["alfa"]["author"].startswith("Центр")
+    assert payload["alfa"] is None
+    assert payload["actions"] == []
+    assert payload["agent_log"] == []
+    assert payload["impact_tiles"] == []
     scenarios = await client.get(f"/api/feed/{ids['risk']}/scenarios?horizon=3m", headers=headers)
     assert scenarios.status_code == 200
     assert scenarios.json()["horizon"] == "3m"
@@ -287,7 +290,13 @@ async def test_mockup_api_flow(api_env) -> None:
     assert listing.json()["total"] == 1
     tracked_detail = await client.get(f"/api/tracked/{tracked_id}", headers=headers)
     assert tracked_detail.json()["insight"]["scenarios"]["scenarios"]
+    assert tracked_detail.json()["insight"]["actions"]
+    assert tracked_detail.json()["insight"]["agent_log"]
     assert tracked_detail.json()["events"][0]["title"].startswith("Повышены")
+
+    tracked_event = await client.get(f"/api/feed/{ids['risk']}", headers=headers)
+    assert tracked_event.json()["actions"]
+    assert tracked_event.json()["agent_log"]
 
     question = await client.post(
         f"/api/tracked/{tracked_id}/questions",
@@ -322,3 +331,70 @@ async def test_mockup_api_flow(api_env) -> None:
     assert (
         next(item for item in notifications.json() if item["key"] == "key_rate")["enabled"] is False
     )
+
+
+async def test_ingest_pipeline_api(api_env) -> None:
+    client, ids, headers = api_env
+    profile_id = str(ids["profile"])
+    text = "Минфин повысил экспортную пошлину на металлопрокат до 7 процентов."
+
+    first = await client.post(
+        "/api/ingest/posts",
+        json={
+            "title": "Повышены экспортные пошлины на металлопрокат",
+            "text": text,
+            "source": "Минфин",
+            "profile_id": profile_id,
+        },
+    )
+    assert first.status_code == 200
+    payload = first.json()
+    assert payload["status"] == "feed"
+    assert payload["news_event_id"] is not None
+    assert payload["importance"] >= 30
+    assert [step["stage"] for step in payload["decision_trace"]][:3] == [
+        "parse",
+        "classify",
+        "cluster",
+    ]
+
+    duplicate = await client.post(
+        "/api/ingest/posts",
+        json={"text": text, "source": "Деловой вестник", "profile_id": profile_id},
+    )
+    assert duplicate.status_code == 200
+    assert duplicate.json()["status"] == "source_cluster"
+    assert duplicate.json()["cluster_key"] == payload["cluster_key"]
+    assert duplicate.json()["similarity"] >= 0.85
+
+    tracked = await client.post(
+        "/api/ingest/posts",
+        json={
+            "text": (
+                "Продолжение истории: во вторник регулятор уточнил порядок "
+                "подачи апелляций по ограничительным мерам."
+            ),
+            "profile_id": profile_id,
+        },
+    )
+    assert tracked.status_code == 200
+    assert tracked.json()["status"] == "tracked"
+    assert tracked.json()["tracked_item_id"] is not None
+
+    feed = await client.get("/api/feed", headers=headers)
+    assert any(item["id"] == payload["news_event_id"] for item in feed.json()["items"])
+
+    weak = await client.post(
+        "/api/ingest/posts",
+        json={
+            "text": "Курс рубля изменился незначительно по итогам торгов.",
+            "source": "Биржа",
+            "profile_id": profile_id,
+        },
+    )
+    assert weak.status_code == 200
+    assert weak.json()["status"] == "ignored"
+
+    trace = await client.get(f"/api/ingest/posts/{payload['id']}")
+    assert trace.status_code == 200
+    assert trace.json()["embedding"]

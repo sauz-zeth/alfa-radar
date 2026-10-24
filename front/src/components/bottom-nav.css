@@ -91,3 +91,7 @@
 .bottom-nav--light .bottom-nav__item.is-active .bottom-nav__icon--sources {
   filter: none;
 }
+
+.bottom-nav--light .bottom-nav__item.is-active .bottom-nav__icon--topics {
+  clip-path: inset(0 0 11px 0);
+}

@@ -6,11 +6,18 @@ from pydantic import BaseModel, Field
 
 from back.schemas.common import ORMModel
 from back.schemas.insights import (
+    ImpactMetricOut,
     InsightOut,
     QuestionOut,
     ScoreComponentOut,
     SourcePostOut,
 )
+
+
+class FeedbackOut(BaseModel):
+    action: str
+    reason: str | None = None
+    created_at: datetime
 
 
 class CategoryBrief(BaseModel):
@@ -40,13 +47,16 @@ class FeedItem(BaseModel):
     source_count: int = 1
     sources: list[SourcePostOut] = []
     facts: list[dict[str, Any]] = []
-    impact_metrics: list[dict[str, Any]] = []
+    impact_metrics: list[ImpactMetricOut] = []
     score_breakdown: list[ScoreComponentOut] = []
     score_why: str = ""
     impact_share: str = ""
     is_important_mention: bool = False
     chain_key: str | None = None
     update_label: str | None = None
+    changed_at: datetime | None = None
+    conclusions_changed: bool = False
+    feedback: FeedbackOut | None = None
     prognosis_note: str
     detail_note: str
 
@@ -56,7 +66,14 @@ class FeedItemDetail(FeedItem, InsightOut):
 
 
 class FeedbackRequest(BaseModel):
-    action: Literal["track", "skip", "important", "not_relevant"]
+    action: Literal[
+        "track",
+        "skip",
+        "important",
+        "not_relevant",
+        "fact_error",
+        "score_inaccurate",
+    ]
     reason: str | None = Field(default=None, max_length=255)
 
 
@@ -106,7 +123,7 @@ class TrackedEventOut(BaseModel):
 class TrackedItemOut(ORMModel):
     id: UUID
     event_id: UUID
-    status: str
+    status: Literal["active", "archived"]
     title: str | None = None
     what_changed: str | None = None
     conclusions_changed: bool = False
@@ -122,6 +139,14 @@ class TrackedItemOut(ORMModel):
 class TrackedListResponse(BaseModel):
     items: list[TrackedItemOut]
     total: int
+
+
+class FeedQuestionRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=1000)
+
+
+class TrackToggleResponse(BaseModel):
+    is_tracked: bool
 
 
 class AgentReanalyzeRequest(BaseModel):

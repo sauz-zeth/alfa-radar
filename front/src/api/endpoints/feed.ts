@@ -1,7 +1,10 @@
+import { z } from "zod";
+
 import type { EndpointOptions, Requester } from "../client";
 import {
   feedbackRequestSchema,
   feedItemDetailSchema,
+  feedQuestionRequestSchema,
   feedItemSchema,
   feedListQuerySchema,
   hiddenQuerySchema,
@@ -14,6 +17,7 @@ import {
   trackedItemSchema,
   type FeedbackRequest,
   type FeedListQuery,
+  type FeedQuestionRequest,
   type HiddenQuery,
   type ScenariosQuery,
 } from "../schemas";
@@ -97,6 +101,28 @@ export function createFeedEndpoints(request: Requester) {
         body,
         bodySchema: feedbackRequestSchema,
         responseSchema: okSchema,
+        signal: options.signal,
+      }),
+
+    askQuestion: (
+      eventId: string,
+      body: FeedQuestionRequest,
+      options: EndpointOptions = {},
+    ) =>
+      request({
+        method: "POST",
+        path: `/api/feed/${encodeURIComponent(eventId)}/questions`,
+        body,
+        bodySchema: feedQuestionRequestSchema,
+        responseSchema: feedItemDetailSchema,
+        signal: options.signal,
+      }),
+
+    untrack: (eventId: string, options: EndpointOptions = {}) =>
+      request({
+        method: "DELETE",
+        path: `/api/feed/${encodeURIComponent(eventId)}/track`,
+        responseSchema: z.object({ is_tracked: z.boolean() }),
         signal: options.signal,
       }),
   };

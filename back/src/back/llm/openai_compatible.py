@@ -48,7 +48,7 @@ class OpenAICompatibleLLM(BaseLLM):
         except httpx.HTTPError as exc:
             raise LLMError(f"LLM request failed: {exc}") from exc
 
-        if response.status_code in {402, 429} or "budget" in response.text.lower():
+        if response.status_code in {402, 429}:
             raise LLMBudgetExceeded(response.text[:500])
         if response.status_code >= 400:
             raise LLMError(f"LLM returned {response.status_code}: {response.text[:500]}")

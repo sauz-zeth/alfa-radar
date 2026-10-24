@@ -11,6 +11,7 @@ from back.schemas.insights import (
     AlfaAnalyticsOut,
     AssumptionOut,
     ChatMessageOut,
+    ImpactTileOut,
     InsightOut,
     ProductOut,
     QuestionOut,
@@ -48,6 +49,10 @@ def _impact_label(value: str) -> str:
         return value
 
 
+def _report_dict(report: dict[str, Any] | None) -> dict[str, Any]:
+    return report if isinstance(report, dict) else {}
+
+
 def source_posts(event: NewsEvent) -> list[SourcePostOut]:
     raw = event.source_posts or []
     result: list[SourcePostOut] = []
@@ -60,16 +65,20 @@ def source_posts(event: NewsEvent) -> list[SourcePostOut]:
                 published = datetime.fromisoformat(published)
             except ValueError:
                 published = event.published_at
+        tone = str(item.get("tone") or "neutral")
+        status = "confirmed" if tone == "official" else "single"
         result.append(
             SourcePostOut(
                 name=str(item.get("name") or event.source_name),
                 time=_aware(published),
-                tone=str(item.get("tone") or "neutral"),
+                tone=tone,
                 text=str(item.get("text") or event.summary),
                 is_primary=bool(item.get("is_primary")) or index == 0,
                 handle=item.get("handle"),
                 url=item.get("url"),
                 image_url=item.get("image_url"),
+                status=status,
+                status_label="Подтверждено" if status == "confirmed" else "Один канал",
             )
         )
     if result:
@@ -83,6 +92,8 @@ def source_posts(event: NewsEvent) -> list[SourcePostOut]:
             is_primary=True,
             url=event.source_url,
             image_url=getattr(event, "image_url", None),
+            status="confirmed",
+            status_label="Подтверждено",
         )
     ]
 
@@ -202,22 +213,21 @@ def theses(event: NewsEvent) -> list[ThesisOut]:
 
 def comparison(event: NewsEvent) -> SourceComparisonOut:
     posts = source_posts(event)
-    names = [item.name for item in posts if not item.is_primary]
-    agree = [f"{item.text[:140]}" for item in posts if item.tone == "official"][:2]
-    single = [f"{name}: подтверждено только в этом канале" for name in names[:2]]
+    agree = [item.text[:140] for item in posts if item.tone == "official"][:2]
+    single = [item.text[:140] for item in posts if not item.is_primary][:2]
     return SourceComparisonOut(agree=agree, differ=[], single=single)
 
 
-def alfa_analytics(event: NewsEvent, profile: BusinessProfile) -> AlfaAnalyticsOut | None:
-    label = _impact_label(event.impact)
-    return AlfaAnalyticsOut(
-        author="Центр макроэкономических исследований Альфа-Банка",
-        text=(
-            f"Базовый сценарий банка: {label.lower()}. "
-            "Рекомендуем сверить параметры события с бюджетом и валютной позицией компании. "
-            "Оценка банка учтена в базовом сценарии."
-        ),
-    )
+def alfa_analytics(
+    event: NewsEvent, profile: BusinessProfile, report: dict[str, Any] | None = None
+) -> AlfaAnalyticsOut | None:
+    raw = _report_dict(report).get("alfa")
+    if not isinstance(raw, dict):
+        return None
+    text = str(raw.get("text") or "").strip()
+    if not text:
+        return None
+    return AlfaAnalyticsOut(author=str(raw.get("author") or ""), text=text)
 
 
 HORIZON_MONTHS = {"3m": 3, "6m": 6, "12m": 12}
@@ -235,7 +245,39 @@ def _company_revenue(profile: BusinessProfile) -> float | None:
     return None
 
 
-def scenarios(event: NewsEvent, profile: BusinessProfile, horizon: str = "12m") -> ScenarioSetOut:
+def _scenario_origins(report: dict[str, Any], names: list[str]) -> list[str | None]:
+    origins = report.get("scenario_origins")
+    per_scenario = report.get("scenarios")
+    result: list[str | None] = []
+    for index, name in enumerate(names):
+        value: Any = None
+        if isinstance(origins, list) and index < len(origins):
+            value = origins[index]
+        elif isinstance(origins, dict):
+            value = origins.get(name, origins.get(str(index)))
+        if value is None and isinstance(per_scenario, list):
+            matched = next(
+                (
+                    item
+                    for item in per_scenario
+                    if isinstance(item, dict) and str(item.get("name") or "") == name
+                ),
+                None,
+            )
+            if matched is None and index < len(per_scenario):
+                matched = per_scenario[index]
+            if isinstance(matched, dict):
+                value = matched.get("origin")
+        result.append(str(value) if value else None)
+    return result
+
+
+def scenarios(
+    event: NewsEvent,
+    profile: BusinessProfile,
+    horizon: str = "12m",
+    report: dict[str, Any] | None = None,
+) -> ScenarioSetOut:
     months = HORIZON_MONTHS.get(horizon, 12)
     revenue = _company_revenue(profile)
     match_impact = event.impact or "neutral"
@@ -244,152 +286,234 @@ def scenarios(event: NewsEvent, profile: BusinessProfile, horizon: str = "12m") 
         share = 0.015
     elif match_impact == "neutral":
         share = 0.005
-    base_annual = (revenue or 10_000_000_000) * share * (event.importance / 100)
-    sign = -1.0 if event.impact in {"risk", "mixed"} else 1.0
-    base = sign * base_annual * months / 12
-    pessimistic = base * 1.4
-    optimistic = base * 0.55
     lever_label = {
         "risk": "Доля эффекта, которую удастся перенести в цену или бюджет",
         "opportunity": "Доля эффекта, которую удастся реализовать",
     }.get(event.impact, "Доля эффекта, которую удастся учесть в плане")
-    scenarios = [
-        ScenarioOut(
-            name="Пессимистичный",
-            effect=round(pessimistic, 2),
-            effect_label=format_money(pessimistic),
-            probability=30,
-            note="Параметры события складываются против компании.",
-            formula=f"{format_money(base)} × 1,4",
-        ),
-        ScenarioOut(
-            name="Базовый",
-            effect=round(base, 2),
-            effect_label=format_money(base),
-            probability=50,
-            note="Эффект распределяется пропорционально профилю компании.",
-            formula=(
-                f"{format_money(revenue or 10_000_000_000)} × "
-                f"{share:.1%} × {event.importance}/100 × {months}/12"
-            ),
-        ),
-        ScenarioOut(
-            name="Оптимистичный",
-            effect=round(optimistic, 2),
-            effect_label=format_money(optimistic),
-            probability=20,
-            note="Часть эффекта компенсируется действиями компании.",
-            formula=f"{format_money(base)} × 0,55",
-        ),
+    if revenue is None:
+        return ScenarioSetOut(
+            horizon=horizon,
+            horizon_label=HORIZON_LABELS.get(horizon, "12 месяцев"),
+            lever_label=lever_label,
+            lever_values=[],
+            scenarios=[],
+            assumptions=[],
+            note="",
+            needs_profile=["выручка компании из отчётности или профиля"],
+            forecast_note=_report_dict(report).get("forecast_note"),
+        )
+    base_annual = revenue * share * (event.importance / 100)
+    sign = -1.0 if event.impact in {"risk", "mixed"} else 1.0
+    base = sign * base_annual * months / 12
+    if sign < 0:
+        pessimistic = base * 1.4
+        optimistic = base * 0.55
+    else:
+        pessimistic = base * 0.55
+        optimistic = base * 1.4
+    names = ["Пессимистичный", "Базовый", "Оптимистичный"]
+    lever_values = ["0%", "15%", "50%"]
+    origins = _scenario_origins(_report_dict(report), names)
+    effects = [pessimistic, base, optimistic]
+    notes = [
+        "Параметры события складываются против компании.",
+        "Эффект распределяется пропорционально профилю компании.",
+        "Часть эффекта компенсируется действиями компании.",
     ]
-    assumptions = [
-        AssumptionOut(
-            key="hedge",
-            label="Зафиксировать курс/ставку по чувствительной позиции",
-            effect="Снижает разброс сценариев",
+    probabilities = [30, 50, 20]
+    formulas = [
+        f"{format_money(base)} × {'1,4' if sign < 0 else '0,55'}",
+        (
+            f"{format_money(revenue)} × "
+            f"{share:.1%} × {event.importance}/100 × {months}/12"
         ),
-        AssumptionOut(
-            key="contracts",
-            label="Пересмотреть условия контрактов",
-            effect="Переносит часть эффекта на контрагента",
-        ),
+        f"{format_money(base)} × {'0,55' if sign < 0 else '1,4'}",
     ]
-    needs = [] if revenue else ["выручка компании из отчётности или профиля"]
+    scenario_list = [
+        ScenarioOut(
+            name=name,
+            effect=round(effects[index], 2),
+            effect_label=format_money(effects[index]),
+            probability=probabilities[index],
+            note=notes[index],
+            formula=formulas[index],
+            share=lever_values[index],
+            origin=origins[index],
+            is_base="базов" in name.lower(),
+        )
+        for index, name in enumerate(names)
+    ]
+    raw_assumptions = _report_dict(report).get("assumptions")
+    assumptions: list[AssumptionOut] = []
+    if isinstance(raw_assumptions, list):
+        for index, item in enumerate(raw_assumptions):
+            if not isinstance(item, dict) or not item.get("label"):
+                continue
+            assumptions.append(
+                AssumptionOut(
+                    key=str(item.get("key") or f"assumption-{index + 1}"),
+                    label=str(item["label"]),
+                    effect=str(item.get("effect") or ""),
+                )
+            )
+    raw_needs = _report_dict(report).get("needs_profile")
+    needs = [str(item) for item in raw_needs] if isinstance(raw_needs, list) else []
+    if revenue is None and "выручка компании из отчётности или профиля" not in needs:
+        needs.append("выручка компании из отчётности или профиля")
+    forecast_note = _report_dict(report).get("forecast_note")
+    scenario_note = _report_dict(report).get("scenario_note")
     return ScenarioSetOut(
         horizon=horizon,
         horizon_label=HORIZON_LABELS.get(horizon, "12 месяцев"),
         lever_label=lever_label,
-        lever_values=["0%", "15%", "50%"],
-        scenarios=scenarios,
+        lever_values=lever_values,
+        scenarios=scenario_list,
         assumptions=assumptions,
-        note="Детерминированная заглушка: точный расчёт появится после подключения модели.",
+        note=str(scenario_note) if scenario_note else "",
         needs_profile=needs,
+        forecast_note=str(forecast_note) if forecast_note else None,
     )
 
 
-def open_questions(event: NewsEvent, profile: BusinessProfile) -> list[QuestionOut]:
-    base = [
-        QuestionOut(
-            id="q1",
-            text="Распространяется ли событие на уже подписанные контракты?",
-            status="Ждём",
-        ),
-        QuestionOut(
-            id="q2",
-            text="Есть ли исключения для ключевых контрагентов?",
-            status="Ждём",
-        ),
-    ]
-    if event.facts:
-        first = event.facts[0]
-        text = first.get("text") if isinstance(first, dict) else str(first)
-        if text:
-            base[0] = QuestionOut(
-                id="q1",
-                text=f"Подтверждено ли: {text}",
-                status="Подтвердилось",
-                answer=str(text),
-                source=event.source_name,
-                date=_aware(event.published_at).strftime("%d.%m"),
+QUESTION_LABELS = {
+    "waiting": "Ждём",
+    "confirmed": "Подтвердилось",
+    "refuted": "Опровергнуто",
+    "answered": "Ответ получен",
+}
+
+
+def question_from_row(row: object) -> QuestionOut:
+    status = str(getattr(row, "status", "waiting"))
+    return QuestionOut(
+        id=str(getattr(row, "id", "")),
+        text=str(getattr(row, "text", "")),
+        status=QUESTION_LABELS.get(status, status),
+        status_code=status,
+        answer=getattr(row, "answer", None),
+        source=getattr(row, "source", None),
+        date=getattr(row, "date", None),
+    )
+
+
+def question_status_code(label: str) -> str:
+    normalized = label.strip().lower()
+    if normalized.startswith("жд"):
+        return "waiting"
+    if normalized.startswith("подтверд"):
+        return "confirmed"
+    if normalized.startswith("опроверг"):
+        return "refuted"
+    return "answered"
+
+
+def _parse_questions(raw: Any) -> list[QuestionOut]:
+    if not isinstance(raw, list):
+        return []
+    result: list[QuestionOut] = []
+    for index, item in enumerate(raw):
+        if not isinstance(item, dict):
+            continue
+        text = str(item.get("text") or "").strip()
+        if not text:
+            continue
+        status = str(item.get("status") or "Ждём")
+        result.append(
+            QuestionOut(
+                id=str(item.get("id") or f"q{index + 1}"),
+                text=text,
+                status=status,
+                status_code=str(item.get("status_code") or question_status_code(status)),
+                answer=item.get("answer"),
+                source=item.get("source"),
+                date=item.get("date"),
+                internal=bool(item.get("internal")),
             )
-    return base
+        )
+    return result
+
+
+def open_questions(
+    event: NewsEvent, profile: BusinessProfile, report: dict[str, Any] | None = None
+) -> list[QuestionOut]:
+    return _parse_questions(_report_dict(report).get("open_questions"))
+
+
+def timeline_point(event: NewsEvent, current_id: object | None) -> TimelinePointOut:
+    return TimelinePointOut(
+        date=_aware(event.published_at).strftime("%d.%m"),
+        text=event.title,
+        importance=event.importance,
+        is_current=event.id == current_id,
+    )
 
 
 def timeline(event: NewsEvent) -> list[TimelinePointOut]:
-    return [
-        TimelinePointOut(
-            date=_aware(event.published_at).strftime("%d.%m"),
-            text=event.title,
-            importance=event.importance,
-            is_current=True,
-        )
-    ]
+    return [timeline_point(event, event.id)]
 
 
-def checklist(event: NewsEvent) -> list[str]:
-    return [
-        "Есть ли в контрактах оговорка о новых условиях",
-        "Какая доля выручки или затрат зависит от фактора новости",
-        "Какой запас до ковенантов и лимитов сохраняется",
-    ]
+def timeline_from_events(
+    events: list[NewsEvent], current_id: object | None
+) -> tuple[list[TimelinePointOut], int, int]:
+    ordered = sorted(events, key=lambda item: _aware(item.published_at))
+    points = [timeline_point(item, current_id) for item in ordered]
+    index = next(
+        (position for position, point in enumerate(points) if point.is_current), len(points) - 1
+    )
+    return points, max(index, 0), len(points)
 
 
-def actions(event: NewsEvent, profile: BusinessProfile) -> list[ActionOut]:
-    role = profile.role_label or "Ответственный"
-    result = [
-        ActionOut(
-            title="Проверить экспозицию компании к фактору новости и оценить худший сценарий",
-            role=role,
-            deadline="3 дня",
-            origin="AI",
-        )
-    ]
-    if event.impact in {"opportunity", "mixed"}:
+def checklist(event: NewsEvent, report: dict[str, Any] | None = None) -> list[str]:
+    raw = _report_dict(report).get("checklist")
+    if not isinstance(raw, list):
+        return []
+    return [str(item).strip() for item in raw if str(item).strip()]
+
+
+def actions(
+    event: NewsEvent, profile: BusinessProfile, report: dict[str, Any] | None = None
+) -> list[ActionOut]:
+    raw = _report_dict(report).get("actions")
+    if not isinstance(raw, list):
+        return []
+    result: list[ActionOut] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        title = str(item.get("title") or "").strip()
+        if not title:
+            continue
+        deadline_label = item.get("deadline_label")
+        description = item.get("description")
+        action_id = item.get("id")
         result.append(
             ActionOut(
-                title="Оценить, можно ли использовать изменение в свою пользу",
-                role=role,
-                deadline="7 дней",
-                origin="AI",
+                id=str(action_id) if action_id else None,
+                title=title,
+                role=str(item.get("role") or profile.role_label or "Ответственный"),
+                description=str(description) if description else None,
+                deadline=str(item.get("deadline") or deadline_label or "7 дней"),
+                deadline_label=str(deadline_label) if deadline_label else None,
+                origin=str(item.get("origin") or "AI"),
+                is_primary=bool(item.get("is_primary")),
             )
         )
     return result
 
 
 def agent_log(event: NewsEvent, report: dict[str, Any] | None = None) -> list[AgentStepOut]:
-    steps = (report or {}).get("agent_steps")
-    if isinstance(steps, list) and steps:
-        return [
-            AgentStepOut(type=str(item.get("type") or "Шаг"), text=str(item.get("text") or ""))
-            for item in steps
-            if isinstance(item, dict) and item.get("text")
-        ]
+    steps = _report_dict(report).get("agent_steps")
+    if not isinstance(steps, list):
+        return []
     return [
-        AgentStepOut(type="Старт", text="Получены новость и профиль бизнеса."),
-        AgentStepOut(type="Данные", text="Загружены категории, контрагенты и отчётность."),
-        AgentStepOut(type="Расчёт", text="Посчитаны важность и сценарии."),
-        AgentStepOut(type="Проверка", text="Проверено, что в выводе нет выдуманных цифр."),
-        AgentStepOut(type="Готово", text="Сформированы выводы и действия."),
+        AgentStepOut(
+            type=str(item.get("type") or "Шаг"),
+            text=str(item.get("text") or ""),
+            is_correction=bool(item.get("is_correction")),
+            at=str(item.get("at")) if item.get("at") else None,
+        )
+        for item in steps
+        if isinstance(item, dict) and item.get("text")
     ]
 
 
@@ -416,21 +540,74 @@ def product(event: NewsEvent) -> ProductOut | None:
     return None
 
 
-def chat(event: NewsEvent) -> list[ChatMessageOut]:
-    return [
-        ChatMessageOut(
-            question="Что изменится для компании?",
-            answer=(
-                f"Событие «{event.title}» относится к типу "
-                f"«{_impact_label(event.impact).lower()}». Оценка важности — "
-                f"{event.importance}/100, детали зависят от профиля."
-            ),
-        ),
-        ChatMessageOut(
-            question="Покажи эффект по кварталам",
-            answer="Разбивка по кварталам появится после подключения расчётной модели.",
-        ),
-    ]
+def chat(event: NewsEvent, report: dict[str, Any] | None = None) -> list[ChatMessageOut]:
+    raw = _report_dict(report).get("chat")
+    if not isinstance(raw, list):
+        return []
+    result: list[ChatMessageOut] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        question = str(item.get("question") or "").strip()
+        answer = str(item.get("answer") or "").strip()
+        if not question or not answer:
+            continue
+        result.append(
+            ChatMessageOut(
+                question=question,
+                answer=answer,
+                origin=str(item.get("origin") or "AI"),
+            )
+        )
+    return result
+
+
+def impact_tiles(
+    event: NewsEvent, report: dict[str, Any] | None = None
+) -> list[ImpactTileOut]:
+    """Tiles chosen by the agent in report["impact_tiles"], else derived from metrics 3+."""
+    raw = _report_dict(report).get("impact_tiles")
+    if isinstance(raw, list) and raw:
+        parsed: list[ImpactTileOut] = []
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            tile_type = item.get("type")
+            label = str(item.get("label") or "").strip()
+            if tile_type not in {"metric", "statement", "accent"} or not label:
+                continue
+            value = item.get("value")
+            note = item.get("note")
+            span = item.get("span")
+            parsed.append(
+                ImpactTileOut(
+                    type=tile_type,
+                    value=str(value) if value is not None else None,
+                    label=label,
+                    note=str(note) if note is not None else None,
+                    span=span if span in {"half", "full"} else "half",
+                )
+            )
+        if parsed:
+            return parsed
+
+    result: list[ImpactTileOut] = []
+    for metric in (event.impact_metrics or [])[2:]:
+        if not isinstance(metric, dict):
+            continue
+        label = str(metric.get("label") or "")
+        value = metric.get("value")
+        note = metric.get("note")
+        result.append(
+            ImpactTileOut(
+                type="metric",
+                value=str(value) if value is not None else None,
+                label=label,
+                note=str(note).replace("\n", " ") if note else None,
+                span="half",
+            )
+        )
+    return result
 
 
 def build_insight(
@@ -440,6 +617,9 @@ def build_insight(
     report: dict[str, Any] | None = None,
 ) -> InsightOut:
     components, score_why, impact_share = score_breakdown(event, match, profile)
+    questions = open_questions(event, profile, report)
+    points = timeline(event)
+    finished_at = _report_dict(report).get("analysis_finished_at")
     return InsightOut(
         sources=source_posts(event),
         score_breakdown=components,
@@ -447,14 +627,20 @@ def build_insight(
         impact_share=impact_share,
         comparison=comparison(event),
         theses=theses(event),
-        alfa=alfa_analytics(event, profile),
-        scenarios=scenarios(event, profile),
-        open_questions=open_questions(event, profile),
-        timeline=timeline(event),
-        checklist=checklist(event),
-        actions=actions(event, profile),
+        alfa=alfa_analytics(event, profile, report),
+        impact_tiles=impact_tiles(event, report),
+        scenarios=scenarios(event, profile, report=report),
+        open_questions=questions,
+        timeline=points,
+        checklist=checklist(event, report),
+        actions=actions(event, profile, report),
         agent_log=agent_log(event, report),
         product=product(event),
-        chat=chat(event),
+        chat=chat(event, report),
         facts=event.facts or [],
+        questions_answered=sum(1 for item in questions if item.status_code != "waiting"),
+        questions_waiting=sum(1 for item in questions if item.status_code == "waiting"),
+        timeline_total=len(points),
+        timeline_current_index=0,
+        analysis_finished_at=str(finished_at) if finished_at else None,
     )

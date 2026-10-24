@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -6,31 +7,138 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from back.api.deps import get_current_profile
+from back.config import get_settings
 from back.core.constants import Impact
-from back.db.models import BusinessProfile, EventLike, Feedback, NewsEvent, TrackedItem
+from back.db.models import (
+    BusinessProfile,
+    EventLike,
+    EventQuestion,
+    Feedback,
+    NewsEvent,
+    TrackedItem,
+)
 from back.db.session import get_session
 from back.schemas.common import Page
 from back.schemas.feed import (
+    FeedbackOut,
     FeedbackRequest,
     FeedItem,
     FeedItemDetail,
+    FeedQuestionRequest,
     HiddenItem,
     HiddenResponse,
     HiddenTab,
     LikeResponse,
     TrackedEventOut,
     TrackedItemOut,
+    TrackToggleResponse,
 )
-from back.schemas.insights import ScenarioSetOut
+from back.schemas.insights import ChatMessageOut, QuestionOut, ScenarioSetOut
 from back.services.agent import analyze_event
+from back.services.chat import answer_question
 from back.services.feed import MatchResult, event_to_feed_item, match_event, recency_key
-from back.services.insights import build_insight, scenarios
+from back.services.insights import (
+    build_insight,
+    question_from_row,
+    scenarios,
+    timeline_from_events,
+)
 from back.services.personalization import (
     load_categories,
     load_counterparties,
     load_skipped_ids,
     load_tracked_ids,
 )
+
+
+async def _user_questions(
+    session: AsyncSession, profile: BusinessProfile, event_id: UUID
+) -> list[QuestionOut]:
+    rows = list(
+        (
+            await session.execute(
+                select(EventQuestion)
+                .where(
+                    EventQuestion.profile_id == profile.id,
+                    EventQuestion.event_id == event_id,
+                )
+                .order_by(EventQuestion.created_at)
+            )
+        ).scalars()
+    )
+    return [question_from_row(row) for row in rows]
+
+
+async def _decorate_detail(
+    session: AsyncSession, profile: BusinessProfile, item: FeedItemDetail, event: NewsEvent
+) -> FeedItemDetail:
+    if event.chain_key:
+        chain = list(
+            (
+                await session.execute(
+                    select(NewsEvent)
+                    .where(NewsEvent.chain_key == event.chain_key, NewsEvent.is_active.is_(True))
+                    .order_by(NewsEvent.published_at)
+                )
+            ).scalars()
+        )
+    else:
+        chain = [event]
+    points, index, total = timeline_from_events(chain, event.id)
+    item.timeline = points
+    item.timeline_total = total
+    item.timeline_current_index = index
+
+    user_questions = await _user_questions(session, profile, event.id)
+    if user_questions:
+        item.open_questions = [*item.open_questions, *user_questions]
+        item.questions_answered = sum(
+            1 for question in item.open_questions if question.status_code != "waiting"
+        )
+        item.questions_waiting = sum(
+            1 for question in item.open_questions if question.status_code == "waiting"
+        )
+        item.chat = [
+            *item.chat,
+            *[
+                ChatMessageOut(
+                    question=question.text,
+                    answer=question.answer or "",
+                    origin=question.source or "AI",
+                )
+                for question in user_questions
+            ],
+        ]
+
+    feedback_row = (
+        await session.execute(
+            select(Feedback).where(
+                Feedback.profile_id == profile.id, Feedback.event_id == event.id
+            )
+        )
+    ).scalar_one_or_none()
+    if feedback_row is not None:
+        item.feedback = FeedbackOut(
+            action=feedback_row.action,
+            reason=feedback_row.reason,
+            created_at=feedback_row.created_at,
+        )
+    return item
+
+
+async def _tracked_report(
+    session: AsyncSession, profile: BusinessProfile, event_id: UUID
+) -> dict[str, Any] | None:
+    row = (
+        await session.execute(
+            select(TrackedItem).where(
+                TrackedItem.profile_id == profile.id,
+                TrackedItem.event_id == event_id,
+            )
+        )
+    ).scalar_one_or_none()
+    return row.report if row is not None else None
+
 
 router = APIRouter(prefix="/feed", tags=["feed"])
 
@@ -123,7 +231,13 @@ async def _hidden_rows(
     )
     feedback_by_event = {row.event_id: row for row in feedback_rows}
     events = list(
-        (await session.execute(select(NewsEvent).where(NewsEvent.is_active.is_(True)))).scalars()
+        (
+            await session.execute(
+                select(NewsEvent).where(
+                    NewsEvent.is_active.is_(True), NewsEvent.is_feed_visible.is_(True)
+                )
+            )
+        ).scalars()
     )
     stale: list[HiddenItem] = []
     weak: list[HiddenItem] = []
@@ -202,7 +316,9 @@ async def get_feed(
         ).scalars()
     )
 
-    query = select(NewsEvent).where(NewsEvent.is_active.is_(True))
+    query = select(NewsEvent).where(
+        NewsEvent.is_active.is_(True), NewsEvent.is_feed_visible.is_(True)
+    )
     if impact is not None:
         query = query.where(NewsEvent.impact == impact.value)
     if q:
@@ -352,7 +468,8 @@ async def get_scenarios(
     event = await session.get(NewsEvent, event_id)
     if event is None or not event.is_active:
         raise HTTPException(status_code=404, detail="Новость не найдена")
-    return scenarios(event, profile, horizon)
+    report = await _tracked_report(session, profile, event.id)
+    return scenarios(event, profile, horizon, report)
 
 
 @router.get("/{event_id}", response_model=FeedItemDetail)
@@ -369,6 +486,7 @@ async def get_event(
     tracked_ids = await load_tracked_ids(session, profile)
     match = match_event(event, categories, counterparties)
     counts, liked_ids = await _like_maps(session, profile, [event.id])
+    report = await _tracked_report(session, profile, event.id)
     item = event_to_feed_item(
         event,
         match,
@@ -377,9 +495,65 @@ async def get_event(
         profile=profile,
         is_liked=event.id in liked_ids,
         likes=counts.get(event.id, 0),
+        report=report,
     )
     assert isinstance(item, FeedItemDetail)
-    return item
+    return await _decorate_detail(session, profile, item, event)
+
+
+@router.post("/{event_id}/questions", response_model=FeedItemDetail)
+async def ask_question(
+    event_id: UUID,
+    payload: FeedQuestionRequest,
+    profile: BusinessProfile = Depends(get_current_profile),
+    session: AsyncSession = Depends(get_session),
+) -> FeedItemDetail:
+    event = await session.get(NewsEvent, event_id)
+    if event is None or not event.is_active:
+        raise HTTPException(status_code=404, detail="Новость не найдена")
+    question = EventQuestion(
+        profile_id=profile.id,
+        event_id=event.id,
+        text=payload.question.strip(),
+        status="waiting",
+    )
+    session.add(question)
+    await session.flush()
+
+    categories = await load_categories(session, profile)
+    counterparties = await load_counterparties(session, profile)
+    tracked_ids = await load_tracked_ids(session, profile)
+    match = match_event(event, categories, counterparties)
+    counts, liked_ids = await _like_maps(session, profile, [event.id])
+    report = await _tracked_report(session, profile, event.id)
+
+    answer = await answer_question(
+        profile,
+        event,
+        categories,
+        counterparties,
+        report,
+        payload.question.strip(),
+    )
+    if answer:
+        question.answer = answer
+        question.status = "answered"
+        question.source = "Анализ AI"
+        question.date = datetime.now(UTC).strftime("%d.%m")
+    await session.commit()
+
+    item = event_to_feed_item(
+        event,
+        match,
+        is_tracked=event.id in tracked_ids,
+        with_details=True,
+        profile=profile,
+        is_liked=event.id in liked_ids,
+        likes=counts.get(event.id, 0),
+        report=report,
+    )
+    assert isinstance(item, FeedItemDetail)
+    return await _decorate_detail(session, profile, item, event)
 
 
 @router.post("/{event_id}/track", response_model=TrackedItemOut)
@@ -412,6 +586,7 @@ async def track_event(
             counterparties=counterparties,
             match_importance=match.importance,
             matched_counterparties=match.matched_counterparties,
+            use_llm=get_settings().llm_agent_enabled,
         )
         existing = TrackedItem(
             profile_id=profile.id,
@@ -431,7 +606,7 @@ async def track_event(
     return TrackedItemOut(
         id=existing.id,
         event_id=existing.event_id,
-        status=existing.status,
+        status="archived" if existing.status == "archived" else "active",
         title=existing.title,
         what_changed=existing.what_changed,
         conclusions_changed=existing.conclusions_changed,
@@ -492,3 +667,23 @@ async def submit_feedback(
             await session.delete(tracked)
     await session.commit()
     return {"ok": True}
+
+
+@router.delete("/{event_id}/track", response_model=TrackToggleResponse)
+async def untrack_event(
+    event_id: UUID,
+    profile: BusinessProfile = Depends(get_current_profile),
+    session: AsyncSession = Depends(get_session),
+) -> TrackToggleResponse:
+    row = (
+        await session.execute(
+            select(TrackedItem).where(
+                TrackedItem.profile_id == profile.id,
+                TrackedItem.event_id == event_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if row is not None:
+        await session.delete(row)
+        await session.commit()
+    return TrackToggleResponse(is_tracked=False)

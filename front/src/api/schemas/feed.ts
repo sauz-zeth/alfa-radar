@@ -14,7 +14,11 @@ export const categoryBriefSchema = z.object({
 });
 
 export const impactMetricSchema = z.object({
+  key: z.string().nullish(),
+  label: z.string().default(""),
   value: z.string(),
+  previous_value: z.string().nullish(),
+  unit: z.string().nullish(),
   note: z.string().default(""),
   tone: z.enum(["negative", "positive"]).nullish(),
 });
@@ -47,6 +51,15 @@ export const feedItemSchema = z.object({
   is_important_mention: z.boolean().default(false),
   chain_key: z.string().nullish(),
   update_label: z.string().nullish(),
+  changed_at: z.string().nullish(),
+  conclusions_changed: z.boolean().default(false),
+  feedback: z
+    .object({
+      action: z.string(),
+      reason: z.string().nullish(),
+      created_at: z.string(),
+    })
+    .nullish(),
   prognosis_note: z.string(),
   detail_note: z.string(),
 });
@@ -54,8 +67,19 @@ export const feedItemSchema = z.object({
 export const feedItemDetailSchema = feedItemSchema.extend(insightSchema.shape);
 
 export const feedbackRequestSchema = z.object({
-  action: z.enum(["track", "skip", "important", "not_relevant"]),
+  action: z.enum([
+    "track",
+    "skip",
+    "important",
+    "not_relevant",
+    "fact_error",
+    "score_inaccurate",
+  ]),
   reason: z.string().max(255).nullish(),
+});
+
+export const feedQuestionRequestSchema = z.object({
+  question: z.string().min(3).max(1000),
 });
 
 export const hiddenItemSchema = z.object({
@@ -118,6 +142,7 @@ export type CategoryBrief = z.infer<typeof categoryBriefSchema>;
 export type FeedItem = z.infer<typeof feedItemSchema>;
 export type FeedItemDetail = z.infer<typeof feedItemDetailSchema>;
 export type FeedbackRequest = z.infer<typeof feedbackRequestSchema>;
+export type FeedQuestionRequest = z.infer<typeof feedQuestionRequestSchema>;
 export type HiddenItem = z.infer<typeof hiddenItemSchema>;
 export type HiddenTab = z.infer<typeof hiddenTabSchema>;
 export type HiddenResponse = z.infer<typeof hiddenResponseSchema>;

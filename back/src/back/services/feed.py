@@ -6,6 +6,7 @@ from back.core.categories import CATEGORY_BY_ID
 from back.core.constants import IMPACT_LABELS, PROGNOSIS_NOTE, Impact
 from back.db.models import BusinessCategory, BusinessProfile, Counterparty, NewsEvent
 from back.schemas.feed import CategoryBrief, FeedItem, FeedItemDetail
+from back.schemas.insights import ImpactMetricOut
 
 
 @dataclass
@@ -87,6 +88,32 @@ def _all_categories(event: NewsEvent) -> list[CategoryBrief]:
     return result
 
 
+METRIC_LABELS = ("EBITDA в год", "Экспорт под пошлиной", "Доля эффекта")
+
+
+def _impact_metrics(event: NewsEvent) -> list[ImpactMetricOut]:
+    result: list[ImpactMetricOut] = []
+    for index, raw in enumerate(event.impact_metrics or []):
+        if not isinstance(raw, dict):
+            continue
+        note = str(raw.get("note") or "")
+        fallback = note.split("\n")[0].strip() or METRIC_LABELS[min(index, len(METRIC_LABELS) - 1)]
+        label = str(raw.get("label") or fallback)
+        tone = raw.get("tone")
+        result.append(
+            ImpactMetricOut(
+                key=raw.get("key"),
+                label=label,
+                value=str(raw.get("value") or "—"),
+                previous_value=raw.get("previous_value"),
+                unit=raw.get("unit"),
+                note=note.replace("\n", " "),
+                tone=tone if tone in {"negative", "positive"} else None,
+            )
+        )
+    return result
+
+
 def event_to_feed_item(
     event: NewsEvent,
     match: MatchResult,
@@ -123,13 +150,15 @@ def event_to_feed_item(
         "source_count": len(insight.sources) if insight else len(event.source_posts or []) or 1,
         "sources": insight.sources if insight else [],
         "facts": event.facts or [],
-        "impact_metrics": event.impact_metrics or [],
+        "impact_metrics": _impact_metrics(event),
         "score_breakdown": insight.score_breakdown if insight else [],
         "score_why": insight.score_why if insight else match.match_reason,
         "impact_share": insight.impact_share if insight else "",
         "is_important_mention": bool(match.matched_counterparties),
         "chain_key": event.chain_key,
         "update_label": event.update_label,
+        "changed_at": event.published_at if event.update_label else None,
+        "conclusions_changed": bool(event.update_label),
         "prognosis_note": PROGNOSIS_NOTE,
         "detail_note": f"(!) {PROGNOSIS_NOTE}",
     }

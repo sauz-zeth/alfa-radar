@@ -7,7 +7,7 @@ import "./bottom-nav.css";
 
 const items = [
   { id: "feed", label: "Лента", icon: lightFeedIcon, to: "/" },
-  { id: "topics", label: "Темы", icon: lightTopicsIcon },
+  { id: "topics", label: "Темы", icon: lightTopicsIcon, to: "/tracked" },
   { id: "sources", label: "Источники", icon: lightSourcesIcon, to: "/sources", compact: true },
   { id: "profile", label: "Профиль", icon: lightProfileIcon, to: "/profile" },
 ];
@@ -18,7 +18,10 @@ function isCurrent(path: string, to: string): boolean {
 
 export function BottomNav() {
   const { path } = useRouter();
-  const theme = path === "/sources" ? "light" : "dark";
+
+  if (path.startsWith("/event/")) return null;
+
+  const theme = path === "/sources" || path.startsWith("/tracked") ? "light" : "dark";
 
   return (
     <nav className={`bottom-nav bottom-nav--${theme}`} aria-label="Основная навигация">
@@ -29,7 +32,9 @@ export function BottomNav() {
           const iconClass =
             item.id === "sources"
               ? "bottom-nav__icon bottom-nav__icon--sources"
-              : "bottom-nav__icon";
+              : item.id === "topics"
+                ? "bottom-nav__icon bottom-nav__icon--topics"
+                : "bottom-nav__icon";
           const content = <img src={item.icon} alt="" className={iconClass} />;
 
           if (!item.to) {

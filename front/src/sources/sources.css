@@ -38,6 +38,15 @@
   font-weight: 500;
 }
 
+.sources-top {
+  position: sticky;
+  top: calc(-1 * max(16px, env(safe-area-inset-top)));
+  z-index: 5;
+  margin: calc(-1 * max(16px, env(safe-area-inset-top))) -16px 0;
+  padding: max(16px, env(safe-area-inset-top)) 16px 0;
+  background: linear-gradient(180deg, var(--canvas) 65%, transparent);
+}
+
 .sources-head {
   display: flex;
   align-items: center;
@@ -90,8 +99,11 @@
 
 .sources-tab__count {
   color: var(--muted);
-  font-size: 15px;
-  font-weight: 500;
+  font-family: var(--font-dot);
+  font-size: 17px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  transform: translateY(1px);
 }
 
 .sources-tab.is-active {

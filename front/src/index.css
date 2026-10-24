@@ -1,5 +1,14 @@
+@font-face {
+  font-family: "Ndot 55";
+  src: url("./assets/fonts/Ndot55-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --font: "Onest", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --font-dot: "Ndot 55", var(--font);
 
   --ink: #202020;
   --surface: #f7f7f7;

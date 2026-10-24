@@ -11,6 +11,8 @@ export const sourcePostSchema = z.object({
   handle: z.string().nullish(),
   url: z.string().nullish(),
   image_url: z.string().nullish(),
+  status: z.string().default("single"),
+  status_label: z.string().default("Один канал"),
 });
 
 export const scoreComponentSchema = z.object({
@@ -46,6 +48,9 @@ export const scenarioSchema = z.object({
   probability: z.number().int(),
   note: z.string(),
   formula: z.string(),
+  share: z.string().nullish(),
+  origin: z.string().nullish(),
+  is_base: z.boolean().default(false),
 });
 
 export const assumptionSchema = z.object({
@@ -63,12 +68,14 @@ export const scenarioSetSchema = z.object({
   assumptions: z.array(assumptionSchema),
   note: z.string(),
   needs_profile: z.array(z.string()).default([]),
+  forecast_note: z.string().nullish(),
 });
 
 export const questionSchema = z.object({
   id: z.string(),
   text: z.string(),
   status: z.string(),
+  status_code: z.string().default("waiting"),
   answer: z.string().nullish(),
   source: z.string().nullish(),
   date: z.string().nullish(),
@@ -83,15 +90,29 @@ export const timelinePointSchema = z.object({
 });
 
 export const actionSchema = z.object({
+  id: z.string().nullish(),
   title: z.string(),
   role: z.string(),
+  description: z.string().nullish(),
   deadline: z.string(),
+  deadline_label: z.string().nullish(),
   origin: z.string().default("AI"),
+  is_primary: z.boolean().default(false),
 });
 
 export const agentStepSchema = z.object({
   type: z.string(),
   text: z.string(),
+  is_correction: z.boolean().default(false),
+  at: z.string().nullish(),
+});
+
+export const impactTileSchema = z.object({
+  type: z.enum(["metric", "statement", "accent"]),
+  value: z.string().nullish(),
+  label: z.string(),
+  note: z.string().nullish(),
+  span: z.enum(["half", "full"]).default("half"),
 });
 
 export const chatMessageSchema = z.object({
@@ -114,6 +135,7 @@ export const insightSchema = z.object({
   comparison: sourceComparisonSchema,
   theses: z.array(thesisSchema),
   alfa: alfaAnalyticsSchema.nullish(),
+  impact_tiles: z.array(impactTileSchema).default([]),
   scenarios: scenarioSetSchema,
   open_questions: z.array(questionSchema),
   timeline: z.array(timelinePointSchema),
@@ -123,6 +145,11 @@ export const insightSchema = z.object({
   product: productSchema.nullish(),
   chat: z.array(chatMessageSchema).default([]),
   facts: z.array(unknownRecordSchema).default([]),
+  questions_answered: z.number().int().default(0),
+  questions_waiting: z.number().int().default(0),
+  timeline_total: z.number().int().default(0),
+  timeline_current_index: z.number().int().default(0),
+  analysis_finished_at: z.string().nullish(),
 });
 
 export const horizonSchema = z.enum(["3m", "6m", "12m"]);
@@ -139,6 +166,7 @@ export type Question = z.infer<typeof questionSchema>;
 export type TimelinePoint = z.infer<typeof timelinePointSchema>;
 export type Action = z.infer<typeof actionSchema>;
 export type AgentStep = z.infer<typeof agentStepSchema>;
+export type ImpactTile = z.infer<typeof impactTileSchema>;
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
 export type Product = z.infer<typeof productSchema>;
 export type Insight = z.infer<typeof insightSchema>;

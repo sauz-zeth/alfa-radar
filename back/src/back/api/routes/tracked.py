@@ -6,7 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from back.api.deps import get_current_profile
-from back.db.models import BusinessProfile, NewsEvent, TrackedItem
+from back.config import get_settings
+from back.db.models import BusinessProfile, EventQuestion, NewsEvent, TrackedItem
 from back.db.session import get_session
 from back.schemas.feed import (
     AgentReanalyzeRequest,
@@ -18,7 +19,13 @@ from back.schemas.feed import (
 from back.schemas.insights import QuestionOut, ScenarioSetOut
 from back.services.agent import analyze_event
 from back.services.feed import event_to_feed_item, match_event
-from back.services.insights import build_insight, scenarios
+from back.services.insights import (
+    build_insight,
+    question_from_row,
+    question_status_code,
+    scenarios,
+    timeline_from_events,
+)
 from back.services.personalization import load_categories, load_counterparties
 
 router = APIRouter(prefix="/tracked", tags=["tracked"])
@@ -66,11 +73,13 @@ def _questions(item: TrackedItem) -> list[QuestionOut]:
         text = str(raw.get("text") or "").strip()
         if not text:
             continue
+        status = str(raw.get("status") or "Ждём")
         result.append(
             QuestionOut(
                 id=str(raw.get("id") or f"q{index + 1}"),
                 text=text,
-                status=str(raw.get("status") or "Ждём"),
+                status=status,
+                status_code=question_status_code(status),
                 answer=raw.get("answer"),
                 source=raw.get("source"),
                 date=raw.get("date"),
@@ -112,14 +121,42 @@ async def _out(
                 published_at=event.published_at,
             )
         )
+    questions = _questions(item)
+    event_ids = [event.id for event in events] or [latest.id]
+    user_rows = list(
+        (
+            await session.execute(
+                select(EventQuestion)
+                .where(
+                    EventQuestion.profile_id == profile.id,
+                    EventQuestion.event_id.in_(event_ids),
+                )
+                .order_by(EventQuestion.created_at)
+            )
+        ).scalars()
+    )
+    user_questions = [question_from_row(row) for row in user_rows]
+    if insight is not None:
+        insight.open_questions = [*insight.open_questions, *user_questions]
+        insight.questions_answered = sum(
+            1 for question in insight.open_questions if question.status_code != "waiting"
+        )
+        insight.questions_waiting = sum(
+            1 for question in insight.open_questions if question.status_code == "waiting"
+        )
+        points, index, total = timeline_from_events(events or [latest], latest.id)
+        insight.timeline = points
+        insight.timeline_current_index = index
+        insight.timeline_total = total
+
     return TrackedItemOut(
         id=item.id,
         event_id=item.event_id,
-        status=item.status,
+        status="archived" if item.status == "archived" else "active",
         title=item.title or latest.title,
         what_changed=item.what_changed,
         conclusions_changed=item.conclusions_changed,
-        questions=_questions(item),
+        questions=questions,
         report=item.report,
         created_at=item.created_at,
         updated_at=item.updated_at,
@@ -156,7 +193,7 @@ async def get_tracked_scenarios(
         raise HTTPException(status_code=404, detail="Отслеживаемая новость не найдена")
     events = await _events(session, row)
     latest = events[-1] if events else row.event
-    return scenarios(latest, profile, horizon)
+    return scenarios(latest, profile, horizon, row.report)
 
 
 @router.get("/{item_id}", response_model=TrackedItemOut)
@@ -271,6 +308,7 @@ async def reanalyze(
         counterparties=counterparties,
         match_importance=match.importance,
         matched_counterparties=match.matched_counterparties,
+        use_llm=get_settings().llm_agent_enabled,
     )
     if payload and payload.question:
         report["user_question"] = payload.question

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import bookmarkIcon from "../assets/icons/bookmark.svg";
+import { Link } from "../router";
 import { ImpactBlock } from "./ImpactBlock";
 import type { FeedPost as FeedPostModel } from "./types";
 
@@ -134,12 +135,12 @@ export function FeedPost({ post, onToggleTracked }: FeedPostProps) {
               ))}
             </div>
           )}
-          <div className="post-card__head">
+          <Link to={`/event/${post.id}`} className="post-card__head">
             <p className="post-card__topics">{post.topics.join(" · ")}</p>
             <h2 className="post-card__title" id={`${post.id}-title`}>
               {post.title}
             </h2>
-          </div>
+          </Link>
           <p className="post-card__meta">
             <span className="post-card__effective">{post.effectiveLabel}</span>
             {" · "}

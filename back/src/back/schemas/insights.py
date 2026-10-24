@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -13,6 +13,8 @@ class SourcePostOut(BaseModel):
     handle: str | None = None
     url: str | None = None
     image_url: str | None = None
+    status: str = "single"
+    status_label: str = "Один канал"
 
 
 class ScoreComponentOut(BaseModel):
@@ -48,6 +50,9 @@ class ScenarioOut(BaseModel):
     probability: int
     note: str
     formula: str
+    share: str | None = None
+    origin: str | None = None
+    is_base: bool = False
 
 
 class AssumptionOut(BaseModel):
@@ -65,12 +70,14 @@ class ScenarioSetOut(BaseModel):
     assumptions: list[AssumptionOut]
     note: str
     needs_profile: list[str] = []
+    forecast_note: str | None = None
 
 
 class QuestionOut(BaseModel):
     id: str
     text: str
     status: str
+    status_code: str = "waiting"
     answer: str | None = None
     source: str | None = None
     date: str | None = None
@@ -84,16 +91,40 @@ class TimelinePointOut(BaseModel):
     is_current: bool = False
 
 
+class ImpactMetricOut(BaseModel):
+    key: str | None = None
+    label: str
+    value: str
+    previous_value: str | None = None
+    unit: str | None = None
+    note: str = ""
+    tone: str | None = None
+
+
 class ActionOut(BaseModel):
     title: str
     role: str
     deadline: str
     origin: str = "AI"
+    id: str | None = None
+    description: str | None = None
+    deadline_label: str | None = None
+    is_primary: bool = False
 
 
 class AgentStepOut(BaseModel):
     type: str
     text: str
+    is_correction: bool = False
+    at: str | None = None
+
+
+class ImpactTileOut(BaseModel):
+    type: Literal["metric", "statement", "accent"]
+    value: str | None = None
+    label: str
+    note: str | None = None
+    span: Literal["half", "full"] = "half"
 
 
 class ChatMessageOut(BaseModel):
@@ -116,6 +147,7 @@ class InsightOut(BaseModel):
     comparison: SourceComparisonOut
     theses: list[ThesisOut]
     alfa: AlfaAnalyticsOut | None = None
+    impact_tiles: list[ImpactTileOut] = []
     scenarios: ScenarioSetOut
     open_questions: list[QuestionOut]
     timeline: list[TimelinePointOut]
@@ -125,3 +157,8 @@ class InsightOut(BaseModel):
     product: ProductOut | None = None
     chat: list[ChatMessageOut] = []
     facts: list[dict[str, Any]] = []
+    questions_answered: int = 0
+    questions_waiting: int = 0
+    timeline_total: int = 0
+    timeline_current_index: int = 0
+    analysis_finished_at: str | None = None

@@ -295,6 +295,7 @@ class NewsEvent(Base):
     chain_key: Mapped[str | None] = mapped_column(String(64), index=True)
     update_label: Mapped[str | None] = mapped_column(String(128))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    is_feed_visible: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -348,3 +349,56 @@ class EventLike(Base):
         ForeignKey("news_events.id", ondelete="CASCADE"), index=True
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class EventQuestion(Base):
+    __tablename__ = "event_questions"
+    __table_args__ = (Index("ix_event_questions_profile_event", "profile_id", "event_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("business_profiles.id", ondelete="CASCADE"), index=True
+    )
+    event_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("news_events.id", ondelete="CASCADE"), index=True
+    )
+    text: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(32), default="waiting")
+    answer: Mapped[str | None] = mapped_column(Text)
+    source: Mapped[str | None] = mapped_column(String(128))
+    date: Mapped[str | None] = mapped_column(String(16))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Post(Base):
+    __tablename__ = "posts"
+    __table_args__ = (
+        Index("ix_posts_cluster_key", "cluster_key"),
+        Index("ix_posts_published_at", "published_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    source_name: Mapped[str | None] = mapped_column(String(128))
+    title: Mapped[str] = mapped_column(String(512))
+    text: Mapped[str] = mapped_column(Text)
+    url: Mapped[str | None] = mapped_column(String(1024))
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    raw: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    parsed: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    categories: Mapped[list[int]] = mapped_column(JSONB, default=list)
+    embedding: Mapped[list[float]] = mapped_column(JSONB, default=list)
+    cluster_key: Mapped[str | None] = mapped_column(String(64))
+    news_event_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("news_events.id", ondelete="SET NULL"), index=True
+    )
+    tracked_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tracked_items.id", ondelete="SET NULL")
+    )
+    importance: Mapped[int | None] = mapped_column(Integer)
+    similarity: Mapped[float | None] = mapped_column(Float)
+    status: Mapped[str] = mapped_column(String(32), default="received", index=True)
+    stage: Mapped[str] = mapped_column(String(32), default="received")
+    decision_trace: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    news_event: Mapped[NewsEvent | None] = relationship()

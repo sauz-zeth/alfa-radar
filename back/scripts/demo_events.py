@@ -52,12 +52,29 @@ DEMO_EVENTS = [
         ],
         "impact_metrics": [
             {
+                "key": "ebitda",
+                "label": "EBITDA в год",
                 "value": "−1,2 млрд ₽",
-                "note": "EBITDA в год\nпри доле экспорта 38%",
+                "previous_value": "−0,9 млрд ₽",
+                "note": "при доле экспорта 38%",
                 "tone": "negative",
             },
-            {"value": "4,6 млрд ₽", "note": "Контракты IV квартала\nпод пошлиной", "tone": None},
-            {"value": "7%", "note": "Ставка пошлины\nвместо 5%", "tone": "negative"},
+            {
+                "key": "export",
+                "label": "Экспорт под пошлиной",
+                "value": "4,6 млрд ₽",
+                "previous_value": "≈60%",
+                "note": "контракты IV квартала",
+                "tone": None,
+            },
+            {
+                "key": "rate",
+                "label": "Ставка пошлины",
+                "value": "7%",
+                "previous_value": "5%",
+                "note": "вместо прежней ставки",
+                "tone": "negative",
+            },
         ],
         "source_posts": [
             _post(
@@ -118,11 +135,21 @@ DEMO_EVENTS = [
         ],
         "impact_metrics": [
             {
+                "key": "ebitda",
+                "label": "EBITDA в год",
                 "value": "−0,7 млрд ₽",
-                "note": "Уточнённая оценка\nэффекта на EBITDA",
+                "previous_value": "−1,18 млрд ₽",
+                "note": "уточнённая оценка эффекта",
                 "tone": "negative",
             },
-            {"value": "2 из 9", "note": "Позиций сортамента\nисключены", "tone": "positive"},
+            {
+                "key": "export",
+                "label": "Экспорт под пошлиной",
+                "value": "2 из 9",
+                "previous_value": "≈60%",
+                "note": "позиций сортамента исключены",
+                "tone": "positive",
+            },
         ],
         "source_posts": [
             _post(
@@ -210,6 +237,8 @@ DEMO_EVENTS = [
         "importance": 78,
         "impact": "risk",
         "category_ids": [20, 4],
+        "chain_key": "rzd-tariffs",
+        "update_label": "Обновлено: уточнены сроки индексации",
         "facts": [
             {"text": "Тарифы проиндексированы на 10%.", "status": "Официально"},
             {"text": "Мера вступает в силу с 1 ноября.", "status": "Официально"},
@@ -269,6 +298,7 @@ DEMO_EVENTS = [
         "importance": 88,
         "impact": "mixed",
         "category_ids": [1, 23],
+        "chain_key": "cb-rate",
         "facts": [
             {"text": "Ключевая ставка сохранена на уровне 14% годовых.", "status": "Официально"},
             {"text": "Риторика регулятора стала жёстче.", "status": "Официально"},
@@ -714,6 +744,141 @@ DEMO_EVENTS = [
         ],
     },
 ]
+
+
+def _history_event(
+    slug: str,
+    *,
+    chain_key: str,
+    title: str,
+    summary: str,
+    days_ago: float,
+    importance: int,
+    impact: str,
+    source_name: str,
+    text: str,
+) -> dict:
+    published = NOW - timedelta(days=days_ago)
+    return {
+        "slug": slug,
+        "title": title,
+        "summary": summary,
+        "what_it_means": summary,
+        "source_name": source_name,
+        "source_url": None,
+        "published_at": published,
+        "importance": importance,
+        "impact": impact,
+        "category_ids": [4, 15],
+        "facts": [{"text": summary, "status": "Официально"}],
+        "impact_metrics": [],
+        "source_posts": [
+            _post(
+                source_name,
+                hours=int(days_ago * 24),
+                tone="official",
+                text=text,
+                image="steel.jpg",
+                primary=True,
+            )
+        ],
+        "chain_key": chain_key,
+        "update_label": None,
+    }
+
+
+CHAIN_HISTORY = [
+    _history_event(
+        "metals-duty-1",
+        chain_key="metals-duty",
+        title="Правительство обсуждает экспортную пошлину на прокат",
+        summary="Минфин предложил ввести пошлину 5% на экспорт плоского проката.",
+        days_ago=21,
+        importance=58,
+        impact="mixed",
+        source_name="Ведомости",
+        text="Обсуждается временная пошлина на экспорт металлопроката.",
+    ),
+    _history_event(
+        "metals-duty-2",
+        chain_key="metals-duty",
+        title="Введена экспортная пошлина на металлопрокат",
+        summary="Правительство подписало постановление о пошлине 5% с 1 октября.",
+        days_ago=17,
+        importance=88,
+        impact="risk",
+        source_name="Правительство РФ",
+        text="Пошлина вводится для защиты внутреннего рынка.",
+    ),
+    _history_event(
+        "metals-duty-3",
+        chain_key="metals-duty",
+        title="Ставку пошлины повысили до 7%",
+        summary="Минфин повысил ставку пошлины из-за роста мировых цен на прокат.",
+        days_ago=13,
+        importance=80,
+        impact="risk",
+        source_name="Минфин России",
+        text="Ставка повышена с 5% до 7%.",
+    ),
+    _history_event(
+        "metals-duty-4",
+        chain_key="metals-duty",
+        title="Экспортёры проката попросили пересмотреть пошлину",
+        summary="Отраслевые ассоциации просят исключить подписанные контракты из-под пошлины.",
+        days_ago=9,
+        importance=64,
+        impact="opportunity",
+        source_name="Деловой вестник",
+        text="Ассоциации направили обращение в правительство.",
+    ),
+    _history_event(
+        "rzd-tariffs-1",
+        chain_key="rzd-tariffs",
+        title="РЖД предложили индексацию тарифов с декабря",
+        summary="Монополия предложила повысить тарифы на 10% с декабря.",
+        days_ago=12,
+        importance=70,
+        impact="risk",
+        source_name="РЖД",
+        text="Предложение направлено в ФАС.",
+    ),
+    _history_event(
+        "rzd-tariffs-2",
+        chain_key="rzd-tariffs",
+        title="ФАС согласовала индексацию тарифов РЖД",
+        summary="ФАС согласовала рост тарифов на грузовые перевозки.",
+        days_ago=6,
+        importance=74,
+        impact="risk",
+        source_name="ФАС",
+        text="Решение согласовано с учётом социальных обязательств.",
+    ),
+    _history_event(
+        "cb-rate-1",
+        chain_key="cb-rate",
+        title="Инфляция замедлилась до 6,8%",
+        summary="Росстат зафиксировал замедление годовой инфляции.",
+        days_ago=11,
+        importance=62,
+        impact="opportunity",
+        source_name="Росстат",
+        text="Инфляция замедлилась четвёртый месяц подряд.",
+    ),
+    _history_event(
+        "cb-rate-2",
+        chain_key="cb-rate",
+        title="ЦБ сохранил ключевую ставку на уровне 14%",
+        summary="Регулятор сохранил ставку и ужесточил риторику.",
+        days_ago=5,
+        importance=88,
+        impact="mixed",
+        source_name="Банк России",
+        text="Ставка сохранена на уровне 14% годовых.",
+    ),
+]
+
+DEMO_EVENTS.extend(CHAIN_HISTORY)
 
 
 def seeded_events() -> list[dict]:

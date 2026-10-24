@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from back.api.deps import get_current_profile
+from back.config import get_settings
 from back.core.constants import ReportingForm
 from back.db.models import BusinessCategory, BusinessProfile, Counterparty, ReportingUpload
 from back.db.session import get_session
@@ -186,7 +187,13 @@ async def upload_reporting(
     for form_type, upload in files.items():
         if upload is None:
             continue
-        row = await process_upload(session, profile, form_type, upload)
+        row = await process_upload(
+            session,
+            profile,
+            form_type,
+            upload,
+            use_llm=get_settings().llm_ml_enabled,
+        )
         uploads.append(ReportingUploadOut.model_validate(row))
     if not uploads:
         raise HTTPException(status_code=400, detail="Загрузите хотя бы одну форму отчётности")

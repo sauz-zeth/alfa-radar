@@ -106,15 +106,15 @@ export default function SourcesPage() {
 
   return (
     <div className="sources-page">
-      <SourcesHeader
-        tab={tab}
-        channelCount={channels.length}
-        catalogCount={data.catalog_total}
-        onTabChange={setTab}
-      />
+      <div className="sources-top">
+        <SourcesHeader
+          tab={tab}
+          channelCount={channels.length}
+          catalogCount={data.catalog_total}
+          onTabChange={setTab}
+        />
 
-      {tab === "channels" ? (
-        <>
+        {tab === "channels" ? (
           <section className="sources-hint">
             <span className="sources-hint__covers" aria-hidden="true">
               <span className="sources-hint__cover sources-hint__cover--back">{covers[1]}</span>
@@ -125,7 +125,11 @@ export default function SourcesPage() {
               <p className="sources-hint__value">{recommended.join(" · ") || "Ваш бизнес"}</p>
             </div>
           </section>
+        ) : null}
+      </div>
 
+      {tab === "channels" ? (
+        <>
           {channels.length === 0 ? (
             <div className="sources-empty">
               <p>Все каналы отключены.</p>

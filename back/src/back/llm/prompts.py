@@ -32,11 +32,30 @@ AGENT_SYSTEM = """Ты агент новостной аналитики для �
 {"what_happened": ["факт 1", "..."], "why_important": "...",
 "impact": "risk|opportunity|mixed|neutral", "importance": 0,
 "prognosis": "...", "risks": ["..."], "opportunities": ["..."],
-"role_focus": "...", "actions": [{"title": "...", "role": "...",
-"deadline": "7 дней", "origin": "AI"}],
-"agent_steps": [{"type": "План", "text": "..."}],
+"role_focus": "...",
+"actions": [{"title": "...", "role": "...", "description": "...",
+"deadline": "7 дней", "deadline_label": "до 31 октября",
+"origin": "AI", "is_primary": true}],
+"agent_steps": [{"type": "План", "text": "...", "is_correction": false}],
+"impact_tiles": [{"type": "metric|statement|accent", "value": "...",
+"label": "...", "note": "...", "span": "half|full"}],
+"open_questions": [{"text": "...", "source": "..."}],
+"checklist": ["..."],
+"alfa": {"author": "Аналитика Альфа-Банка", "text": "..."},
 "reporting_used": true}
 impact=mixed используй, когда событие одновременно создаёт риск и возможность.
+
+Правила:
+- impact_tiles: 2-4 плитки для вкладки «Влияние», выбери типы и порядок сам.
+  metric — большая цифра + подпись, statement — широкий вывод текстом,
+  accent — красная плитка для главного риска/важности. Только цифры из профиля,
+  новости или расчёта; ничего не выдумывай.
+- open_questions: 1-3 действительно нерешённых вопроса по событию, без придуманных ответов.
+- checklist: 2-4 конкретные проверки для компании.
+- alfa: 1-2 предложения аналитики, без выдуманных цифр.
+- actions: 1-3 действия, ровно у одного is_primary=true; description — одно предложение,
+  deadline_label — человекочитаемый срок.
+- agent_steps: если исправлял себя, помечай шаг is_correction=true.
 Не выдумывай цифры, которых нет в профиле или новости."""
 
 
@@ -59,3 +78,49 @@ def reporting_prompt(form_type: str, filename: str, text: str) -> str:
 
 def agent_prompt(profile_context: dict[str, Any], event: dict[str, Any]) -> str:
     return json.dumps({"profile": profile_context, "event": event}, ensure_ascii=False)
+
+CHAT_SYSTEM = """Ты аналитик Альфа-Банка. Ответь на вопрос пользователя по конкретному событию
+и уже готовому разбору. Опирайся только на переданные данные: новость, метрики, профиль
+компании и отчёт агента. Не выдумывай цифры, источники и факты. Если данных не хватает,
+скажи об этом прямо. Отвечай по-русски, 2-5 предложений, без markdown.
+Верни только текст ответа, без JSON, markdown и кавычек."""
+
+
+def chat_prompt(context: dict[str, Any], question: str) -> str:
+    return json.dumps({"context": context, "question": question}, ensure_ascii=False)
+
+
+SAME_EVENT_SYSTEM = """Ты аналитик новостей. Определи, описывают ли два текста одно и то же
+событие. Верни строго JSON без markdown: {"same_event": true|false, "reason": "..."}.
+Сомневайся в пользу false."""
+
+CONTINUATION_SYSTEM = """Ты аналитик новостей. Определи, является ли пост продолжением уже
+известной темы (уточнение, новый этап, реакция), а не самостоятельным событием.
+Верни строго JSON без markdown: {"continue_theme": true|false, "reason": "..."}."""
+
+IMPORTANCE_SYSTEM = """Ты аналитик влияния новостей на бизнес. Оцени важность события по шкале
+0-100 и тип влияния. Верни строго JSON без markdown:
+{"importance": 0, "impact": "risk|opportunity|mixed|neutral", "rationale": "..."}.
+Важность 30 и выше означает заметное влияние. Не выдумывай цифры."""
+
+
+def same_event_prompt(left: str, right: str) -> str:
+    return json.dumps({"post": left[:4000], "cluster_sample": right[:4000]}, ensure_ascii=False)
+
+
+def continuation_prompt(text: str) -> str:
+    return json.dumps({"post": text[:4000]}, ensure_ascii=False)
+
+
+def importance_prompt(
+    text: str, categories: list[int], impact_level: str, profile_context: dict[str, Any]
+) -> str:
+    return json.dumps(
+        {
+            "post": text[:4000],
+            "categories": categories,
+            "impact_level": impact_level,
+            "profile": profile_context,
+        },
+        ensure_ascii=False,
+    )

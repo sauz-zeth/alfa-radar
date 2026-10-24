@@ -3,6 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from back.api.deps import get_current_profile, get_current_user
+from back.config import get_settings
 from back.core.constants import OnboardingStep, ReportingForm
 from back.db.models import BusinessCategory, BusinessProfile, Counterparty, ReportingUpload, User
 from back.db.session import get_session
@@ -114,7 +115,7 @@ async def list_counterparties(
     profile: BusinessProfile = Depends(get_current_profile),
     session: AsyncSession = Depends(get_session),
 ) -> list[CounterpartyOut]:
-    rows = await build_counterparties(session, profile)
+    rows = await build_counterparties(session, profile, use_llm=get_settings().llm_ml_enabled)
     advance_step(profile, OnboardingStep.COUNTERPARTIES_CONFIGURED)
     await session.commit()
     return [CounterpartyOut.model_validate(row) for row in rows]
@@ -125,7 +126,7 @@ async def suggest_counterparties(
     profile: BusinessProfile = Depends(get_current_profile),
     session: AsyncSession = Depends(get_session),
 ) -> list[CounterpartyOut]:
-    rows = await build_counterparties(session, profile)
+    rows = await build_counterparties(session, profile, use_llm=get_settings().llm_ml_enabled)
     advance_step(profile, OnboardingStep.COUNTERPARTIES_CONFIGURED)
     await session.commit()
     return [CounterpartyOut.model_validate(row) for row in rows]
@@ -167,7 +168,7 @@ async def suggest_profile_categories(
 ) -> list[CategoryOut]:
     if not profile.company:
         raise HTTPException(status_code=409, detail="Сначала выберите бизнес")
-    items = await suggest_categories(profile.company)
+    items = await suggest_categories(profile.company, use_llm=get_settings().llm_ml_enabled)
     await save_categories(session, profile, items)
     return await categories_out(session, profile)
 
@@ -236,7 +237,13 @@ async def upload_reporting(
     for form_type, upload in files.items():
         if upload is None:
             continue
-        row = await process_upload(session, profile, form_type, upload)
+        row = await process_upload(
+            session,
+            profile,
+            form_type,
+            upload,
+            use_llm=get_settings().llm_ml_enabled,
+        )
         uploads.append(ReportingUploadOut.model_validate(row))
     if not uploads:
         raise HTTPException(status_code=400, detail="Загрузите хотя бы одну форму отчётности")

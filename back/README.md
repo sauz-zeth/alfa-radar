@@ -21,6 +21,7 @@ podman-compose up -d postgres      # или: docker compose up -d postgres
 uv sync --all-groups
 uv run alembic upgrade head
 uv run python scripts/seed.py --reset
+uv run python scripts/seed_demo_tracked.py
 uv run uvicorn back.main:app --reload
 ```
 
@@ -31,6 +32,9 @@ API: `http://localhost:8000`, Swagger: `http://localhost:8000/docs`.
 ```bash
 uv run python scripts/seed.py --reset --data-dir "/tmp/alfadata/Данные для участников"
 ```
+
+`seed_demo_tracked.py` добавляет демо-темы, цепочки событий и вопросы для `demo_full`
+(идемпотентно, можно запускать повторно).
 
 Скрипт seed сам находит `/tmp/alfadata/Данные для участников`, если `--data-dir` не задан.
 Флаги: `--limit N` — ограничить число компаний, `--skip-payments` — не грузить 1.38M платежей,
@@ -182,6 +186,12 @@ GET /api/businesses/options?search=&limit=15
 ```env
 LLM_PROVIDER=stub   # offline, без вызовов
 LLM_PROVIDER=openai # любой OpenAI-compatible gateway
+LLM_BASE_URL=https://your-gateway/v1
+LLM_API_KEY=...
+LLM_MODEL=...
+LLM_FAST_MODEL=...
+LLM_AGENT_ENABLED=true  # LLM для разбора события
+LLM_ML_ENABLED=false    # категории/контрагенты/отчётность пока детерминированные
 ```
 
 - `base.py` — контракт `BaseLLM`, парсинг JSON, ошибки `LLMError` / `LLMBudgetExceeded`.
@@ -193,9 +203,69 @@ LLM_PROVIDER=openai # любой OpenAI-compatible gateway
 
 Задачи и модели задаются через `LLM_MODEL` и `LLM_FAST_MODEL`. Бюджетный лимит обрабатывается
 мягко: при ошибке LLM сервис отдаёт детерминированный fallback, а не падает.
+Для пайплайна есть роли: `LLM_WEAK_MODEL` (по умолчанию `LLM_FAST_MODEL`) и
+`LLM_STRONG_MODEL` (по умолчанию `LLM_MODEL`). Пустое значение = откат к старым переменным.
 
 ML-обучения в проекте нет: старый pipeline/классификатор удалён. Всё, что можно заменить
 моделью позже, вынесено в `llm/` и `services/` (категории, контрагенты, отчётность, агент).
+По умолчанию LLM включён только для агента (`LLM_AGENT_ENABLED=true`); ML-подобные
+подсказки категорий/контрагентов и извлечение отчётности остаются детерминированными,
+пока не выставлен `LLM_ML_ENABLED=true`.
+
+Агент возвращает в отчёте `impact_tiles` — упорядоченный JSON плиток для вкладки «Влияние»:
+`type` (`metric` / `statement` / `accent`), `value`, `label`, `note`, `span` (`half` / `full`).
+Если плиток нет, бэкенд строит их из `impact_metrics`.
+
+## Pipeline
+
+Пост принимается через `POST /api/ingest/posts` (внутренний endpoint, опционально защищён
+`X-Ingest-Token`, см. `INGEST_TOKEN`). Пайплайн сохраняет каждый пост и все решения в таблицу
+`posts` (`raw`, `parsed`, `categories`, `embedding`, `cluster_key`, `news_event_id`,
+`status`, `stage`, `decision_trace`). События отслеживаемых тем получают
+`news_events.is_feed_visible = false`, поэтому в ленту не попадают, но открываются по прямой
+ссылке `/api/feed/{id}`.
+
+Этапы и ветки:
+
+1. **parse** — нормализует `title/text/source/url/published_at`, чистит HTML, выводит заголовок
+   из текста, принимает ISO/человеческие даты, отсутствующие поля не ломают приём.
+2. **classify** — `services/ml.py`: stub-классификатор категорий (ключевой лексикон) и
+   детерминированный hashed-эмбеддинг (64 измерения). Интерфейс `PostClassifier` — точка
+   замены на ruBERT/e5.
+3. **cluster** — косинус к центроидам существующих кластеров (центроид считается на лету по
+   последним постам, без отдельной таблицы). `>= 0.85` — «Источник кластера», LLM не
+   вызывается; `0.75–0.85` — weak-модель отвечает на «То же событие?»; `< 0.75` — новый
+   кластер. Пороги: `SAME_CLUSTER_THRESHOLD`, `AMBIGUOUS_CLUSTER_THRESHOLD`.
+4. **continuation** — weak-модель «Продолжение темы?». Да → пост отслеживается
+   (`TrackedItem`, в ленту не идёт), но только если передан `profile_id`; без профиля решение
+   пишется в trace, сущности не создаются.
+5. **influence** — только при переданном `profile_id`: уровень `none | indirect | direct` по
+   категориям поста и весам категорий профиля (прямое влияние — вес `>= 0.8`). `none` —
+   пост игнорируется. `indirect` → weak-модель, `direct` → strong-модель. Оценка важности
+   `I` и короткое обоснование сохраняются в `posts` и `NewsEvent`.
+6. **routing** — `I >= 30` → `NewsEvent` попадает в ленту; `I < 30` → событие создаётся, но
+   скрывается существующей логикой «Слабое влияние» (`/api/feed/hidden?tab=weak`).
+
+Почему так: кластеризация и «продолжение темы» глобальны для поста, а влияние — свойство
+профиля. Для демо влияние считается для одного явно переданного `profile_id`; без него
+пайплайн останавливается после кластеризации и сохраняет глобальный trace. Полный fan-out по
+всем активным профилям — следующий шаг.
+
+Сейчас заглушки (детерминированные, без сети): категории, эмбеддинги, решения weak/strong.
+При `LLM_ML_ENABLED=false` (по умолчанию) вызываются офлайн-fallback; при `true` те же
+функции идут в `get_llm()` с ролями weak/strong. Пороги и точка замены ML — только в
+`services/pipeline.py` и `services/ml.py`.
+
+Пример:
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/api/ingest/posts \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"ЦБ повысил ставку","text":"Регулятор повысил ключевую ставку до 21%.",
+       "source":"ЦБ РФ","published_at":"2026-10-24T10:00:00Z"}'
+
+curl -s http://127.0.0.1:8000/api/ingest/posts/<post_id>
+```
 
 ## API
 
