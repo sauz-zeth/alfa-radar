@@ -5,6 +5,7 @@ import { useMediaQuery } from "../lib/useMediaQuery";
 import { useRouter } from "../router";
 import { FeedDesktop } from "./FeedDesktop";
 import { FeedEnd } from "./FeedEnd";
+import { FeedEndScreen } from "./FeedEndScreen";
 import { FeedPost } from "./FeedPost";
 import { FeedTopBar } from "./FeedTopBar";
 import { buildFilters, toFeedPost } from "./mapFeed";
@@ -20,7 +21,9 @@ export function FeedScreen() {
   const isDesktop = useMediaQuery("(min-width: 1200px)");
   const [activeFilter, setActiveFilter] = useState("Все");
   const [trackedOverrides, setTrackedOverrides] = useState<Record<string, boolean>>({});
+  const [endOpen, setEndOpen] = useState(false);
   const feedRef = useRef<HTMLDivElement>(null);
+  const endSentinelRef = useRef<HTMLDivElement>(null);
 
   const feedQuery = useApiQuery({
     queryKey: ["feed", { limit: FEED_LIMIT }],
@@ -74,9 +77,36 @@ export function FeedScreen() {
     feedRef.current?.scrollTo({ top: 0 });
   }, []);
 
+  useEffect(() => {
+    if (isDesktop || endOpen || renderedPosts.length === 0) return;
+    const root = feedRef.current;
+    const sentinel = endSentinelRef.current;
+    if (!root || !sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) setEndOpen(true);
+      },
+      { root, rootMargin: "0px 0px -10% 0px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [endOpen, isDesktop, renderedPosts.length]);
+
+  const restartFeed = useCallback(() => {
+    setEndOpen(false);
+    scrollToTop();
+  }, [scrollToTop]);
+
+  const openHidden = useCallback(() => {
+    setEndOpen(false);
+    navigate("/hidden");
+  }, [navigate]);
+
   const changeFilter = useCallback(
     (filter: string) => {
       setActiveFilter(filter);
+      setEndOpen(false);
       scrollToTop();
     },
     [scrollToTop],
@@ -132,11 +162,10 @@ export function FeedScreen() {
             {renderedPosts.length === 0 ? (
               <p className="feed-empty">Нет новостей по этому фильтру</p>
             ) : (
-              <FeedEnd
-                hiddenCount={hiddenCount}
-                onRestart={scrollToTop}
-                onOpenHidden={() => navigate("/hidden")}
-              />
+              <>
+                <div ref={endSentinelRef} className="feed-end-sentinel" aria-hidden="true" />
+                <FeedEnd onOpen={() => setEndOpen(true)} />
+              </>
             )}
           </div>
 
@@ -146,9 +175,18 @@ export function FeedScreen() {
             filters={filters}
             activeFilter={activeFilter}
             onFilterChange={changeFilter}
-            onOpenHidden={() => navigate("/hidden")}
+            onOpenHidden={openHidden}
             onSearch={() => navigate("/search")}
+            hideFilters={endOpen}
           />
+
+          {endOpen && renderedPosts.length > 0 ? (
+            <FeedEndScreen
+              hiddenCount={hiddenCount}
+              onOpenHidden={openHidden}
+              onRestart={restartFeed}
+            />
+          ) : null}
         </>
       )}
     </div>

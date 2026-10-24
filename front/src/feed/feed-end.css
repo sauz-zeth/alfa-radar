@@ -1,0 +1,100 @@
+.feed-end-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(239, 49, 36, 0.12), transparent 60%),
+    linear-gradient(180deg, #241a19 0%, #202020 38%, #1b1b1b 100%);
+}
+
+.feed-end-screen__oval {
+  position: absolute;
+  top: calc(50% + 34px);
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(calc(100% - 32px), 361px);
+  height: min(639px, calc(100% - 190px));
+  padding: 40px 24px;
+  overflow: hidden;
+  border-radius: 86px;
+  background: #383838;
+  transform: translate(-50%, -50%);
+}
+
+.feed-end-screen__content {
+  display: flex;
+  width: 100%;
+  max-width: 334px;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  color: #fff;
+  text-align: center;
+}
+
+.feed-end-screen__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.feed-end-screen__title {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 32px;
+}
+
+.feed-end-screen__text {
+  max-width: 306px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 18px;
+  opacity: 0.8;
+}
+
+.feed-end-screen__actions {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.feed-end-screen__button {
+  width: min(253px, 100%);
+  height: 70px;
+  padding: 0 14px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  text-align: center;
+}
+
+.feed-end-screen__button--primary {
+  background: #202020;
+  color: #f7f7f7;
+}
+
+.feed-end-screen__button--secondary {
+  width: min(252px, 100%);
+  background: #585858;
+  color: #f7f7f7;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .feed-end-screen {
+    animation: feed-end-screen-in 0.2s ease-out;
+  }
+}
+
+@keyframes feed-end-screen-in {
+  from {
+    opacity: 0;
+  }
+}

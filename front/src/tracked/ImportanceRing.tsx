@@ -13,9 +13,10 @@ export function ImportanceRing({ value }: ImportanceRingProps) {
       style={{ "--importance": clamped } as CSSProperties}
       aria-hidden="true"
     >
-      <span className="topic-ring__ticks" />
-      <span className="topic-ring__ticks topic-ring__ticks--major" />
+      <span className="topic-ring__base" />
       <span className="topic-ring__progress" />
+      <span className="topic-ring__ticks" />
+      <span className="topic-ring__dots" />
     </span>
   );
 }

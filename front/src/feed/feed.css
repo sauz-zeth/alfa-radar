@@ -605,10 +605,9 @@
   opacity: 0.65;
 }
 
-.feed-end__hidden {
-  width: 100%;
-  max-width: 305px;
+.feed-end__trigger {
   height: 44px;
+  padding: 0 22px;
   border: 1px solid var(--glass-stroke);
   border-radius: 22px;
   background: var(--glass-surface);
@@ -616,12 +615,6 @@
   font-weight: 500;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-}
-
-.feed-end__restart {
-  height: 44px;
-  font-size: 14px;
-  font-weight: 500;
 }
 
 /* Loading and empty states */

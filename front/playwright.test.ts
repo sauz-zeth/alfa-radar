@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -181,39 +181,29 @@ test("profile reporting summary", async ({ page }) => {
         counterparties_by_direction: {},
         notifications: [],
         reporting: {
-          markdown: [
-            "# Отчётность",
-            "",
-            "**Период:** 2025",
-            "",
-            "| Показатель | Значение |",
-            "| --- | ---: |",
-            "| Выручка | 1 млрд ₽ |",
-            "",
-            "- Выручка выросла на 12%",
-            "",
-            "## Бухгалтерский баланс",
-            "",
-            "**Файл:** balance.xlsx",
-            "",
-            "## Отчёт о движении денежных средств",
-            "",
-            "**Файл:** cash-flow.xlsx",
-          ].join("\n"),
+          forms: {
+            balance: { label: "Бухгалтерский баланс", filename: "balance.xlsx" },
+            income: { label: "Отчёт о финансовых результатах", filename: "income.xlsx" },
+            cash_flow: { label: "Отчёт о движении денежных средств", filename: "cash-flow.xlsx" },
+          },
         },
       }),
     }),
   );
 
   await page.goto("/profile", { waitUntil: "networkidle" });
-  const mobile = page.locator(".profile-mobile");
-  await mobile.getByRole("tab", { name: "Отчётность" }).click();
+  const summary = page.locator(".profile-summary");
 
-  await mobile.getByRole("heading", { name: "Отчётность" }).waitFor();
-  await mobile.getByText("Период: 2025").waitFor();
-  await mobile.getByText("Выручка выросла на 12%").waitFor();
-  await mobile.getByRole("columnheader", { name: "Показатель" }).waitFor();
-  await mobile.getByRole("cell", { name: "1 млрд ₽" }).waitFor();
-  await mobile.getByRole("heading", { name: "Бухгалтерский баланс" }).waitFor();
-  await mobile.getByRole("heading", { name: "Отчёт о движении денежных средств" }).waitFor();
+  await expect(summary.getByRole("heading", { name: "Саммари отчётов" })).toBeVisible();
+  await expect(summary.locator(".profile-summary__badge")).toHaveText("3");
+  await expect(summary.getByRole("link")).toHaveCount(3);
+  await expect(
+    summary.getByRole("link", { name: "Бухгалтерский баланс: balance.xlsx" }),
+  ).toHaveAttribute("href", "/profile/reports/balance");
+  await expect(
+    summary.getByRole("link", { name: "Отчёт о финансовых результатах: income.xlsx" }),
+  ).toHaveAttribute("href", "/profile/reports/income");
+  await expect(
+    summary.getByRole("link", { name: "Отчёт о движении денежных средств: cash-flow.xlsx" }),
+  ).toHaveAttribute("href", "/profile/reports/cash_flow");
 });

@@ -11,7 +11,7 @@ const GLYPHS: Record<string, string[]> = {
   "9": ["01110", "10001", "10001", "01111", "00001", "00010", "01100"],
 };
 
-const DOT_RADIUS = 0.22;
+const DOT_RADIUS = 0.28;
 
 type DotDigitsProps = {
   value: number;

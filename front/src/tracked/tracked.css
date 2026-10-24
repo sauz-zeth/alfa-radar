@@ -15,20 +15,43 @@
 
 .tracked-hero {
   position: relative;
-  height: 429px;
+  height: 476px;
   overflow: hidden;
   border-radius: 0 0 48px 48px;
-  background:
-    radial-gradient(48% 38% at 34% 9%, rgba(239, 49, 36, 0.9), rgba(239, 49, 36, 0) 72%),
-    radial-gradient(52% 44% at 74% 13%, rgba(239, 49, 36, 0.72), rgba(239, 49, 36, 0) 74%),
-    #1a0303;
-  box-shadow: inset 0 0 86px 4px rgba(255, 135, 116, 0.32);
+  background: #1a0303;
+  box-shadow: inset 0 0 86px 3.6px rgba(255, 135, 116, 0.32);
+}
+
+.tracked-hero::before,
+.tracked-hero::after {
+  position: absolute;
+  border-radius: 36px;
+  background: #ef3124;
+  content: "";
+  pointer-events: none;
+}
+
+.tracked-hero::before {
+  top: -145px;
+  left: calc(50% - 151.5px);
+  width: 303px;
+  height: 265px;
+  filter: blur(49px);
+}
+
+.tracked-hero::after {
+  top: 0;
+  left: calc(50% - 66.5px);
+  width: 165px;
+  height: 133px;
+  border-radius: 18px;
+  filter: blur(18px);
 }
 
 .tracked-head {
   position: relative;
   z-index: 2;
-  padding-top: 15px;
+  padding-top: max(62px, calc(env(safe-area-inset-top) + 15px));
   color: #fff;
   text-align: center;
 }
@@ -64,7 +87,8 @@
 
 .tracked-empty {
   position: absolute;
-  top: 89px;
+  z-index: 1;
+  top: 136px;
   left: 0;
   right: 0;
   display: flex;
@@ -120,7 +144,8 @@
 
 .topic-carousel {
   position: absolute;
-  top: 89px;
+  z-index: 1;
+  top: 136px;
   left: 0;
   right: 0;
   height: 330px;
@@ -131,9 +156,9 @@
   width: 320px;
   height: 320px;
   padding: 0;
-  border: 0;
+  border: 0.56px solid rgba(255, 255, 255, 0.8);
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 42%, #ffffff 0%, #f7f7f7 72%, #ececec 100%);
+  background: radial-gradient(circle 320px at 34% 28%, #ffffff 0%, #f7f7f7 72%, #ececec 100%);
   color: #202020;
   text-align: center;
 }
@@ -149,14 +174,15 @@
   opacity: 0.5;
   cursor: pointer;
   transform: scale(0.725);
+  transform-origin: 0 0;
 }
 
 .topic-circle--prev {
-  left: calc(50% - 341px);
+  left: calc(50% - 297px);
 }
 
 .topic-circle--next {
-  left: calc(50% + 21px);
+  left: calc(50% + 65.5px);
 }
 
 /* Importance scale around the circle */
@@ -164,47 +190,97 @@
 .topic-ring {
   position: absolute;
   inset: 0;
-  border: 0.5px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.topic-ring__base {
+  position: absolute;
+  inset: 8.8px;
+  border: 0.93px solid rgba(215, 215, 215, 0.3);
   border-radius: 50%;
 }
 
-.topic-ring__ticks,
 .topic-ring__progress {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 9.4px),
+    #000 calc(100% - 9.3px) calc(100% - 7.3px),
+    transparent calc(100% - 7.2px)
+  );
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 9.4px),
+    #000 calc(100% - 9.3px) calc(100% - 7.3px),
+    transparent calc(100% - 7.2px)
+  );
+}
+
+.topic-ring__progress::before {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 180deg,
+    #4a2521 0deg,
+    #672d26 100.8deg,
+    #9b3026 226.8deg,
+    #b3382a 316.8deg,
+    #9b3026 360deg
+  );
+  -webkit-mask: conic-gradient(
+    #000 0deg calc(var(--importance) * 3.6deg),
+    transparent calc(var(--importance) * 3.6deg) 360deg
+  );
+  mask: conic-gradient(
+    #000 0deg calc(var(--importance) * 3.6deg),
+    transparent calc(var(--importance) * 3.6deg) 360deg
+  );
+  content: "";
+}
+
+.topic-ring__ticks,
+.topic-ring__dots {
   position: absolute;
   inset: 0;
   border-radius: 50%;
 }
 
 .topic-ring__ticks {
-  background: repeating-conic-gradient(
-    from -90deg,
-    rgba(32, 32, 32, 0.12) 0deg 0.5deg,
-    transparent 0.5deg 9deg
+  background: repeating-conic-gradient(#202020 0deg 0.4deg, transparent 0.4deg 36deg);
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 19.2px),
+    #000 calc(100% - 19.1px) calc(100% - 14.4px),
+    transparent calc(100% - 14.3px)
   );
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 8px));
-  mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 8px));
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 19.2px),
+    #000 calc(100% - 19.1px) calc(100% - 14.4px),
+    transparent calc(100% - 14.3px)
+  );
+  opacity: 0.23;
 }
 
-.topic-ring__ticks--major {
-  background: repeating-conic-gradient(
-    from -90deg,
-    rgba(32, 32, 32, 0.18) 0deg 0.7deg,
-    transparent 0.7deg 90deg
+.topic-ring__dots {
+  background: repeating-conic-gradient(#202020 0deg 0.5deg, transparent 0.5deg 7.2deg);
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 16.6px),
+    #000 calc(100% - 16.5px) calc(100% - 15.1px),
+    transparent calc(100% - 15px)
   );
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 15px), #000 calc(100% - 14px));
-  mask: radial-gradient(farthest-side, transparent calc(100% - 15px), #000 calc(100% - 14px));
-}
-
-.topic-ring__progress {
-  background: conic-gradient(
-    from -90deg,
-    rgba(140, 60, 45, 0.9) 0deg,
-    #4a1510 calc(var(--importance) * 3.6deg),
-    transparent calc(var(--importance) * 3.6deg)
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 16.6px),
+    #000 calc(100% - 16.5px) calc(100% - 15.1px),
+    transparent calc(100% - 15px)
   );
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
-  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
-  opacity: 0.55;
+  opacity: 0.18;
 }
 
 /* Circle content */
@@ -237,7 +313,6 @@
 
 .importance-score--circle {
   display: block;
-  transform: translateY(10px);
 }
 
 .dot-digits {
@@ -280,6 +355,8 @@
 }
 
 .topic-circle__title {
+  display: block;
+  max-width: 228px;
   font-size: 21.3px;
   font-weight: 500;
   letter-spacing: -0.3px;

@@ -10,6 +10,7 @@ type FeedTopBarProps = {
   onFilterChange: (filter: string) => void;
   onOpenHidden: () => void;
   onSearch: () => void;
+  hideFilters?: boolean;
 };
 
 export function FeedTopBar({
@@ -20,6 +21,7 @@ export function FeedTopBar({
   onFilterChange,
   onOpenHidden,
   onSearch,
+  hideFilters = false,
 }: FeedTopBarProps) {
   return (
     <header className="feed-topbar">
@@ -46,7 +48,9 @@ export function FeedTopBar({
           </button>
         </div>
 
-        <FeedFilters filters={filters} active={activeFilter} onChange={onFilterChange} />
+        {hideFilters ? null : (
+          <FeedFilters filters={filters} active={activeFilter} onChange={onFilterChange} />
+        )}
       </div>
     </header>
   );

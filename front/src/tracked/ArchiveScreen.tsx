@@ -1,8 +1,24 @@
 import { useMemo } from "react";
 import { ApiError, useApi, useApiMutation, useApiQuery, useQueryClient } from "../api";
+import { pluralRu } from "../lib/plural";
 import { Link } from "../router";
-import { eventsLabel, toTopic } from "./mapTracked";
-import "./tracked.css";
+import "./archive.css";
+
+type ArchiveRow = {
+  id: string;
+  title: string;
+  events: number;
+  days: number;
+};
+
+function daysWithoutNews(iso: string): number {
+  const diff = Date.now() - new Date(iso).getTime();
+  return Math.max(0, Math.floor(diff / 86_400_000));
+}
+
+function daysLabel(days: number): string {
+  return `${days} ${pluralRu(days, ["день", "дня", "дней"])} без новостей`;
+}
 
 export default function ArchiveScreen() {
   const api = useApi();
@@ -22,49 +38,96 @@ export default function ArchiveScreen() {
     },
   });
 
-  const items = useMemo(() => (tracked.data?.items ?? []).map(toTopic), [tracked.data]);
+  const rows = useMemo<ArchiveRow[]>(
+    () =>
+      (tracked.data?.items ?? []).map((item) => {
+        const latest = item.events[item.events.length - 1]?.published_at ?? item.event.published_at;
+        return {
+          id: item.id,
+          title: item.title ?? item.event.title,
+          events: Math.max(1, item.events.length),
+          days: daysWithoutNews(latest),
+        };
+      }),
+    [tracked.data],
+  );
+
+  const error = resume.error;
+  const errorId = resume.variables ? `archive-error-${resume.variables}` : undefined;
 
   return (
-    <div className="tracked-page tracked-page--archive">
-      <header className="tracked-archive__head">
-        <Link to="/tracked" className="tracked-archive__back">
-          Назад
-        </Link>
-        <h1>Архив</h1>
-      </header>
+    <div className="archive-page">
+      <div className="archive-shell">
+        <header className="archive-head">
+          <Link to="/tracked" className="archive-back" aria-label="Назад к отслеживаемому">
+            <span aria-hidden="true">←</span>
+          </Link>
+          <h1 className="archive-head__title">Архив</h1>
+          <span className="archive-head__spacer" aria-hidden="true" />
+        </header>
 
-      {tracked.isPending ? <p className="tracked-state__note">Загружаем архив…</p> : null}
+        <main className="archive-body">
+          {tracked.isPending ? <p className="archive-note">Загружаем архив…</p> : null}
 
-      {tracked.isError ? (
-        <p className="tracked-state__note">
-          {tracked.error instanceof ApiError ? tracked.error.detail : "Не удалось загрузить архив"}
-        </p>
-      ) : null}
+          {tracked.isError ? (
+            <p className="archive-note">
+              {tracked.error instanceof ApiError
+                ? tracked.error.detail
+                : "Не удалось загрузить архив"}
+            </p>
+          ) : null}
 
-      {tracked.data && items.length === 0 ? (
-        <p className="tracked-state__note">В архиве пока пусто.</p>
-      ) : null}
+          {tracked.data && rows.length === 0 ? (
+            <section className="archive-empty">
+              <h2>Нет тем</h2>
+              <p>Архивные темы появятся здесь, когда вы приостановите отслеживание.</p>
+              <Link to="/tracked" className="archive-empty__action">
+                К отслеживаемому
+              </Link>
+            </section>
+          ) : null}
 
-      <ul className="tracked-archive__list">
-        {items.map((topic) => (
-          <li key={topic.id} className="tracked-archive__row">
-            <div className="tracked-archive__body">
-              <h2 className="tracked-archive__title">{topic.title}</h2>
-              <p className="tracked-archive__meta">
-                {topic.date} · {eventsLabel(topic.eventsCount)}
-              </p>
-            </div>
-            <button
-              type="button"
-              className="tracked-archive__resume"
-              onClick={() => resume.mutate(topic.id)}
-              disabled={resume.isPending}
-            >
-              Возобновить
-            </button>
-          </li>
-        ))}
-      </ul>
+          {rows.length > 0 ? (
+            <ul className="archive-list">
+              {rows.map((row) => {
+                const rowError = resume.isError && resume.variables === row.id;
+                return (
+                  <li key={row.id} className="archive-card">
+                    <div
+                      className="archive-card__date"
+                      aria-label={`Событий в теме: ${row.events}`}
+                    >
+                      <span className="archive-card__day">{row.events}</span>
+                    </div>
+                    <div className="archive-card__main">
+                      <div className="archive-card__text">
+                        <h2 className="archive-card__title">{row.title}</h2>
+                        <p className="archive-card__meta">{daysLabel(row.days)}</p>
+                      </div>
+                      {rowError ? (
+                        <p className="archive-card__error" id={errorId} role="alert">
+                          {error instanceof ApiError
+                            ? error.detail
+                            : "Не удалось возобновить тему"}
+                        </p>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="archive-card__resume"
+                        onClick={() => resume.mutate(row.id)}
+                        disabled={resume.isPending}
+                        aria-describedby={rowError ? errorId : undefined}
+                      >
+                        Возобновить
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </main>
+      </div>
     </div>
   );
 }

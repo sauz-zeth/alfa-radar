@@ -1,0 +1,233 @@
+.archive-page {
+  --ar-ink: #202020;
+  --ar-muted: #737373;
+  --ar-surface: #f7f7f7;
+  --ar-card: #ffffff;
+  --ar-radius: 28px;
+  height: 100%;
+  overflow-y: auto;
+  background: #ebebeb;
+  color: var(--ar-ink);
+  scrollbar-width: none;
+}
+
+.archive-page::-webkit-scrollbar {
+  display: none;
+}
+
+.archive-shell {
+  display: flex;
+  width: 100%;
+  max-width: 393px;
+  min-height: 100%;
+  flex-direction: column;
+  margin: 0 auto;
+  padding-bottom: calc(104px + env(safe-area-inset-bottom));
+}
+
+.archive-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 8px;
+  padding: max(16px, env(safe-area-inset-top)) 16px 8px;
+  background: rgba(235, 235, 235, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.archive-back {
+  display: flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 24px;
+  background: var(--ar-card);
+  color: var(--ar-ink);
+  font-size: 20px;
+  line-height: 24px;
+  text-decoration: none;
+}
+
+.archive-head__title {
+  margin: 0;
+  overflow: hidden;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: -0.54px;
+  text-align: center;
+}
+
+.archive-head__spacer {
+  width: 44px;
+}
+
+.archive-body {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px 0;
+}
+
+.archive-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.archive-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border-radius: var(--ar-radius);
+  background: var(--ar-card);
+}
+
+.archive-card__date {
+  display: flex;
+  width: 64px;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px;
+  border-radius: var(--ar-radius);
+  background: var(--ar-surface);
+  text-align: center;
+}
+
+.archive-card__day {
+  font-size: 40px;
+  font-weight: 500;
+  letter-spacing: -1.2px;
+  line-height: 40px;
+}
+
+.archive-card__main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.archive-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.archive-card__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.archive-card__meta {
+  margin: 0;
+  color: var(--ar-muted);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.archive-card__resume {
+  display: flex;
+  width: 148px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--ar-radius);
+  background: var(--ar-ink);
+  color: var(--ar-surface);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.archive-card__resume:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.archive-card__error {
+  margin: -8px 0 0;
+  color: #ef3124;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.archive-note {
+  margin: 8px 0;
+  color: var(--ar-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.archive-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 24px 20px;
+  border-radius: var(--ar-radius);
+  background: var(--ar-card);
+}
+
+.archive-empty h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+.archive-empty p {
+  margin: 0;
+  color: var(--ar-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.archive-empty__action {
+  display: flex;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  padding: 0 20px;
+  border-radius: var(--ar-radius);
+  background: var(--ar-ink);
+  color: var(--ar-surface);
+  font-size: 14px;
+  line-height: 20px;
+  text-decoration: none;
+}
+
+.archive-back:focus-visible,
+.archive-card__resume:focus-visible,
+.archive-empty__action:focus-visible {
+  outline: 2px solid #ef3124;
+  outline-offset: 2px;
+}
+
+@media (min-width: 600px) {
+  .archive-shell {
+    max-width: 430px;
+  }
+}

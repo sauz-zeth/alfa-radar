@@ -21,7 +21,10 @@ export function BottomNav() {
 
   if (path.startsWith("/event/")) return null;
 
-  const theme = path === "/sources" || path.startsWith("/tracked") ? "light" : "dark";
+  const theme =
+    path === "/sources" || path.startsWith("/tracked") || path.startsWith("/profile")
+      ? "light"
+      : "dark";
 
   return (
     <nav className={`bottom-nav bottom-nav--${theme}`} aria-label="Основная навигация">
