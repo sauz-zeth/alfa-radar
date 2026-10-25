@@ -131,15 +131,7 @@
   }
 
   .desktop-tools {
-    position: sticky;
-    top: 100px;
-    display: flex;
-    width: 64px;
-    flex: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    align-self: flex-start;
+    display: none;
   }
 
   .desktop-tools__button {
