@@ -30,6 +30,28 @@ class Settings:
     ingest_path: str = field(
         default_factory=lambda: os.getenv("INGEST_PATH", "/api/ingest/posts")
     )
+    channels_path: str = field(
+        default_factory=lambda: os.getenv("CHANNELS_PATH", "/api/ingest/channels")
+    )
+    sync_interval: float = field(
+        default_factory=lambda: float(os.getenv("CHANNELS_SYNC_INTERVAL", "60"))
+    )
+    join_retry_seconds: float = field(
+        default_factory=lambda: float(os.getenv("CHANNEL_JOIN_RETRY", "600"))
+    )
+    join_delay_min: float = field(
+        default_factory=lambda: float(os.getenv("JOIN_DELAY_MIN", "30"))
+    )
+    join_delay_max: float = field(
+        default_factory=lambda: float(os.getenv("JOIN_DELAY_MAX", "90"))
+    )
+    join_batch: int = field(default_factory=lambda: int(os.getenv("JOIN_BATCH", "2")))
+    join_daily_limit: int = field(
+        default_factory=lambda: int(os.getenv("JOIN_DAILY_LIMIT", "20"))
+    )
+    join_state: Path = field(
+        default_factory=lambda: Path(os.getenv("JOIN_STATE", "state/joins.json"))
+    )
     ingest_token: str = field(default_factory=lambda: os.getenv("INGEST_TOKEN", ""))
     timeout: float = field(default_factory=lambda: float(os.getenv("HTTP_TIMEOUT", "30")))
     retries: int = field(default_factory=lambda: int(os.getenv("INGEST_RETRIES", "3")))

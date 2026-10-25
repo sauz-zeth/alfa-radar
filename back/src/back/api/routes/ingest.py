@@ -29,6 +29,44 @@ async def require_ingest_token(
         raise HTTPException(status_code=401, detail="Недействительный сервисный токен")
 
 
+@router.get(
+    "/channels", response_model=IngestChannelList, dependencies=[Depends(require_ingest_token)]
+)
+async def list_ingest_channels(
+    session: AsyncSession = Depends(get_session),
+) -> IngestChannelList:
+    subscribers = func.count(ProfileChannel.profile_id)
+    rows = (
+        await session.execute(
+            select(
+                Channel.id,
+                Channel.name,
+                Channel.handle,
+                subscribers.label("subscribers"),
+            )
+            .join(ProfileChannel, ProfileChannel.channel_id == Channel.id)
+            .where(
+                Channel.is_active.is_(True),
+                Channel.handle.is_not(None),
+                Channel.handle != "",
+            )
+            .group_by(Channel.id, Channel.name, Channel.handle)
+            .order_by(subscribers.desc(), Channel.name)
+        )
+    ).all()
+    return IngestChannelList(
+        items=[
+            IngestChannelOut(
+                id=row.id,
+                name=row.name,
+                handle=row.handle,
+                subscribers=row.subscribers,
+            )
+            for row in rows
+        ]
+    )
+
+
 @router.post("/posts", response_model=IngestPostOut, dependencies=[Depends(require_ingest_token)])
 async def ingest_post(
     payload: IngestPostRequest,

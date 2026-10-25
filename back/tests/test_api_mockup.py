@@ -9,6 +9,7 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
+from back.config import get_settings
 from back.core.categories import CATEGORIES
 from back.core.security import create_access_token, hash_password
 from back.db.base import Base
@@ -410,11 +411,13 @@ async def test_mockup_api_flow(api_env) -> None:
 
 async def test_ingest_pipeline_api(api_env) -> None:
     client, ids, headers, session_factory = api_env
+    ingest_headers = {"X-Ingest-Token": get_settings().ingest_token}
     profile_id = str(ids["profile"])
     text = "Минфин повысил экспортную пошлину на металлопрокат до 7 процентов."
 
     first = await client.post(
         "/api/ingest/posts",
+        headers=ingest_headers,
         json={
             "title": "Повышены экспортные пошлины на металлопрокат",
             "text": text,
@@ -435,6 +438,7 @@ async def test_ingest_pipeline_api(api_env) -> None:
 
     duplicate = await client.post(
         "/api/ingest/posts",
+        headers=ingest_headers,
         json={"text": text, "source": "Деловой вестник", "profile_id": profile_id},
     )
     assert duplicate.status_code == 200
@@ -444,6 +448,7 @@ async def test_ingest_pipeline_api(api_env) -> None:
 
     tracked = await client.post(
         "/api/ingest/posts",
+        headers=ingest_headers,
         json={
             "text": (
                 "Продолжение истории: во вторник регулятор уточнил порядок "
@@ -461,6 +466,7 @@ async def test_ingest_pipeline_api(api_env) -> None:
 
     weak = await client.post(
         "/api/ingest/posts",
+        headers=ingest_headers,
         json={
             "text": "Курс рубля изменился незначительно по итогам торгов.",
             "source": "Биржа",
@@ -470,6 +476,24 @@ async def test_ingest_pipeline_api(api_env) -> None:
     assert weak.status_code == 200
     assert weak.json()["status"] == "ignored"
 
-    trace = await client.get(f"/api/ingest/posts/{payload['id']}")
+    trace = await client.get(f"/api/ingest/posts/{payload['id']}", headers=ingest_headers)
     assert trace.status_code == 200
     assert trace.json()["embedding"]
+
+
+async def test_ingest_channels_returns_subscriptions(api_env) -> None:
+    client, _, headers, _ = api_env
+
+    added = await client.post(
+        "/api/sources/channels",
+        headers=headers,
+        json={"query": "@twin_test_channel"},
+    )
+    assert added.status_code == 200
+
+    ingest_headers = {"X-Ingest-Token": get_settings().ingest_token}
+    response = await client.get("/api/ingest/channels", headers=ingest_headers)
+    assert response.status_code == 200
+    items = {item["handle"]: item for item in response.json()["items"]}
+    assert items["@twin_test_channel"]["subscribers"] == 1
+    assert items["@twin_test_channel"]["name"] == "@twin_test_channel"

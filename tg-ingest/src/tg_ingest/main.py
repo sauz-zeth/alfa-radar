@@ -2,12 +2,13 @@ import argparse
 import asyncio
 import logging
 import sys
-from typing import Any
+from contextlib import suppress
 
 import httpx
 from telethon import TelegramClient, events
 
 from .backend import send_post
+from .channels import ChannelRegistry
 from .config import Settings, load_settings
 from .payload import build_payload
 
@@ -26,20 +27,15 @@ async def authorize(client: TelegramClient, settings: Settings) -> None:
         await client.start(phone=settings.phone)
 
 
-async def resolve_channels(
-    client: TelegramClient, handles: tuple[str, ...]
-) -> list[Any] | None:
-    if not handles:
-        return None
-    chats = []
-    for handle in handles:
+async def sync_loop(
+    registry: ChannelRegistry, http: httpx.AsyncClient, interval: float
+) -> None:
+    while True:
         try:
-            chats.append(await client.get_entity(handle))
+            await registry.sync(http)
         except Exception as exc:
-            logger.warning("cannot resolve channel %s: %s", handle, exc)
-    if not chats:
-        raise SystemExit("Не удалось найти ни одного канала из TG_CHANNELS")
-    return chats
+            logger.warning("channel sync failed: %s", exc)
+        await asyncio.sleep(interval)
 
 
 async def run(settings: Settings) -> None:
@@ -49,22 +45,27 @@ async def run(settings: Settings) -> None:
     me = await client.get_me()
     logger.info("logged in as %s (@%s, id=%s)", me.first_name, me.username, me.id)
 
-    chats = await resolve_channels(client, settings.channels)
-    if chats:
-        logger.info("listening to %s configured channels", len(chats))
-    else:
-        logger.info("TG_CHANNELS пуст: слушаю все каналы, на которые подписан аккаунт")
-
     async with httpx.AsyncClient(base_url=settings.backend_url, timeout=settings.timeout) as http:
+        registry = ChannelRegistry(client, settings)
+        await registry.load_dialogs()
+        await registry.sync(http, join=False)
+        logger.info("active channels: %s", len(registry.active_ids))
+        if not registry.active_ids:
+            logger.warning(
+                "нет активных каналов: подпишитесь на источники в бэкенде или задайте TG_CHANNELS"
+            )
+        sync_task = asyncio.create_task(sync_loop(registry, http, settings.sync_interval))
 
-        @client.on(events.NewMessage(chats=chats))
+        @client.on(events.NewMessage())
         async def handler(event: events.NewMessage.Event) -> None:
             if not event.is_channel or event.is_group:
+                return
+            chat = await event.get_chat()
+            if getattr(chat, "id", None) not in registry.active_ids:
                 return
             text = event.raw_text or ""
             if not text.strip():
                 return
-            chat = await event.get_chat()
             payload = build_payload(
                 text=text,
                 chat_id=getattr(chat, "id", event.chat_id),
@@ -75,7 +76,12 @@ async def run(settings: Settings) -> None:
             )
             await send_post(http, settings, payload)
 
-        await client.run_until_disconnected()
+        try:
+            await client.run_until_disconnected()
+        finally:
+            sync_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await sync_task
 
 
 async def login(settings: Settings) -> None:
