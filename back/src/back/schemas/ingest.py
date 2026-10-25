@@ -52,6 +52,7 @@ class IngestChannelOut(BaseModel):
     name: str
     handle: str
     subscribers: int
+    manual_subscribers: int = 0
     avatar_url: str | None = None
     source_type: str = "telegram"
     tg_subscribers: int | None = None

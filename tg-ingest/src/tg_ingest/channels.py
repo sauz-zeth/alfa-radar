@@ -26,6 +26,7 @@ class ChannelInfo:
     handle: str
     avatar_url: str | None = None
     subscribers: int = 1
+    manual_subscribers: int = 0
     tg_subscribers: int | None = None
 
 
@@ -53,6 +54,7 @@ async def fetch_channels(http: httpx.AsyncClient, settings: Settings) -> list[Ch
             handle=str(item["handle"]),
             avatar_url=item.get("avatar_url"),
             subscribers=int(item.get("subscribers", 0)),
+            manual_subscribers=int(item.get("manual_subscribers", 0)),
             tg_subscribers=item.get("tg_subscribers"),
         )
         for item in items
@@ -237,7 +239,10 @@ class ChannelRegistry:
     async def sync(self, http: httpx.AsyncClient, *, join: bool = True) -> None:
         self._joins_cycle = 0
         manual = _keyed(
-            [ChannelInfo(id="", handle=handle) for handle in self.settings.channels]
+            [
+                ChannelInfo(id="", handle=handle, manual_subscribers=1)
+                for handle in self.settings.channels
+            ]
         )
         try:
             fetched = await fetch_channels(http, self.settings)
@@ -248,6 +253,13 @@ class ChannelRegistry:
             wanted = {**manual, **_keyed(fetched)}
         infos = list(wanted.values())
         join_targets = [info for info in infos if info.subscribers > 0 or not info.id]
+        join_targets.sort(
+            key=lambda info: (
+                -info.manual_subscribers,
+                -info.subscribers,
+                info.handle.lower(),
+            )
+        )
         for info in join_targets:
             key = _key(info.handle)
             if self._cooling(key):

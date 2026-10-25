@@ -40,6 +40,9 @@ async def list_ingest_channels(
     session: AsyncSession = Depends(get_session),
 ) -> IngestChannelList:
     subscribers = func.count(ProfileChannel.profile_id)
+    manual_subscribers = func.count(ProfileChannel.profile_id).filter(
+        ProfileChannel.source != "recommended"
+    )
     rows = (
         await session.execute(
             select(
@@ -48,6 +51,7 @@ async def list_ingest_channels(
                 Channel.handle,
                 Channel.meta,
                 subscribers.label("subscribers"),
+                manual_subscribers.label("manual_subscribers"),
             )
             .outerjoin(ProfileChannel, ProfileChannel.channel_id == Channel.id)
             .where(
@@ -66,6 +70,7 @@ async def list_ingest_channels(
                 name=row.name,
                 handle=row.handle,
                 subscribers=row.subscribers,
+                manual_subscribers=row.manual_subscribers,
                 avatar_url=(row.meta or {}).get("avatar_url"),
                 tg_subscribers=(row.meta or {}).get("tg_subscribers"),
             )

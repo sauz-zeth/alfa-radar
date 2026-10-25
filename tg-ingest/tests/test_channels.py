@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Any
 
+from telethon.tl.functions.channels import JoinChannelRequest
+
 from tg_ingest import channels as channels_module
 from tg_ingest.channels import ChannelInfo, ChannelRegistry
 from tg_ingest.config import Settings
@@ -131,3 +133,24 @@ async def test_sync_without_join_keeps_existing_subscriptions(monkeypatch, tmp_p
 
     assert registry.active_ids == {50}
     assert client.joins == []
+
+
+async def test_manual_subscriptions_join_first(monkeypatch, tmp_path) -> None:
+    async def fake_fetch(http, settings) -> list[ChannelInfo]:
+        return [
+            ChannelInfo(id="rec", handle="@recommended", subscribers=100),
+            ChannelInfo(id="manual", handle="@manual", subscribers=1, manual_subscribers=1),
+        ]
+
+    monkeypatch.setattr(channels_module, "fetch_channels", fake_fetch)
+    client = FakeClient({"recommended": 1, "manual": 2})
+    registry = ChannelRegistry(client, _settings(tmp_path))  # type: ignore[arg-type]
+
+    await registry.sync(None)  # type: ignore[arg-type]
+
+    joins = [
+        request.channel.id
+        for request in client.joins
+        if isinstance(request, JoinChannelRequest)
+    ]
+    assert joins == [2, 1]

@@ -60,7 +60,7 @@ class Settings:
     )
     join_batch: int = field(default_factory=lambda: int(os.getenv("JOIN_BATCH", "5")))
     join_daily_limit: int = field(
-        default_factory=lambda: int(os.getenv("JOIN_DAILY_LIMIT", "40"))
+        default_factory=lambda: int(os.getenv("JOIN_DAILY_LIMIT", "0"))
     )
     avatar_batch: int = field(default_factory=lambda: int(os.getenv("AVATAR_BATCH", "3")))
     join_state: Path = field(default_factory=_join_state_path)
