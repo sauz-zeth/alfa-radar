@@ -31,6 +31,10 @@ services:
       LLM_AGENT_ENABLED: ${LLM_AGENT_ENABLED:-true}
       LLM_ML_ENABLED: ${LLM_ML_ENABLED:-false}
       INGEST_TOKEN: ${INGEST_TOKEN:-}
+      # Многие хосты прокидывают HTTP(S)_PROXY в контейнеры. Внутренние имена
+      # должны идти мимо прокси, иначе api/postgres недоступны из соседних сервисов.
+      NO_PROXY: localhost,127.0.0.1,::1,postgres,api,tg-ingest
+      no_proxy: localhost,127.0.0.1,::1,postgres,api,tg-ingest
       RSS_POLL_ENABLED: ${RSS_POLL_ENABLED:-true}
       RSS_FEEDS: ${RSS_FEEDS:-}
       DATA_DIR: /app/data
@@ -40,7 +44,8 @@ services:
       DEMO_FULL_PASSWORD: ${DEMO_FULL_PASSWORD:-demo}
     volumes:
       # CSV из архива хакатона; нужны только для seed.py.
-      - ${BACK_DATA_DIR:-./back/data}:/app/data:ro
+      # :z — SELinux-метка для Fedora/Silverblue; на хостах без SELinux игнорируется.
+      - ${BACK_DATA_DIR:-./back/data}:/app/data:ro,z
       # Аватарки каналов, которые заливает tg-ingest. uv ставит проект editable,
       # поэтому путь совпадает с исходниками.
       - avatars:/app/src/back/static/avatars
@@ -67,6 +72,8 @@ services:
     build: ./front
     environment:
       PROXY_TARGET: http://api:8000
+      NO_PROXY: localhost,127.0.0.1,::1,api
+      no_proxy: localhost,127.0.0.1,::1,api
       HOST: 0.0.0.0
       PORT: "3000"
     ports:
@@ -82,6 +89,8 @@ services:
     environment:
       BACKEND_URL: http://api:8000
       INGEST_TOKEN: ${INGEST_TOKEN:-}
+      NO_PROXY: localhost,127.0.0.1,::1,api
+      no_proxy: localhost,127.0.0.1,::1,api
       TG_STATE_DIR: /state
       TG_SESSION: /state/tg_ingest
       JOIN_STATE: /state/joins.json
@@ -89,7 +98,7 @@ services:
       SETUP_PORT: "8081"
     volumes:
       # Файл сессии Telegram — фактический ключ от аккаунта, не теряйте его.
-      - ${TG_STATE_DIR_HOST:-./tg-ingest/state}:/state
+      - ${TG_STATE_DIR_HOST:-./tg-ingest/state}:/state:z
     ports:
       - "${TG_SETUP_PORT:-8081}:8081"
     depends_on:

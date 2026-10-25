@@ -36,7 +36,10 @@
 
 ## Что нужно заранее
 
-- Сервер с Docker и плагином `docker compose` (или Podman + `podman-compose`).
+- Сервер с Docker + `docker compose` **или** Podman + `podman-compose` (у вас — Podman 5.x
+  и `podman-compose` 1.6, этого достаточно). Все команды ниже записаны как `docker compose`;
+  с Podman просто заменяйте их на `podman-compose` — файл называется `docker-compose.yml`,
+  поэтому `-f` не нужен.
 - Свободные порты `3000` (фронт) и `8081` (первый вход в Telegram). `8000` проброшен
   только на `127.0.0.1`.
 - Для Telegram: `TG_API_ID`, `TG_API_HASH` с <https://my.telegram.org> и номер аккаунта.
@@ -170,13 +173,82 @@ docker compose exec -T postgres pg_dump -U postgres alfafuture | gzip > db-$(dat
 
 # сессия Telegram + счётчик подписок
 tar czf tg-state-$(date +%F).tgz tg-ingest/state
+
+# аватарки каналов (named volume avatars)
+docker compose run --rm --no-deps -v "$PWD":/backup:z api \
+  tar cf /backup/avatars-$(date +%F).tar -C /app/src/back/static/avatars .
 ```
 
-Восстановление базы:
+Восстановление базы и аватарок:
 
 ```bash
 gunzip -c db-2026-10-25.sql.gz | docker compose exec -T postgres psql -U postgres -d alfafuture
+docker compose run --rm --no-deps -v "$PWD":/backup:z api \
+  tar xf /backup/avatars-2026-10-25.tar -C /app/src/back/static/avatars
 ```
+
+Если восстановить только БД, в `channels.meta` останутся старые `avatar_url`, а файлов в
+новом volume не будет — фронт получит 404. Либо залейте tar с аватарками, либо очистите
+`avatar_url` у каналов и дайте `tg-ingest` скачать их заново.
+
+## Podman
+
+Всё то же самое, только команды короче:
+
+```bash
+cp .env.example .env
+cp tg-ingest/.env.example tg-ingest/.env
+# заполнить JWT_SECRET, INGEST_TOKEN, POSTGRES_PASSWORD
+
+podman-compose up -d --build
+podman-compose ps
+podman-compose logs -f api
+podman-compose exec api python scripts/seed.py --reset
+```
+
+Важное для Podman:
+
+- **SELinux** (Fedora, Silverblue, Kinoite, Bazzite): bind-mount'ы в compose уже помечены
+  `:z` — `back/data` и `tg-ingest/state`. Если добавляете свои каталоги, тоже ставьте
+  `:z` (или `:Z`), иначе контейнер получит `Permission denied`.
+- **Прокси хоста.** Podman может автоматически прокинуть `HTTP_PROXY/HTTPS_PROXY`
+  в контейнеры. Если прокси слушает `127.0.0.1` на хосте, из контейнера он недоступен:
+  сборка падает на скачивании пакетов, а фронт не может достучаться до `api`. В compose
+  внутренние имена уже добавлены в `NO_PROXY`, поэтому связка front↔api работает. Если
+  сборка падает на PyPI (`Connection refused` в `uv sync`):
+
+  ```bash
+  podman-compose --podman-build-args="--network=host" build
+  ```
+
+  Если не идут внешние запросы (LLM, RSS, Telegram), запускайте без проброса прокси:
+
+  ```bash
+  podman-compose --podman-run-args="--http-proxy=false" up -d --build
+  ```
+
+  Это же лечится отключением проброса в `~/.config/containers/containers.conf`
+  (`[engine] http_proxy = false`). На обычном VPS без прокси ничего из этого не нужно.
+- **Занятые порты.** Если локально уже крутится старый стек (`back_postgres_1`,
+  `uvicorn` на 8000, фронт на 3000), либо остановите его, либо поменяйте в `.env`
+  `FRONT_PORT=3001`, `API_PORT=8001`, `TG_SETUP_PORT=8082`. Postgres наружу не
+  публикуется, поэтому 5432 не конфликтует.
+- **Автозапуск после ребута.** Rootless-контейнеры сами не встают. Либо один раз
+  зарегистрируйте systemd-юнит (имя проекта смотрите в выводе команды):
+
+  ```bash
+  loginctl enable-linger "$USER"
+  podman-compose systemd -a create-unit   # один раз, может попросить sudo
+  podman-compose systemd -a register
+  systemctl --user start podman-compose@alfa-future
+  ```
+
+  либо запускайте `podman-compose up -d` после загрузки вручную.
+- `podman-compose down -v` **удаляет и named volumes**, то есть базу. Без `-v` — только
+  контейнеры.
+- Порты `3000`/`8081` публикуются через rootless-проброс, sudo не нужен.
+- `podman compose` (обёртка) у вас делегирует в `podman-compose`, так что можно писать
+  и так, и так.
 
 ## Прод-заметки
 
@@ -202,8 +274,10 @@ gunzip -c db-2026-10-25.sql.gz | docker compose exec -T postgres psql -U postgre
 | --- | --- | --- |
 | `set JWT_SECRET in .env` | нет `.env` или пустой `JWT_SECRET` | `cp .env.example .env`, заполнить |
 | фронт отдаёт 502 на `/api` | `api` не поднялся | `docker compose logs api`, проверить `DATABASE_URL` и пароль Postgres |
+| `address already in use` | заняты 3000/8000/8081 | остановить старый стек или поменять `FRONT_PORT`/`API_PORT`/`TG_SETUP_PORT` |
 | `/setup` отвечает 401 | пустой `INGEST_TOKEN` | задать непустой токен в корневом `.env`, перезапустить |
 | `seed.py`: не найден `df_Uid_data_hack.csv` | нет CSV в `back/data` | положить файлы или запустить `seed_15_profiles.py` |
+| аватарки каналов 404 | БД восстановлена, а volume `avatars` пустой | залить tar с аватарками или очистить `avatar_url` у каналов |
 | `tg-ingest` не подписывается на каналы | нет подписчиков у каналов или неверный токен | подписаться на каналы во фронте, проверить `INGEST_TOKEN` |
 | забыли пароль/слетела сессия Telegram | удалён `tg-ingest/state` | повторить шаг 5 |
 | нужно снести всё | — | `docker compose down -v` **удалит базу**, state Telegram останется |
