@@ -1,9 +1,9 @@
+import { Logo } from "../components/Logo";
+
 export function Splash() {
   return (
     <div className="app-splash">
-      <span className="auth-logo" aria-hidden="true">
-        А
-      </span>
+      <Logo className="auth-logo" />
       <p>Загрузка…</p>
     </div>
   );

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { OnboardingState } from "../api";
+import { Logo } from "../components/Logo";
 
 type OnboardingLayoutProps = {
   state: OnboardingState;
@@ -18,9 +19,7 @@ export function OnboardingLayout({ state, title, description, children, footer }
   return (
     <div className="onboarding-screen">
       <header className="onboarding-top">
-        <span className="auth-logo" aria-hidden="true">
-          А
-        </span>
+        <Logo className="auth-logo" />
         <div className="onboarding-progress" aria-hidden="true">
           {state.steps.map((step, index) => (
             <span

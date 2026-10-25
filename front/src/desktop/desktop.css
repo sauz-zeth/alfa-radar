@@ -34,16 +34,9 @@
   }
 
   .desktop-topbar__logo {
-    display: grid;
-    width: 28px;
-    height: 28px;
-    place-items: center;
-    border-radius: 50%;
-    background: var(--accent);
-    color: #fff;
-    font-size: 18px;
-    font-weight: 600;
-    line-height: 1;
+    display: block;
+    width: 42px;
+    height: 42px;
   }
 
   .desktop-topbar__nav {

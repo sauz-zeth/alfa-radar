@@ -278,15 +278,8 @@ input[type="range"] {
 }
 
 .auth-logo {
-  display: flex;
+  display: block;
   width: 40px;
   height: 40px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1;
+  flex: none;
 }

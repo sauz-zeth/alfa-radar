@@ -3,6 +3,7 @@ import { ApiError } from "../api";
 import { Link, useRouter } from "../router";
 import { useAuth } from "./useAuth";
 import "./auth.css";
+import { Logo } from "../components/Logo";
 
 export function LoginPage() {
   const { signIn } = useAuth();
@@ -29,9 +30,7 @@ export function LoginPage() {
     <div className="auth-screen">
       <div className="auth-panel">
         <header className="auth-header">
-          <span className="auth-logo" aria-hidden="true">
-            А
-          </span>
+          <Logo className="auth-logo" />
           <p className="auth-brand">Альфа · Лента</p>
         </header>
 

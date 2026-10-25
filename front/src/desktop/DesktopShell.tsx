@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useApi, useApiQuery } from "../api";
+import { Logo } from "../components/Logo";
 import { Link, useRouter } from "../router";
 import { HeaderSearch } from "./HeaderSearch";
 import "./desktop.css";
@@ -38,7 +39,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
     <div className="desktop-shell">
       <header className="desktop-topbar">
         <Link to="/" className="desktop-topbar__brand">
-          <span className="desktop-topbar__logo">a</span>
+          <Logo className="desktop-topbar__logo" />
           <span>Лента новостей</span>
         </Link>
         <nav className="desktop-topbar__nav" aria-label="Основная навигация">
