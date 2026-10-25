@@ -1,0 +1,162 @@
+.event-mailto__card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border-radius: 24px;
+  background: #fff;
+  color: #202020;
+}
+
+.event-mailto__form {
+  gap: 12px;
+}
+
+.event-mailto__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: -0.54px;
+}
+
+.event-mailto__note {
+  margin: 0;
+  color: #737373;
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.event-mailto__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.event-mailto__field > span {
+  color: #737373;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.event-mailto__field input,
+.event-mailto__field select,
+.event-mailto__field textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #d7d7d7;
+  border-radius: 14px;
+  background: #f7f7f7;
+  color: #202020;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  outline: none;
+}
+
+.event-mailto__field textarea {
+  min-height: 180px;
+  resize: vertical;
+}
+
+.event-mailto__field input::placeholder,
+.event-mailto__field textarea::placeholder {
+  color: #a6a6a6;
+}
+
+.event-mailto__field input:focus,
+.event-mailto__field select:focus,
+.event-mailto__field textarea:focus {
+  border-color: #202020;
+}
+
+.event-mailto__field select option {
+  color: #202020;
+}
+
+.event-mailto__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.event-mailto__button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border-radius: 20px;
+  background: #ededed;
+  color: #202020;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 17px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.event-mailto__button:hover {
+  background: #e2e2e2;
+}
+
+.event-mailto__button--primary {
+  background: #ef3124;
+  color: #fff;
+}
+
+.event-mailto__button--primary:hover {
+  background: #d92a1e;
+}
+
+.event-mailto__button--ghost {
+  background: transparent;
+  color: #737373;
+}
+
+.event-mailto__error {
+  margin: 0;
+  color: #c4271c;
+  font-size: 12px;
+  line-height: 17px;
+}
+
+@media (min-width: 1200px) {
+  .event-mailto__card {
+    gap: 16px;
+    padding: 24px;
+    border-radius: 28px;
+  }
+
+  .event-mailto__title {
+    font-size: 20px;
+    line-height: 26px;
+  }
+
+  .event-mailto__note {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .event-mailto__field > span {
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  .event-mailto__field input,
+  .event-mailto__field select,
+  .event-mailto__field textarea {
+    font-size: 15px;
+    line-height: 21px;
+  }
+
+  .event-mailto__button {
+    min-height: 44px;
+    padding: 0 18px;
+    font-size: 14px;
+    line-height: 18px;
+  }
+}

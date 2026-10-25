@@ -1,5 +1,5 @@
 import type { FeedItemDetail } from "../api";
-import { OutlookPanel } from "./OutlookPanel";
+import { MailtoPanel } from "./MailtoPanel";
 import { SectionHeader } from "./SectionHeader";
 import "./event-actions.css";
 
@@ -99,7 +99,7 @@ export function ActionsTab({ detail }: ActionsTabProps) {
         </section>
       ) : null}
 
-      <OutlookPanel detail={detail} />
+      <MailtoPanel detail={detail} />
     </div>
   );
 }

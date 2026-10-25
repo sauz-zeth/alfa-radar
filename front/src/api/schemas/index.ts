@@ -5,7 +5,6 @@ export * from "./feed";
 export * from "./health";
 export * from "./insights";
 export * from "./onboarding";
-export * from "./outlook";
 export * from "./profile";
 export * from "./search";
 export * from "./sources";

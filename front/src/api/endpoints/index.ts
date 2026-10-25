@@ -3,7 +3,6 @@ export * from "./businesses";
 export * from "./feed";
 export * from "./health";
 export * from "./onboarding";
-export * from "./outlook";
 export * from "./profile";
 export * from "./search";
 export * from "./sources";
