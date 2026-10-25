@@ -1,0 +1,34 @@
+[project]
+name = "tg-ingest"
+version = "0.1.0"
+description = "Telegram selfbot that forwards new channel posts into the backend ingest endpoint"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28.1",
+    "python-dotenv>=1.1.1",
+    "telethon>=1.41.2",
+]
+
+[project.scripts]
+tg-ingest = "tg_ingest.main:main"
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.17.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

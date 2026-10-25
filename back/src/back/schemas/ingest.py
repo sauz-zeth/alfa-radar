@@ -45,3 +45,14 @@ class IngestPostTrace(IngestPostOut):
     raw: dict[str, Any]
     parsed: dict[str, Any]
     embedding: list[float]
+
+
+class IngestChannelOut(BaseModel):
+    id: str
+    name: str
+    handle: str
+    subscribers: int
+
+
+class IngestChannelList(BaseModel):
+    items: list[IngestChannelOut]

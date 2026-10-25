@@ -6,6 +6,7 @@
 
 - `artifacts` хранит наброски;
 - `back` содержит бэкенд на fastapi — см. `back/README.md` (запуск, API, онбординг, LLM-слой);
+- `tg-ingest` — Telegram-селфбот, который льёт новые посты каналов в бэкенд — см. `tg-ingest/README.md`;
 - `front` содержит фронтенд на bun + react spa;
 - `docs` содержит всю доку на проект.
 

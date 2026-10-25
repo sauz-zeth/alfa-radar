@@ -292,6 +292,13 @@ uv run python scripts/ingest_rss.py
 uv run python scripts/ingest_rss.py https://example.com/rss https://example.com/atom
 ```
 
+### Telegram
+
+Отдельный подсервис `tg-ingest/` логинится в Telegram как обычный аккаунт (Telethon),
+слушает новые посты каналов и шлёт их в этот же `POST /api/ingest/posts` с
+`X-Ingest-Token`. Запуск, вход по номеру/коду и хранение сессии — в
+[`tg-ingest/README.md`](../tg-ingest/README.md).
+
 ### Ленивый разбор события
 
 `GET /api/feed/{id}` при первом открытии строит отчёт агента (LLM при

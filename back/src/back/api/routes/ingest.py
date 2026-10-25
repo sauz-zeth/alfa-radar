@@ -6,10 +6,16 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from back.config import get_settings
-from back.db.models import Post
+from back.db.models import Channel, Post, ProfileChannel
 from back.db.session import get_session
 from back.schemas.common import Page
-from back.schemas.ingest import IngestPostOut, IngestPostRequest, IngestPostTrace
+from back.schemas.ingest import (
+    IngestChannelList,
+    IngestChannelOut,
+    IngestPostOut,
+    IngestPostRequest,
+    IngestPostTrace,
+)
 from back.services.pipeline import ingest_from_profile
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
