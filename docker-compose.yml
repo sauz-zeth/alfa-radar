@@ -1,0 +1,102 @@
+name: alfa-future
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-alfafuture}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-alfafuture}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build: ./back
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-alfafuture}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      LLM_PROVIDER: ${LLM_PROVIDER:-stub}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://changellenge.up.railway.app/v1}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-qwen/qwen3.6-35b-a3b}
+      LLM_FAST_MODEL: ${LLM_FAST_MODEL:-google/gemma-4-26b-a4b-it}
+      LLM_AGENT_ENABLED: ${LLM_AGENT_ENABLED:-true}
+      LLM_ML_ENABLED: ${LLM_ML_ENABLED:-false}
+      INGEST_TOKEN: ${INGEST_TOKEN:-}
+      RSS_POLL_ENABLED: ${RSS_POLL_ENABLED:-true}
+      RSS_FEEDS: ${RSS_FEEDS:-}
+      DATA_DIR: /app/data
+      DEMO_LOGIN: ${DEMO_LOGIN:-demo}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-demo}
+      DEMO_FULL_LOGIN: ${DEMO_FULL_LOGIN:-demo_full}
+      DEMO_FULL_PASSWORD: ${DEMO_FULL_PASSWORD:-demo}
+    volumes:
+      # CSV из архива хакатона; нужны только для seed.py.
+      - ${BACK_DATA_DIR:-./back/data}:/app/data:ro
+      # Аватарки каналов, которые заливает tg-ingest. uv ставит проект editable,
+      # поэтому путь совпадает с исходниками.
+      - avatars:/app/src/back/static/avatars
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).status == 200 else 1)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  front:
+    build: ./front
+    environment:
+      PROXY_TARGET: http://api:8000
+      HOST: 0.0.0.0
+      PORT: "3000"
+    ports:
+      - "${FRONT_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  tg-ingest:
+    build: ./tg-ingest
+    env_file: ./tg-ingest/.env
+    environment:
+      BACKEND_URL: http://api:8000
+      INGEST_TOKEN: ${INGEST_TOKEN:-}
+      TG_STATE_DIR: /state
+      TG_SESSION: /state/tg_ingest
+      JOIN_STATE: /state/joins.json
+      SETUP_HOST: 0.0.0.0
+      SETUP_PORT: "8081"
+    volumes:
+      # Файл сессии Telegram — фактический ключ от аккаунта, не теряйте его.
+      - ${TG_STATE_DIR_HOST:-./tg-ingest/state}:/state
+    ports:
+      - "${TG_SETUP_PORT:-8081}:8081"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  avatars:
