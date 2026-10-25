@@ -36,6 +36,15 @@ def test_general_sources_are_always_present_for_narrow_profile() -> None:
     assert any("ФТС" in item.name or "тамож" in item.name.lower() for item in chosen)
 
 
+def test_rss_sources_rank_by_importance() -> None:
+    popularity = {item.name: item.popularity for item in candidates() if item.source_type == "rss"}
+    regional = popularity["63.ру (Самара)"]
+    assert popularity["Банк России — события"] > popularity["Комсомольская правда"]
+    assert popularity["The New York Times — Business"] > regional
+    assert popularity["Financial Times"] > regional
+    assert popularity["Al Jazeera"] > regional
+
+
 def test_rss_section_overrides_do_not_mix_unrelated_industries() -> None:
     by_name = {item.name: item for item in CHANNELS}
     assert source_category_ids(by_name["Учительская газета"]) == {26}

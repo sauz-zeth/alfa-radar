@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 from back.core.categories import CATEGORIES
+from back.core.rss_importance import rss_importance
 from back.core.sources import CHANNELS, ChannelSeed
 
 GENERAL_CATEGORY_IDS = frozenset(item.id for item in CATEGORIES if item.group == "general")
@@ -196,6 +197,8 @@ def source_category_ids(seed: ChannelSeed) -> frozenset[int]:
 
 
 def _popularity(seed: ChannelSeed) -> int:
+    if seed.feed_url:
+        return rss_importance(seed.name)
     if seed.subscribers is not None:
         return seed.subscribers
     return seed.popularity or 0
