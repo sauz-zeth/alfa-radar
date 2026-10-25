@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 class ChannelInfo:
     id: str
     handle: str
+    name: str | None = None
     avatar_url: str | None = None
     subscribers: int = 1
     manual_subscribers: int = 0
@@ -52,6 +53,7 @@ async def fetch_channels(http: httpx.AsyncClient, settings: Settings) -> list[Ch
         ChannelInfo(
             id=str(item["id"]),
             handle=str(item["handle"]),
+            name=item.get("name"),
             avatar_url=item.get("avatar_url"),
             subscribers=int(item.get("subscribers", 0)),
             manual_subscribers=int(item.get("manual_subscribers", 0)),
@@ -208,12 +210,25 @@ class ChannelRegistry:
             except Exception as exc:
                 logger.warning("cannot read subscriber count %s: %s", info.handle, exc)
         self._stats_checked.add(info.id)
-        if count is None or count == info.tg_subscribers:
+        title = getattr(entity, "title", None) or getattr(entity, "first_name", None)
+        title = title.strip() if isinstance(title, str) and title.strip() else None
+        count_changed = count is not None and count != info.tg_subscribers
+        title_changed = bool(title and title != info.name)
+        if not count_changed and not title_changed:
+            return
+        subscribers = int(count) if count is not None else info.tg_subscribers
+        if subscribers is None:
             return
         try:
-            await update_channel_stats(http, self.settings, info.id, int(count))
+            await update_channel_stats(
+                http,
+                self.settings,
+                info.id,
+                subscribers,
+                title if title_changed else None,
+            )
         except (httpx.HTTPError, KeyError, ValueError) as exc:
-            logger.warning("cannot cache subscriber count %s: %s", info.handle, exc)
+            logger.warning("cannot cache channel stats %s: %s", info.handle, exc)
 
     async def _cache_avatar(
         self, http: httpx.AsyncClient, entity: Any, info: ChannelInfo

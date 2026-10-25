@@ -120,6 +120,8 @@ async def update_channel_stats(
     if channel is None:
         raise HTTPException(status_code=404, detail="Канал не найден")
     channel.meta = {**(channel.meta or {}), "tg_subscribers": payload.subscribers}
+    if payload.title and channel.kind == "custom":
+        channel.name = payload.title
     await session.commit()
     return IngestChannelStatsOut(tg_subscribers=payload.subscribers)
 

@@ -500,6 +500,27 @@ async def test_ingest_channels_returns_subscriptions(api_env) -> None:
     assert items["@twin_test_channel"]["name"] == "@twin_test_channel"
 
 
+async def test_ingest_stats_does_not_rename_catalog_channel(api_env) -> None:
+    client, _, headers, _ = api_env
+    ingest_headers = {"X-Ingest-Token": get_settings().ingest_token}
+
+    await client.post("/api/sources/channels", headers=headers, json={"query": "rian_ru"})
+    channels = await client.get("/api/ingest/channels", headers=ingest_headers)
+    channel = next(item for item in channels.json()["items"] if item["handle"] == "@rian_ru")
+    before = channel["name"]
+
+    stats = await client.put(
+        f"/api/ingest/channels/{channel['id']}/stats",
+        headers=ingest_headers,
+        json={"subscribers": 1, "title": "Другое имя"},
+    )
+    assert stats.status_code == 200
+
+    sources = await client.get("/api/sources", headers=headers)
+    mine = next(item for item in sources.json()["channels"] if item["id"] == channel["id"])
+    assert mine["name"] == before
+
+
 async def test_ingest_avatar_upload(api_env, tmp_path, monkeypatch) -> None:
     import back.services.avatars as avatars
 
@@ -531,7 +552,7 @@ async def test_ingest_avatar_upload(api_env, tmp_path, monkeypatch) -> None:
     stats = await client.put(
         f"/api/ingest/channels/{channel['id']}/stats",
         headers=ingest_headers,
-        json={"subscribers": 12_345},
+        json={"subscribers": 12_345, "title": "Twin Avatar Channel"},
     )
     assert stats.status_code == 200
 
@@ -539,6 +560,7 @@ async def test_ingest_avatar_upload(api_env, tmp_path, monkeypatch) -> None:
     mine = next(item for item in sources.json()["channels"] if item["id"] == channel["id"])
     assert mine["avatar_url"] == avatar_url
     assert mine["tg_subscribers"] == 12_345
+    assert mine["name"] == "Twin Avatar Channel"
 
     bad = await client.put(
         f"/api/ingest/channels/{channel['id']}/avatar",

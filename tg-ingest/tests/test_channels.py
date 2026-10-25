@@ -95,6 +95,34 @@ async def test_daily_join_limit_is_persisted(monkeypatch, tmp_path) -> None:
     assert (tmp_path / "joins.json").exists()
 
 
+async def test_channel_title_is_synced_once(monkeypatch, tmp_path) -> None:
+    class TitleClient(FakeClient):
+        async def get_entity(self, handle: str) -> Any:
+            class Entity:
+                id = 50
+                title = "Ateo Breaking"
+                participants_count = 123
+
+            return Entity()
+
+    calls: list[tuple[str, int, str | None]] = []
+
+    async def fake_stats(http, settings, channel_id, subscribers, title=None) -> None:
+        calls.append((channel_id, subscribers, title))
+
+    async def fake_fetch(http, settings) -> list[ChannelInfo]:
+        return [ChannelInfo(id="ch-1", handle="@ateo", name="@ateo")]
+
+    monkeypatch.setattr(channels_module, "fetch_channels", fake_fetch)
+    monkeypatch.setattr(channels_module, "update_channel_stats", fake_stats)
+    registry = ChannelRegistry(TitleClient({}), _settings(tmp_path))  # type: ignore[arg-type]
+
+    await registry.sync(None)  # type: ignore[arg-type]
+    await registry.sync(None)  # type: ignore[arg-type]
+
+    assert calls == [("ch-1", 123, "Ateo Breaking")]
+
+
 async def test_avatar_is_uploaded_once(monkeypatch, tmp_path) -> None:
     class AvatarClient(FakeClient):
         async def download_profile_photo(self, entity, file=None) -> bytes:

@@ -68,6 +68,7 @@ class IngestAvatarOut(BaseModel):
 
 class IngestChannelStats(BaseModel):
     subscribers: int = Field(ge=0)
+    title: str | None = Field(default=None, min_length=1, max_length=128)
 
 
 class IngestChannelStatsOut(BaseModel):
