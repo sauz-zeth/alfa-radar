@@ -1,0 +1,19 @@
+services:
+  tg-ingest:
+    build: .
+    env_file: .env
+    environment:
+      TG_STATE_DIR: /state
+      TG_SESSION: /state/tg_ingest
+      JOIN_STATE: /state/joins.json
+      SETUP_HOST: 0.0.0.0
+      BACKEND_URL: ${TG_BACKEND_URL:-http://host.docker.internal:8000}
+    ports:
+      - "8081:8081"
+    volumes:
+      # Левую часть можно заменить на любой каталог/volume:
+      # TG_STATE_DIR_HOST=/srv/alfa/tg-state docker compose up -d
+      - ${TG_STATE_DIR_HOST:-./state}:/state
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

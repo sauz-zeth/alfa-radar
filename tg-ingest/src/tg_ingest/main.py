@@ -11,6 +11,7 @@ from .backend import send_post
 from .channels import ChannelRegistry
 from .config import Settings, load_settings
 from .payload import build_payload
+from .setup import run_setup
 
 logger = logging.getLogger("tg_ingest")
 
@@ -40,8 +41,15 @@ async def sync_loop(
 
 async def run(settings: Settings) -> None:
     settings.session.parent.mkdir(parents=True, exist_ok=True)
+    settings.join_state.parent.mkdir(parents=True, exist_ok=True)
     client = TelegramClient(str(settings.session), settings.api_id, settings.api_hash)
-    await authorize(client, settings)
+    await client.connect()
+    setup_task = None
+    if not await client.is_user_authorized():
+        if settings.setup_enabled:
+            setup_task = await run_setup(client, settings)
+        else:
+            await authorize(client, settings)
     me = await client.get_me()
     logger.info("logged in as %s (@%s, id=%s)", me.first_name, me.username, me.id)
 
@@ -82,6 +90,10 @@ async def run(settings: Settings) -> None:
             sync_task.cancel()
             with suppress(asyncio.CancelledError):
                 await sync_task
+            if setup_task is not None:
+                setup_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await setup_task
 
 
 async def login(settings: Settings) -> None:

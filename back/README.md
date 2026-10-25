@@ -313,7 +313,10 @@ uv run python scripts/ingest_rss.py https://example.com/rss https://example.com/
 Отдельный подсервис `tg-ingest/` логинится в Telegram как обычный аккаунт (Telethon),
 периодически забирает `GET /api/ingest/channels`, подписывает твинка на каналы с
 подписчиками (`subscribers > 0`) и шлёт новые посты в этот же `POST /api/ingest/posts`
-с `X-Ingest-Token`. Запуск, вход по номеру/коду и хранение сессии — в
+с `X-Ingest-Token`. При первом запуске без сессии поднимается веб-настройка
+`http://<host>:8081/setup`: оператор вводит `INGEST_TOKEN`, код из Telegram и при
+необходимости пароль 2FA. Состояние (SQLite-сессия и счётчики) лежит в `TG_STATE_DIR`
+и должно быть смонтировано как volume. Подробности, Dockerfile и compose — в
 [`tg-ingest/README.md`](../tg-ingest/README.md).
 
 Каталог Telegram-каналов — 93 реальных источника из
