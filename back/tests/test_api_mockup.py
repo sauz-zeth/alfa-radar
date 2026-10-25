@@ -616,3 +616,39 @@ async def test_rss_poller_lists_subscribed_feeds(api_env, monkeypatch) -> None:
 
     urls = await poller.subscribed_feed_urls()
     assert feed_url in urls
+
+
+async def test_business_options_dedupe_activities(api_env) -> None:
+    client, _, headers, session_factory = api_env
+    async with session_factory() as session:
+        session.add_all(
+            [
+                Company(
+                    uid="U_DUP_A",
+                    main_okved_code="79.90",
+                    main_okved_name="Туристические услуги",
+                    revenue=100_000_000_000,
+                    revenue_segment="крупнейший",
+                    city="Москва",
+                    region="Москва",
+                    tags=[],
+                ),
+                Company(
+                    uid="U_DUP_B",
+                    main_okved_code="79.90",
+                    main_okved_name="Туристические услуги",
+                    revenue=90_000_000_000,
+                    revenue_segment="крупнейший",
+                    city="Санкт-Петербург",
+                    region="Санкт-Петербург",
+                    tags=[],
+                ),
+            ]
+        )
+        await session.commit()
+
+    response = await client.get("/api/businesses/options?limit=2", headers=headers)
+    assert response.status_code == 200
+    items = response.json()["items"]
+    assert len(items) == 2
+    assert len({item["main_okved_name"] for item in items}) == 2

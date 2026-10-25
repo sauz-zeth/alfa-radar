@@ -11,6 +11,10 @@ from back.schemas.common import Page
 
 router = APIRouter(prefix="/businesses", tags=["businesses"])
 
+def _activity(company: Company) -> str:
+    return company.main_okved_name or company.main_okved_code or company.uid
+
+
 PRODUCT_COLUMNS = {
     "rko": Company.cl_product_rko_mark,
     "guarantees": Company.cl_product_gar_mark,
@@ -144,20 +148,28 @@ async def business_options(
     order = {uid: index for index, uid in enumerate(FEATURED_COMPANY_UIDS)}
     rows.sort(key=lambda row: order.get(row.uid, len(order)))
     if len(rows) < limit:
-        existing = [row.uid for row in rows]
+        existing = {row.uid for row in rows}
+        seen = {_activity(row) for row in rows}
         extra = (
             (
                 await session.execute(
                     select(Company)
                     .where(Company.revenue.is_not(None), Company.uid.not_in(existing))
                     .order_by(Company.revenue.desc().nullslast(), Company.uid)
-                    .limit(limit - len(rows))
+                    .limit(limit * 20)
                 )
             )
             .scalars()
             .all()
         )
-        rows.extend(extra)
+        for row in extra:
+            if len(rows) >= limit:
+                break
+            key = _activity(row)
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append(row)
     items = [BusinessListItem.model_validate(row) for row in rows]
     return BusinessOptionsResponse(mode="featured", items=items, total=len(items))
 
