@@ -1,6 +1,6 @@
 import { ApiError, useApi, useApiMutation, useApiQuery, type Channel, type SourcesState } from "../../api";
 import { formatSubscribers } from "../../sources/channelVisuals";
-import { SourceBadge } from "../../sources/SourceBadge";
+import { SourceIcon } from "../../sources/SourceIcon";
 import { OnboardingLayout } from "../OnboardingLayout";
 import type { StepProps } from "./types";
 
@@ -70,7 +70,7 @@ export function SourcesStep({ state, onDone }: StepProps) {
                 />
                 <span className="source-item__body">
                   <span className="source-item__name">
-                    <SourceBadge type={channel.source_type} />
+                    <SourceIcon type={channel.source_type} />
                     {channel.name}
                   </span>
                   <span className="source-item__meta">

@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import type { Channel } from "../api";
 import { cardTilt, cardTone, channelInitials, formatSubscribers } from "./channelVisuals";
-import { SourceBadge } from "./SourceBadge";
+import { SourceIcon } from "./SourceIcon";
 
 type ChannelCardProps = {
   channel: Channel;
@@ -13,13 +13,15 @@ type ChannelCardProps = {
 
 export function ChannelCard({ channel, index, onToggle, disabled, variant = "mobile" }: ChannelCardProps) {
   const isDesktop = variant === "desktop";
+  // У кастомных каналов topics = "добавлен вами" — это дублирует статус «свой».
+  const topics = channel.kind === "custom" ? "" : channel.topics;
   const meta = isDesktop
-    ? `${channel.recommended ? "по профилю" : "свой"}${channel.topics ? ` · ${channel.topics}` : ""}`
+    ? `${channel.recommended ? "по профилю" : "свой"}${topics ? ` · ${topics}` : ""}`
     : channel.recommended
       ? "Профиль"
       : "Свой";
   const subscribers = channel.tg_subscribers
-    ? ` · ${formatSubscribers(channel.tg_subscribers)}`
+    ? formatSubscribers(channel.tg_subscribers)
     : "";
 
   return (
@@ -45,6 +47,10 @@ export function ChannelCard({ channel, index, onToggle, disabled, variant = "mob
         <span className="channel-folder__glass">
           <span className="channel-folder__rivet channel-folder__rivet--left" aria-hidden="true" />
           <span className="channel-folder__rivet channel-folder__rivet--right" aria-hidden="true" />
+          <span className="channel-folder__meta">
+            <SourceIcon type={channel.source_type} />
+            {subscribers ? <span className="channel-folder__subs">{subscribers}</span> : null}
+          </span>
           <span className="channel-folder__check" aria-hidden="true">
             {channel.subscribed ? (
               <svg width="13.8" height="11.8" viewBox="0 0 13.8 11.8" fill="none">
@@ -68,8 +74,7 @@ export function ChannelCard({ channel, index, onToggle, disabled, variant = "mob
       <span className="channel-card__info">
         <span className="channel-card__name">{channel.name}</span>
         <span className="channel-card__type">
-          <SourceBadge type={channel.source_type} />
-          <span>{meta}{subscribers}</span>
+          <span>{meta}</span>
         </span>
       </span>
     </button>

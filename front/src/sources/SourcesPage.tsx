@@ -12,7 +12,7 @@ import { channelCountLabel, pluralRu } from "../lib/plural";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { ChannelCard } from "./ChannelCard";
 import { channelInitials, channelTone, formatSubscribers } from "./channelVisuals";
-import { SourceBadge } from "./SourceBadge";
+import { SourceIcon } from "./SourceIcon";
 import { MoreCard } from "./MoreCard";
 import { officialSources } from "./officialSources";
 import { SourcesHeader, type SourcesTab } from "./SourcesHeader";
@@ -186,7 +186,7 @@ export default function SourcesPage() {
               </span>
               <span className="catalog-body">
                 <span className="catalog-name">
-                  <SourceBadge type={channel.source_type} />
+                  <SourceIcon type={channel.source_type} />
                   {channel.name}
                 </span>
                 <span className="catalog-topics">
