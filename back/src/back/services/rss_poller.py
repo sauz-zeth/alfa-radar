@@ -26,28 +26,38 @@ async def subscribed_feed_urls() -> list[str]:
         return [str(row[0]) for row in rows]
 
 
+async def _poll_feed(
+    url: str,
+    client: httpx.AsyncClient,
+    semaphore: asyncio.Semaphore,
+    limit: int,
+) -> None:
+    async with semaphore, SessionLocal() as session:
+        try:
+            await ingest_feed(session, url, client=client, limit=limit)
+        except (httpx.HTTPError, ValueError) as exc:
+            logger.warning("rss %s: failed (%s)", url, exc)
+            await session.rollback()
+        except Exception:
+            logger.exception("rss %s: unexpected failure", url)
+            await session.rollback()
+
+
 async def poll_once() -> None:
+    settings = get_settings()
     urls = await subscribed_feed_urls()
     if not urls:
         return
-    async with (
-        httpx.AsyncClient(
-            timeout=20, follow_redirects=True, headers={"User-Agent": "AlfaFutureNewsBot/1.0"}
-        ) as client,
-        SessionLocal() as session,
-    ):
-        for url in urls:
-            try:
-                ingested, skipped = await ingest_feed(session, url, client=client)
-            except (httpx.HTTPError, ValueError) as exc:
-                logger.warning("rss %s: failed (%s)", url, exc)
-                await session.rollback()
-                continue
-            except Exception:
-                logger.exception("rss %s: unexpected failure", url)
-                await session.rollback()
-                continue
-            logger.info("rss %s: ingested=%s skipped=%s", url, ingested, skipped)
+    semaphore = asyncio.Semaphore(settings.rss_poll_concurrency)
+    async with httpx.AsyncClient(
+        timeout=20, follow_redirects=True, headers={"User-Agent": "AlfaFutureNewsBot/1.0"}
+    ) as client:
+        await asyncio.gather(
+            *(
+                _poll_feed(url, client, semaphore, settings.rss_poll_items_limit)
+                for url in urls
+            )
+        )
 
 
 async def rss_poll_loop() -> None:

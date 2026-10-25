@@ -12,6 +12,8 @@ export const channelSchema = z.object({
   feed_url: z.string().nullish(),
   source_type: z.enum(["telegram", "rss"]).default("telegram"),
   tg_subscribers: z.number().int().nullish(),
+  popularity: z.number().int().nullish(),
+  category_ids: z.array(z.number().int()).default([]),
 });
 
 export const sourcesStateSchema = z.object({

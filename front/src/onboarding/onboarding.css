@@ -451,3 +451,30 @@
   margin: 0;
   accent-color: var(--text);
 }
+
+.source-list--onboarding {
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.source-item__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.source-item__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.source-item__meta {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
+}

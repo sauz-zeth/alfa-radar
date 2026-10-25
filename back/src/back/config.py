@@ -47,6 +47,8 @@ class Settings(BaseSettings):
     rss_poll_enabled: bool = True
     rss_poll_interval_seconds: int = 300
     rss_poll_initial_delay_seconds: float = 20
+    rss_poll_concurrency: int = 5
+    rss_poll_items_limit: int = 10
 
     data_dir: Path = Path("data")
     seed_company_limit: int = 0

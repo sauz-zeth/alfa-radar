@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from back.core.recommendations import candidates_by_id, recommend_ids
 from back.core.sources import (
     CHANNELS,
     RECOMMENDED_IDS,
@@ -10,12 +11,13 @@ from back.core.sources import (
     parse_handle,
     rss_channel_id,
 )
-from back.db.models import BusinessProfile, Channel, ProfileChannel
+from back.db.models import BusinessCategory, BusinessProfile, Channel, ProfileChannel
 from back.schemas.sources import ChannelCatalogResponse, ChannelOut, SourcesState
 
 
-def _channel_out(channel: Channel, subscribed: bool) -> ChannelOut:
+def _channel_out(channel: Channel, subscribed: bool, recommended: bool) -> ChannelOut:
     meta = channel.meta or {}
+    candidate = candidates_by_id().get(channel.id)
     return ChannelOut(
         id=channel.id,
         name=channel.name,
@@ -23,11 +25,13 @@ def _channel_out(channel: Channel, subscribed: bool) -> ChannelOut:
         topics=channel.topics,
         kind=channel.kind,
         subscribed=subscribed,
-        recommended=channel.is_recommended,
+        recommended=recommended,
         avatar_url=meta.get("avatar_url"),
         feed_url=meta.get("feed_url"),
         source_type="rss" if meta.get("feed_url") else "telegram",
         tg_subscribers=meta.get("tg_subscribers"),
+        popularity=candidate.popularity if candidate else meta.get("tg_subscribers"),
+        category_ids=sorted(candidate.category_ids) if candidate else [],
     )
 
 
@@ -37,6 +41,8 @@ def _seed_meta(seed) -> dict:
         meta["feed_url"] = seed.feed_url
     if seed.subscribers is not None:
         meta["tg_subscribers"] = seed.subscribers
+    if seed.popularity is not None:
+        meta["rss_popularity"] = seed.popularity
     return meta
 
 
@@ -152,21 +158,30 @@ async def _ensure_legacy_channels(session: AsyncSession, profile: BusinessProfil
     return True
 
 
+async def _profile_category_ids(session: AsyncSession, profile: BusinessProfile) -> set[int]:
+    return set(
+        (
+            await session.execute(
+                select(BusinessCategory.category_id).where(
+                    BusinessCategory.profile_id == profile.id
+                )
+            )
+        ).scalars()
+    )
+
+
+async def _recommended_ids(session: AsyncSession, profile: BusinessProfile) -> set[str]:
+    return set(recommend_ids(await _profile_category_ids(session, profile)))
+
+
 async def ensure_profile_sources(session: AsyncSession, profile: BusinessProfile) -> None:
     if profile.sources_initialized:
         return
     migrated = await _ensure_legacy_channels(session, profile)
     if not migrated:
         await ensure_catalog(session)
-        recommended = {
-            row.id: row
-            for row in (
-                await session.execute(select(Channel).where(Channel.is_recommended.is_(True)))
-            ).scalars()
-        }
-        for channel_id in RECOMMENDED_IDS:
-            if channel_id in recommended:
-                await _add_subscription(session, profile, channel_id, "recommended")
+        for channel_id in await _recommended_ids(session, profile):
+            await _add_subscription(session, profile, channel_id, "recommended")
     profile.sources_initialized = True
     await session.flush()
 
@@ -183,7 +198,13 @@ async def sources_state(session: AsyncSession, profile: BusinessProfile) -> Sour
             )
         ).scalars()
     )
-    channels = [_channel_out(row, True) for row in rows]
+    recommended_ids = await _recommended_ids(session, profile)
+    channels = [
+        _channel_out(row, True, row.id in recommended_ids) for row in rows
+    ]
+    channels.sort(
+        key=lambda item: (not item.recommended, -(item.popularity or 0), item.name)
+    )
     custom_count = sum(1 for row in rows if row.kind == "custom")
     catalog_total = (
         await session.execute(
@@ -192,7 +213,7 @@ async def sources_state(session: AsyncSession, profile: BusinessProfile) -> Sour
     ).scalar_one()
     return SourcesState(
         channels=channels,
-        recommended_count=len(RECOMMENDED_IDS),
+        recommended_count=len(recommended_ids),
         custom_count=custom_count,
         catalog_total=catalog_total,
     )
@@ -220,16 +241,17 @@ async def catalog(
             filters.append(Channel.handle.ilike(handle))
         statement = statement.where(or_(*filters))
     rows = list(
-        (
-            await session.execute(
-                statement.order_by(Channel.is_recommended.desc(), Channel.name).limit(500)
-            )
-        ).scalars()
+        (await session.execute(statement.order_by(Channel.name).limit(500))).scalars()
     )
+    recommended_ids = await _recommended_ids(session, profile)
+    items = [
+        _channel_out(row, row.id in subscribed, row.id in recommended_ids) for row in rows
+    ]
+    items.sort(key=lambda item: (not item.recommended, -(item.popularity or 0), item.name))
     return ChannelCatalogResponse(
         query=text,
-        items=[_channel_out(row, row.id in subscribed) for row in rows],
-        total=len(rows),
+        items=items,
+        total=len(items),
     )
 
 
@@ -339,10 +361,7 @@ async def restore_recommended(session: AsyncSession, profile: BusinessProfile) -
     await ensure_profile_sources(session, profile)
     await ensure_catalog(session)
     await session.execute(delete(ProfileChannel).where(ProfileChannel.profile_id == profile.id))
-    recommended = list(
-        (await session.execute(select(Channel).where(Channel.is_recommended.is_(True)))).scalars()
-    )
-    for channel in recommended:
-        await _add_subscription(session, profile, channel.id, "recommended")
+    for channel_id in await _recommended_ids(session, profile):
+        await _add_subscription(session, profile, channel_id, "recommended")
     await session.flush()
     return await sources_state(session, profile)

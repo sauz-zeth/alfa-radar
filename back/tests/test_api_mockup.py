@@ -259,7 +259,8 @@ async def test_mockup_api_flow(api_env) -> None:
 
     sources = await client.get("/api/sources", headers=headers)
     assert sources.status_code == 200
-    assert len(sources.json()["channels"]) == 15
+    assert len(sources.json()["channels"]) == 50
+    assert sources.json()["recommended_count"] == 50
     assert sources.json()["alfa_analytics"] is True
     assert "official" not in sources.json()
     catalog = await client.get("/api/sources/catalog", headers=headers, params={"q": "металл"})
@@ -280,7 +281,7 @@ async def test_mockup_api_flow(api_env) -> None:
     )
     assert all(item["id"] != custom_channel["id"] for item in unsubscribed.json()["channels"])
     restored = await client.post("/api/sources/channels/restore", headers=headers)
-    assert len(restored.json()["channels"]) == 15
+    assert len(restored.json()["channels"]) == 50
     assert restored.json()["custom_count"] == 0
 
     search = await client.get("/api/search", headers=headers, params={"q": "пошлин"})

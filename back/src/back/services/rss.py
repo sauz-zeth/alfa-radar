@@ -114,8 +114,11 @@ async def ingest_feed(
     url: str,
     profile: BusinessProfile | None = None,
     client: httpx.AsyncClient | None = None,
+    limit: int | None = None,
 ) -> tuple[int, int]:
     items = await fetch_feed(url, client)
+    if limit is not None:
+        items = items[:limit]
     ingested = 0
     skipped = 0
     for item in items:

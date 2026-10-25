@@ -157,7 +157,8 @@ GET /api/businesses/options?search=&limit=15
 
 ### Источники
 
-- `GET /api/sources` — подписки профиля; при первом обращении подписывает на 15 рекомендаций.
+- `GET /api/sources` — подписки профиля; при первом обращении подписывает на 50
+  персональных рекомендаций (25 Telegram + 25 RSS).
 - `GET /api/sources/catalog?q=` — поиск по каталогу и пользовательским каналам.
 - `POST /api/sources/channels` — добавить свой источник: `@тег`, `t.me`-ссылка или
   URL RSS/Atom-ленты (`http://` / `https://`).
@@ -167,10 +168,18 @@ GET /api/businesses/options?search=&limit=15
 Каталог и рекомендации лежат в `core/sources.py` как сид: 93 Telegram-канала и
 100 RSS-лент. Пользовательские источники создаются в таблице `channels`
 (`kind = custom`, RSS определяется по `meta.feed_url`). Ответы `CHANNEL_OUT` содержат
-`source_type` (`telegram` / `rss`), `avatar_url` и закэшированное число подписчиков
-`tg_subscribers`. RSS пользовательских и каталожных подписок опрашивается фоновым
-заданием (`RSS_POLL_ENABLED`, `RSS_POLL_INTERVAL_SECONDS`). Подробности — в
-[`docs/Sources-Migration.md`](../docs/Sources-Migration.md).
+`source_type` (`telegram` / `rss`), `avatar_url`, закэшированное число подписчиков
+`tg_subscribers` и `category_ids` источника.
+
+Рекомендации считает `core/recommendations.py`: у каждого источника есть набор
+категорий, по категориям профиля и популярности выбираются 50 источников — ровно
+25 Telegram и 25 RSS, из них 10–20 общих деловых/политических, остальные отраслевые
+и профильные (налоги, ВЭД, право, отрасль). Популярность TG — подписчики, RSS —
+частота публикаций. Категории соседних отраслей расширяют отраслевую выдачу, поэтому
+например металлургу попадают металлургия, таможня, логистика и ТЭК, а не случайные
+отрасли. RSS подписок опрашивается фоновым заданием (`RSS_POLL_ENABLED`,
+`RSS_POLL_INTERVAL_SECONDS`, `RSS_POLL_ITEMS_LIMIT`, `RSS_POLL_CONCURRENCY`).
+Подробности — в [`docs/Sources-Migration.md`](../docs/Sources-Migration.md).
 
 ### Поиск
 

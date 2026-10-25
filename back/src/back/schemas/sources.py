@@ -15,6 +15,8 @@ class ChannelOut(BaseModel):
     feed_url: str | None = None
     source_type: str = "telegram"
     tg_subscribers: int | None = None
+    popularity: int | None = None
+    category_ids: list[int] = []
 
 
 class SourcesState(BaseModel):
