@@ -38,23 +38,15 @@ export function HeaderSearch() {
   });
 
   const suggestions: Suggestion[] = enabled && results.data
-    ? [
-        ...results.data.companies.slice(0, 3).map((company) => ({
-          key: `company-${company.uid}`,
-          label: company.name,
-          meta: company.role,
-          to: `/search?q=${encodeURIComponent(company.name)}`,
-        })),
-        ...results.data.news.slice(0, 4).map((item) => ({
-          key: `news-${item.id}`,
-          label: item.title,
-          meta: `${item.source_name} · ${shortDate(item.published_at)} · ${pluralRu(
-            item.source_count,
-            ["источник", "источника", "источников"],
-          )}`,
-          to: `/event/${item.id}`,
-        })),
-      ]
+    ? results.data.news.slice(0, 5).map((item) => ({
+        key: `news-${item.id}`,
+        label: item.title,
+        meta: `${item.source_name} · ${shortDate(item.published_at)} · ${pluralRu(
+          item.source_count,
+          ["источник", "источника", "источников"],
+        )}`,
+        to: `/event/${item.id}`,
+      }))
     : [];
 
   useEffect(() => {

@@ -167,6 +167,10 @@
     white-space: nowrap;
   }
 
+  .desktop-topbar__nav + .desktop-topbar__user {
+    margin-left: auto;
+  }
+
   .desktop-topbar__avatar {
     display: grid;
     width: 36px;

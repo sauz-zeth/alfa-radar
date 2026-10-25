@@ -55,7 +55,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <HeaderSearch />
+        {path === "/search" ? null : <HeaderSearch />}
         <div className="desktop-topbar__user">
           <span className="desktop-topbar__avatar">{avatar}</span>
           <span>

@@ -67,10 +67,6 @@
   color: rgba(247, 247, 247, 0.4);
 }
 
-.search-field input::-webkit-search-cancel-button {
-  filter: invert(1);
-}
-
 .search-start {
   display: flex;
   flex-direction: column;
@@ -110,11 +106,18 @@
 
 .search-recent__chip {
   padding: 8px 12px;
+  border: 0;
   border-radius: 16px;
   background: var(--glass-surface);
   color: var(--muted-soft);
+  font: inherit;
   font-size: 13px;
   line-height: 16px;
+  cursor: pointer;
+}
+
+.search-recent__chip:hover {
+  color: var(--surface);
 }
 
 .search-results {
@@ -157,73 +160,6 @@
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.search-company {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px;
-  border-radius: 20px;
-  background: rgba(247, 247, 247, 0.05);
-}
-
-.search-company__avatar {
-  display: flex;
-  width: 40px;
-  height: 40px;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.search-company__body {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.search-company__name {
-  margin: 0;
-  overflow: hidden;
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 20px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.search-company__uid {
-  margin: 0;
-  color: var(--muted-soft);
-  font-size: 11px;
-  line-height: 14px;
-}
-
-.search-company__meta {
-  margin: 0;
-  color: var(--muted-soft);
-  font-size: 12px;
-  line-height: 16px;
-}
-
-.search-company__segment {
-  flex: none;
-  padding: 4px 10px;
-  border-radius: 12px;
-  background: var(--glass-surface);
-  color: var(--muted-strong);
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 14px;
-  white-space: nowrap;
 }
 
 .search-news-row {

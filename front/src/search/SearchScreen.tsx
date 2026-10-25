@@ -5,7 +5,6 @@ import {
   useApiMutation,
   useApiQuery,
   useQueryClient,
-  type SearchCompany,
   type SearchNews,
 } from "../api";
 import { pluralRu } from "../lib/plural";
@@ -15,8 +14,6 @@ import "./search.css";
 const MIN_QUERY = 2;
 const RESULT_LIMIT = 10;
 
-const RECENT_STUBS = ["ключевая ставка", "металлургия", "логистика", "Алроса"];
-
 const impactTones: Record<string, string> = {
   risk: "risk",
   opportunity: "opportunity",
@@ -24,35 +21,8 @@ const impactTones: Record<string, string> = {
   neutral: "neutral",
 };
 
-function companyMeta(company: SearchCompany): string {
-  return [company.city, company.region].filter(Boolean).join(" · ");
-}
-
 function shortDate(iso: string): string {
   return new Date(iso).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
-}
-
-function CompanyRow({ company }: { company: SearchCompany }) {
-  const meta = companyMeta(company);
-
-  return (
-    <li className="search-company">
-      <span className="search-company__avatar" aria-hidden="true">
-        {company.initials}
-      </span>
-      <div className="search-company__body">
-        <p className="search-company__name">{company.name}</p>
-        <p className="search-company__uid">UID {company.uid}</p>
-        <p className="search-company__meta">
-          {meta ? `${meta} · ` : ""}
-          {company.role}
-        </p>
-      </div>
-      {company.revenue_segment ? (
-        <span className="search-company__segment">{company.revenue_segment}</span>
-      ) : null}
-    </li>
-  );
 }
 
 function NewsRow({
@@ -100,7 +70,7 @@ function NewsRow({
 export default function SearchScreen() {
   const api = useApi();
   const queryClient = useQueryClient();
-  const { search } = useRouter();
+  const { search, navigate } = useRouter();
   const urlQuery = new URLSearchParams(search).get("q") ?? "";
   const [query, setQuery] = useState(urlQuery);
   const [trackedOverrides, setTrackedOverrides] = useState<Record<string, boolean>>({});
@@ -129,16 +99,27 @@ export default function SearchScreen() {
     enabled: active,
   });
 
+  const history = useApiQuery({
+    queryKey: ["search-history"],
+    queryFn: (signal) => api.search.history({ signal }),
+    staleTime: 0,
+  });
+
+  useEffect(() => {
+    if (results.data) void queryClient.invalidateQueries({ queryKey: ["search-history"] });
+  }, [results.data, queryClient]);
+
+  const recent = history.data?.items ?? [];
+
   const data = results.data;
-  const companies = data?.companies.slice(0, RESULT_LIMIT) ?? [];
   const news = data?.news.slice(0, RESULT_LIMIT) ?? [];
-  const empty = Boolean(data && data.total_companies === 0 && data.total_news === 0);
+  const empty = Boolean(data && data.total_news === 0);
 
   return (
     <div className="search-page">
       <header className="search-head">
         <h1 className="search-head__title">Поиск</h1>
-        <p className="search-head__subtitle">Новости, компании и контрагенты в одном месте</p>
+        <p className="search-head__subtitle">Новости в ленте за последние дни</p>
         <label className="search-field">
           <svg viewBox="0 0 18 18" width="18" height="18" aria-hidden="true">
             <circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
@@ -153,8 +134,8 @@ export default function SearchScreen() {
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Новости, компании, контрагенты"
-            aria-label="Новости, компании, контрагенты"
+            placeholder="Поиск по новостям"
+            aria-label="Поиск по новостям"
             autoFocus
             enterKeyHint="search"
           />
@@ -164,19 +145,25 @@ export default function SearchScreen() {
       {!active ? (
         <div className="search-start">
           <p className="search-hint">
-            Введите хотя бы {MIN_QUERY} символа, чтобы найти новости по компаниям, отраслям и
-            контрагентам.
+            Введите хотя бы {MIN_QUERY} символа, чтобы найти новости по заголовку и тексту.
           </p>
-          <div className="search-recent">
-            <p className="search-recent__label">Недавно искали</p>
-            <div className="search-recent__chips">
-              {RECENT_STUBS.map((item) => (
-                <span key={item} className="search-recent__chip">
-                  {item}
-                </span>
-              ))}
+          {recent.length > 0 ? (
+            <div className="search-recent">
+              <p className="search-recent__label">Недавно искали</p>
+              <div className="search-recent__chips">
+                {recent.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="search-recent__chip"
+                    onClick={() => navigate(`/search?q=${encodeURIComponent(item.query)}`)}
+                  >
+                    {item.query}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
       ) : results.isPending ? (
         <div className="search-state">
@@ -201,22 +188,6 @@ export default function SearchScreen() {
           </div>
         ) : (
           <div className="search-results" aria-busy={results.isFetching}>
-            {companies.length > 0 ? (
-              <section className="search-section" aria-labelledby="search-companies">
-                <div className="search-section__head">
-                  <h2 className="search-section__title" id="search-companies">
-                    Компании
-                  </h2>
-                  <span className="search-section__count">{data.total_companies}</span>
-                </div>
-                <ul className="search-list">
-                  {companies.map((company) => (
-                    <CompanyRow key={company.uid} company={company} />
-                  ))}
-                </ul>
-              </section>
-            ) : null}
-
             {news.length > 0 ? (
               <section className="search-section" aria-labelledby="search-news">
                 <div className="search-section__head">
