@@ -39,6 +39,7 @@
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
@@ -61,6 +62,8 @@ button {
   font: inherit;
   text-align: inherit;
   cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 button[aria-disabled="true"] {
@@ -80,6 +83,12 @@ img {
 :focus-visible {
   outline: 2px solid var(--surface);
   outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
 }
 
 .app-shell {
