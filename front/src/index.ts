@@ -23,6 +23,8 @@ async function proxy(request: Request): Promise<Response> {
 }
 
 const server = serve({
+  hostname: process.env.HOST ?? "0.0.0.0",
+  port: Number(process.env.PORT ?? 3000),
   routes: {
     [`${PROXY_PREFIX}/*`]: (request) => proxy(request),
     "/static/*": (request) => proxy(request),
