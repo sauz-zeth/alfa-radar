@@ -11,10 +11,10 @@ from typing import Any
 import httpx
 from telethon import TelegramClient
 from telethon.errors import FloodWaitError, RPCError, UserAlreadyParticipantError
-from telethon.tl.functions.channels import JoinChannelRequest
+from telethon.tl.functions.channels import GetFullChannelRequest, JoinChannelRequest
 from telethon.tl.types import Channel
 
-from .backend import upload_avatar
+from .backend import update_channel_stats, upload_avatar
 from .config import Settings
 
 logger = logging.getLogger(__name__)
@@ -26,6 +26,7 @@ class ChannelInfo:
     handle: str
     avatar_url: str | None = None
     subscribers: int = 1
+    tg_subscribers: int | None = None
 
 
 def _key(handle: str) -> str:
@@ -52,6 +53,7 @@ async def fetch_channels(http: httpx.AsyncClient, settings: Settings) -> list[Ch
             handle=str(item["handle"]),
             avatar_url=item.get("avatar_url"),
             subscribers=int(item.get("subscribers", 0)),
+            tg_subscribers=item.get("tg_subscribers"),
         )
         for item in items
         if item.get("handle")
@@ -122,6 +124,7 @@ class ChannelRegistry:
         self._active_ids: set[int] = set()
         self._joins_cycle = 0
         self._avatar_checked: set[str] = set()
+        self._stats_checked: set[str] = set()
         self.limiter = JoinLimiter(settings.join_state, settings.join_daily_limit)
 
     @property
@@ -190,6 +193,26 @@ class ChannelRegistry:
         self._failed.pop(key, None)
         self._active_ids.add(entity.id)
 
+    async def _cache_stats(
+        self, http: httpx.AsyncClient, entity: Any, info: ChannelInfo
+    ) -> None:
+        if info.id in self._stats_checked:
+            return
+        count = getattr(entity, "participants_count", None)
+        if count is None and info.tg_subscribers is None:
+            try:
+                full = await self.client(GetFullChannelRequest(entity))
+                count = getattr(full.full_chat, "participants_count", None)
+            except Exception as exc:
+                logger.warning("cannot read subscriber count %s: %s", info.handle, exc)
+        self._stats_checked.add(info.id)
+        if count is None or count == info.tg_subscribers:
+            return
+        try:
+            await update_channel_stats(http, self.settings, info.id, int(count))
+        except (httpx.HTTPError, KeyError, ValueError) as exc:
+            logger.warning("cannot cache subscriber count %s: %s", info.handle, exc)
+
     async def _cache_avatar(
         self, http: httpx.AsyncClient, entity: Any, info: ChannelInfo
     ) -> None:
@@ -232,10 +255,14 @@ class ChannelRegistry:
             entity = await self._resolve(info.handle)
             if entity is None:
                 continue
+            if entity.id in self._joined_ids:
+                self._joined.add(key)
             if join:
                 await self._join(info.handle, entity)
             if key in self._joined:
                 self._active_ids.add(entity.id)
+            if join and info.id:
+                await self._cache_stats(http, entity, info)
             if join and info.id and not info.avatar_url:
                 await self._cache_avatar(http, entity, info)
 

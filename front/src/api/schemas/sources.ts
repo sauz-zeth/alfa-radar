@@ -9,6 +9,9 @@ export const channelSchema = z.object({
   subscribed: z.boolean().default(false),
   recommended: z.boolean().default(false),
   avatar_url: z.string().nullish(),
+  feed_url: z.string().nullish(),
+  source_type: z.enum(["telegram", "rss"]).default("telegram"),
+  tg_subscribers: z.number().int().nullish(),
 });
 
 export const sourcesStateSchema = z.object({

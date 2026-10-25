@@ -116,3 +116,18 @@ async def test_avatar_is_uploaded_once(monkeypatch, tmp_path) -> None:
     await registry.sync(None)  # type: ignore[arg-type]
 
     assert uploaded == [("ch-1", b"\xff\xd8\xfffake-jpeg")]
+
+
+async def test_sync_without_join_keeps_existing_subscriptions(monkeypatch, tmp_path) -> None:
+    async def fake_fetch(http, settings) -> list[ChannelInfo]:
+        return [ChannelInfo(id="", handle="@existing")]
+
+    monkeypatch.setattr(channels_module, "fetch_channels", fake_fetch)
+    client = FakeClient({"existing": 50})
+    registry = ChannelRegistry(client, _settings(tmp_path))  # type: ignore[arg-type]
+    registry._joined_ids.add(50)
+
+    await registry.sync(None, join=False)  # type: ignore[arg-type]
+
+    assert registry.active_ids == {50}
+    assert client.joins == []

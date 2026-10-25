@@ -53,6 +53,8 @@ class IngestChannelOut(BaseModel):
     handle: str
     subscribers: int
     avatar_url: str | None = None
+    source_type: str = "telegram"
+    tg_subscribers: int | None = None
 
 
 class IngestChannelList(BaseModel):
@@ -61,3 +63,11 @@ class IngestChannelList(BaseModel):
 
 class IngestAvatarOut(BaseModel):
     avatar_url: str
+
+
+class IngestChannelStats(BaseModel):
+    subscribers: int = Field(ge=0)
+
+
+class IngestChannelStatsOut(BaseModel):
+    tg_subscribers: int

@@ -159,13 +159,18 @@ GET /api/businesses/options?search=&limit=15
 
 - `GET /api/sources` — подписки профиля; при первом обращении подписывает на 15 рекомендаций.
 - `GET /api/sources/catalog?q=` — поиск по каталогу и пользовательским каналам.
-- `POST /api/sources/channels` — добавить свой канал по `@тегу` или `t.me`-ссылке.
+- `POST /api/sources/channels` — добавить свой источник: `@тег`, `t.me`-ссылка или
+  URL RSS/Atom-ленты (`http://` / `https://`).
 - `POST /api/sources/channels/{id}/subscribe`, `DELETE /api/sources/channels/{id}`,
   `POST /api/sources/channels/unsubscribe-all`, `POST /api/sources/channels/restore`.
 
-Каталог и рекомендации лежат в `core/sources.py` как сид, пользовательские каналы
-создаются в таблице `channels` (`kind = custom`). Подробности и план подключения реального
-парсера — в [`docs/Sources-Migration.md`](../docs/Sources-Migration.md).
+Каталог и рекомендации лежат в `core/sources.py` как сид: 93 Telegram-канала и
+100 RSS-лент. Пользовательские источники создаются в таблице `channels`
+(`kind = custom`, RSS определяется по `meta.feed_url`). Ответы `CHANNEL_OUT` содержат
+`source_type` (`telegram` / `rss`), `avatar_url` и закэшированное число подписчиков
+`tg_subscribers`. RSS пользовательских и каталожных подписок опрашивается фоновым
+заданием (`RSS_POLL_ENABLED`, `RSS_POLL_INTERVAL_SECONDS`). Подробности — в
+[`docs/Sources-Migration.md`](../docs/Sources-Migration.md).
 
 ### Поиск
 
@@ -284,7 +289,9 @@ curl -s http://127.0.0.1:8000/api/ingest/posts/<post_id>
 
 `services/rss.py` читает RSS 2.0 и Atom через `httpx` (stdlib `ElementTree`, без новых
 зависимостей), чистит HTML, нормализует даты и отправляет каждый новый пост в тот же
-пайплайн. Дубли отсекаются по `url`.
+пайплайн. Дубли отсекаются по `url`. Фоновый поллер (`services/rss_poller.py`) сам
+опрашивает RSS-источники, на которые подписаны пользователи, раз в
+`RSS_POLL_INTERVAL_SECONDS`; включается через `RSS_POLL_ENABLED`.
 
 ```bash
 # URL из RSS_FEEDS (.env, через запятую) или аргументами
@@ -300,15 +307,21 @@ uv run python scripts/ingest_rss.py https://example.com/rss https://example.com/
 с `X-Ingest-Token`. Запуск, вход по номеру/коду и хранение сессии — в
 [`tg-ingest/README.md`](../tg-ingest/README.md).
 
-Каталог источников — 93 реальных канала из
-[`docs/ТГ_каналы_для_новостной_аналитики_кейс_Альфа_Банка_1.md`](../docs/ТГ_каналы_для_новостной_аналитики_кейс_Альфа_Банка_1.md).
-Аватарки каналов кэшируются подсервисом:
+Каталог Telegram-каналов — 93 реальных источника из
+[`docs/ТГ_каналы_для_новостной_аналитики_кейс_Альфа_Банка_1.md`](../docs/ТГ_каналы_для_новостной_аналитики_кейс_Альфа_Банка_1.md);
+ещё 100 RSS-лент — из
+[`docs/RSS_ленты_для_новостной_аналитики_кейс_Альфа_Банка.md`](../docs/RSS_ленты_для_новостной_аналитики_кейс_Альфа_Банка.md).
+Аватарки и счётчики подписчиков кэшируются подсервисом:
 
-- `GET /api/ingest/channels` — все активные каналы с `handle` и числом подписчиков;
+- `GET /api/ingest/channels` — все активные Telegram-каналы с `handle`, числом подписчиков
+  в системе и закэшированным `tg_subscribers`;
 - `PUT /api/ingest/channels/{channel_id}/avatar` — тело `image/jpeg|png|webp` до 2 МБ,
   `X-Ingest-Token`; файл сохраняется в `src/back/static/avatars`, а URL пишется в
   `channels.meta.avatar_url`;
-- `GET /api/sources` и `/api/sources/catalog` отдают `avatar_url` для фронта.
+- `PUT /api/ingest/channels/{channel_id}/stats` — `{ "subscribers": 123 }` обновляет
+  `channels.meta.tg_subscribers`;
+- `GET /api/sources` и `/api/sources/catalog` отдают `avatar_url`, `source_type` и
+  `tg_subscribers` для фронта.
 
 ### Ленивый разбор события
 

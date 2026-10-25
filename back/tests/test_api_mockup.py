@@ -527,9 +527,17 @@ async def test_ingest_avatar_upload(api_env, tmp_path, monkeypatch) -> None:
     assert avatar_url.startswith("/static/avatars/")
     assert (tmp_path / avatar_url.rsplit("/", 1)[-1]).exists()
 
+    stats = await client.put(
+        f"/api/ingest/channels/{channel['id']}/stats",
+        headers=ingest_headers,
+        json={"subscribers": 12_345},
+    )
+    assert stats.status_code == 200
+
     sources = await client.get("/api/sources", headers=headers)
     mine = next(item for item in sources.json()["channels"] if item["id"] == channel["id"])
     assert mine["avatar_url"] == avatar_url
+    assert mine["tg_subscribers"] == 12_345
 
     bad = await client.put(
         f"/api/ingest/channels/{channel['id']}/avatar",
@@ -537,3 +545,51 @@ async def test_ingest_avatar_upload(api_env, tmp_path, monkeypatch) -> None:
         content=b"not an image",
     )
     assert bad.status_code == 415
+
+
+async def test_add_rss_source_and_catalog_metadata(api_env) -> None:
+    client, _, headers, _ = api_env
+
+    catalog = await client.get("/api/sources/catalog?q=rian_ru", headers=headers)
+    assert catalog.status_code == 200
+    telegram = catalog.json()["items"][0]
+    assert telegram["source_type"] == "telegram"
+    assert telegram["tg_subscribers"] == 3_029_269
+
+    feed_url = "https://example.com/rss/news.xml"
+    added = await client.post(
+        "/api/sources/channels",
+        headers=headers,
+        json={"query": feed_url},
+    )
+    assert added.status_code == 200
+    rss = next(item for item in added.json()["channels"] if item["feed_url"] == feed_url)
+    assert rss["source_type"] == "rss"
+    assert rss["kind"] == "custom"
+    assert rss["tg_subscribers"] is None
+
+    again = await client.post(
+        "/api/sources/channels",
+        headers=headers,
+        json={"query": feed_url},
+    )
+    duplicate = next(item for item in again.json()["channels"] if item["feed_url"] == feed_url)
+    assert duplicate["id"] == rss["id"]
+
+
+async def test_rss_poller_lists_subscribed_feeds(api_env, monkeypatch) -> None:
+    import back.services.rss_poller as poller
+
+    client, _, headers, session_factory = api_env
+    monkeypatch.setattr(poller, "SessionLocal", session_factory)
+    feed_url = "https://example.com/rss/poller.xml"
+
+    added = await client.post(
+        "/api/sources/channels",
+        headers=headers,
+        json={"query": feed_url},
+    )
+    assert added.status_code == 200
+
+    urls = await poller.subscribed_feed_urls()
+    assert feed_url in urls

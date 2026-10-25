@@ -11,7 +11,8 @@ import {
 import { channelCountLabel, pluralRu } from "../lib/plural";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { ChannelCard } from "./ChannelCard";
-import { channelInitials, channelTone } from "./channelVisuals";
+import { channelInitials, channelTone, formatSubscribers } from "./channelVisuals";
+import { SourceBadge } from "./SourceBadge";
 import { MoreCard } from "./MoreCard";
 import { officialSources } from "./officialSources";
 import { SourcesHeader, type SourcesTab } from "./SourcesHeader";
@@ -23,6 +24,7 @@ export default function SourcesPage() {
   const isDesktop = useMediaQuery("(min-width: 1200px)");
   const [tab, setTab] = useState<SourcesTab>("channels");
   const [query, setQuery] = useState("");
+  const [addQuery, setAddQuery] = useState("");
 
   const sources = useApiQuery({
     queryKey: ["sources"],
@@ -65,6 +67,15 @@ export default function SourcesPage() {
     onSuccess: applyState,
   });
 
+  const addChannel = useApiMutation<SourcesState, string>({
+    mutationFn: (query) => api.sources.addChannel({ query }),
+    onSuccess: (state) => {
+      applyState(state);
+      setAddQuery("");
+      setTab("channels");
+    },
+  });
+
   const data = sources.data;
   const channels = useMemo(() => data?.channels ?? [], [data?.channels]);
   const recommended = useMemo(
@@ -83,6 +94,7 @@ export default function SourcesPage() {
     return [0, 1].map((index) => (list[index] ? channelInitials(list[index].name) : "•"));
   }, [channels]);
   const pending = subscribe.isPending || unsubscribe.isPending;
+  const canAddSource = /^(@|https?:\/\/)/i.test(addQuery.trim());
 
   const toggleChannel = (channel: Channel) => {
     if (channel.subscribed) unsubscribe.mutate(channel.id);
@@ -119,6 +131,39 @@ export default function SourcesPage() {
         />
       </label>
 
+      <form
+        className="sources-add"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (canAddSource && !addChannel.isPending) {
+            addChannel.mutate(addQuery.trim());
+          }
+        }}
+      >
+        <div className="sources-add__field">
+          <input
+            value={addQuery}
+            onChange={(event) => setAddQuery(event.target.value)}
+            placeholder="@handle, t.me/... или URL RSS-ленты"
+            aria-label="Новый источник"
+          />
+          <button
+            type="submit"
+            className="sources-add__button"
+            disabled={!canAddSource || addChannel.isPending}
+          >
+            {addChannel.isPending ? "Добавляем…" : "Добавить"}
+          </button>
+        </div>
+        {addChannel.isError ? (
+          <p className="form-error">
+            {addChannel.error instanceof ApiError
+              ? addChannel.error.detail
+              : "Не удалось добавить источник"}
+          </p>
+        ) : null}
+      </form>
+
       {catalog.isPending ? <p className="sources-note">Ищем каналы…</p> : null}
       {catalog.isError ? <p className="form-error">Не удалось загрузить каталог</p> : null}
 
@@ -140,8 +185,16 @@ export default function SourcesPage() {
                 )}
               </span>
               <span className="catalog-body">
-                <span className="catalog-name">{channel.name}</span>
-                <span className="catalog-topics">{channel.handle ?? channel.topics}</span>
+                <span className="catalog-name">
+                  <SourceBadge type={channel.source_type} />
+                  {channel.name}
+                </span>
+                <span className="catalog-topics">
+                  {channel.handle ?? channel.topics}
+                  {channel.tg_subscribers
+                    ? ` · ${formatSubscribers(channel.tg_subscribers)}`
+                    : ""}
+                </span>
               </span>
               <span className={channel.subscribed ? "catalog-action is-subscribed" : "catalog-action"}>
                 {channel.subscribed ? "✓" : "+"}

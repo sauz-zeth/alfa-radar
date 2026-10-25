@@ -32,3 +32,13 @@ export function cardTone(index: number): ChannelTone {
 export function cardTilt(index: number): number {
   return cardTiltSequence[index % cardTiltSequence.length]!;
 }
+
+export function formatSubscribers(count: number): string {
+  if (count >= 1_000_000) {
+    return `${(count / 1_000_000).toFixed(1).replace(".", ",")} млн`;
+  }
+  if (count >= 1_000) {
+    return `${Math.round(count / 1_000)} тыс.`;
+  }
+  return String(count);
+}

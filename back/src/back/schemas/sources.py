@@ -12,6 +12,9 @@ class ChannelOut(BaseModel):
     subscribed: bool = False
     recommended: bool = False
     avatar_url: str | None = None
+    feed_url: str | None = None
+    source_type: str = "telegram"
+    tg_subscribers: int | None = None
 
 
 class SourcesState(BaseModel):

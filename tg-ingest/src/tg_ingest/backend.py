@@ -39,6 +39,18 @@ async def send_post(http: httpx.AsyncClient, settings: Settings, payload: dict[s
     return False
 
 
+async def update_channel_stats(
+    http: httpx.AsyncClient, settings: Settings, channel_id: str, subscribers: int
+) -> None:
+    response = await http.put(
+        f"/api/ingest/channels/{quote(channel_id, safe='')}/stats",
+        json={"subscribers": subscribers},
+        headers={"X-Ingest-Token": settings.ingest_token},
+    )
+    response.raise_for_status()
+    logger.info("cached %s subscribers for %s", subscribers, channel_id)
+
+
 async def upload_avatar(
     http: httpx.AsyncClient, settings: Settings, channel_id: str, photo: bytes
 ) -> str:

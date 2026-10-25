@@ -1,4 +1,6 @@
+import asyncio
 import logging
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 
 import uvicorn
@@ -9,9 +11,23 @@ from fastapi.staticfiles import StaticFiles
 from back.api.router import api_router
 from back.api.routes.health import router as health_router
 from back.config import get_settings
+from back.services.rss_poller import rss_poll_loop
 
 logging.basicConfig(level=logging.INFO)
 settings = get_settings()
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    task = asyncio.create_task(rss_poll_loop()) if settings.rss_poll_enabled else None
+    try:
+        yield
+    finally:
+        if task is not None:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
 
 app = FastAPI(
     title=settings.app_name,
@@ -20,6 +36,7 @@ app = FastAPI(
         "Бэкенд сервиса новостной аналитики: авторизация, онбординг бизнеса, "
         "персонализированная лента и отслеживаемые разборы."
     ),
+    lifespan=lifespan,
 )
 
 app.add_middleware(

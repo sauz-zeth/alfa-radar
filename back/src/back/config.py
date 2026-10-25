@@ -43,6 +43,10 @@ class Settings(BaseSettings):
 
     # Comma-separated RSS/Atom feeds polled by scripts/ingest_rss.py.
     rss_feeds: str = ""
+    # Background poller for RSS sources subscribed by users.
+    rss_poll_enabled: bool = True
+    rss_poll_interval_seconds: int = 300
+    rss_poll_initial_delay_seconds: float = 20
 
     data_dir: Path = Path("data")
     seed_company_limit: int = 0

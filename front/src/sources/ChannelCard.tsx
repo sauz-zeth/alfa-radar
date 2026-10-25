@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { Channel } from "../api";
-import { cardTilt, cardTone, channelInitials } from "./channelVisuals";
+import { cardTilt, cardTone, channelInitials, formatSubscribers } from "./channelVisuals";
+import { SourceBadge } from "./SourceBadge";
 
 type ChannelCardProps = {
   channel: Channel;
@@ -17,6 +18,9 @@ export function ChannelCard({ channel, index, onToggle, disabled, variant = "mob
     : channel.recommended
       ? "Профиль"
       : "Свой";
+  const subscribers = channel.tg_subscribers
+    ? ` · ${formatSubscribers(channel.tg_subscribers)}`
+    : "";
 
   return (
     <button
@@ -63,7 +67,10 @@ export function ChannelCard({ channel, index, onToggle, disabled, variant = "mob
 
       <span className="channel-card__info">
         <span className="channel-card__name">{channel.name}</span>
-        <span className="channel-card__type">{meta}</span>
+        <span className="channel-card__type">
+          <SourceBadge type={channel.source_type} />
+          <span>{meta}{subscribers}</span>
+        </span>
       </span>
     </button>
   );

@@ -13,6 +13,8 @@ from back.schemas.ingest import (
     IngestAvatarOut,
     IngestChannelList,
     IngestChannelOut,
+    IngestChannelStats,
+    IngestChannelStatsOut,
     IngestPostOut,
     IngestPostRequest,
     IngestPostTrace,
@@ -65,6 +67,7 @@ async def list_ingest_channels(
                 handle=row.handle,
                 subscribers=row.subscribers,
                 avatar_url=(row.meta or {}).get("avatar_url"),
+                tg_subscribers=(row.meta or {}).get("tg_subscribers"),
             )
             for row in rows
         ]
@@ -96,6 +99,24 @@ async def upload_channel_avatar(
     channel.meta = {**(channel.meta or {}), "avatar_url": avatar_url}
     await session.commit()
     return IngestAvatarOut(avatar_url=avatar_url)
+
+
+@router.put(
+    "/channels/{channel_id}/stats",
+    response_model=IngestChannelStatsOut,
+    dependencies=[Depends(require_ingest_token)],
+)
+async def update_channel_stats(
+    channel_id: str,
+    payload: IngestChannelStats,
+    session: AsyncSession = Depends(get_session),
+) -> IngestChannelStatsOut:
+    channel = await session.get(Channel, channel_id)
+    if channel is None:
+        raise HTTPException(status_code=404, detail="Канал не найден")
+    channel.meta = {**(channel.meta or {}), "tg_subscribers": payload.subscribers}
+    await session.commit()
+    return IngestChannelStatsOut(tg_subscribers=payload.subscribers)
 
 
 @router.post("/posts", response_model=IngestPostOut, dependencies=[Depends(require_ingest_token)])
