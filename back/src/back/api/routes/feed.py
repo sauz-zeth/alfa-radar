@@ -1,14 +1,16 @@
 import asyncio
 import json
+import logging
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.orm import selectinload
 
 from back.api.deps import get_current_profile
 from back.config import get_settings
@@ -39,7 +41,7 @@ from back.schemas.feed import (
     TrackToggleResponse,
 )
 from back.schemas.insights import ChatMessageOut, QuestionOut, ScenarioSetOut
-from back.services.agent import analyze_event, chat_context
+from back.services.agent import analyze_event, chat_context, fallback_report, pending_report
 from back.services.chat import answer_question, stream_answer
 from back.services.feed import MatchResult, event_to_feed_item, match_event, recency_key
 from back.services.insights import (
@@ -54,6 +56,8 @@ from back.services.personalization import (
     load_skipped_ids,
     load_tracked_ids,
 )
+
+logger = logging.getLogger(__name__)
 
 
 async def _user_questions(
@@ -662,9 +666,63 @@ async def ask_question_stream(
     )
 
 
+async def _refine_tracked_analysis(
+    bind: Any, profile_id: UUID, event_id: UUID
+) -> None:
+    try:
+        factory = async_sessionmaker(bind, expire_on_commit=False)
+        async with factory() as session:
+            profile = (
+                await session.execute(
+                    select(BusinessProfile)
+                    .options(selectinload(BusinessProfile.company))
+                    .where(BusinessProfile.id == profile_id)
+                )
+            ).scalar_one_or_none()
+            event = await session.get(NewsEvent, event_id)
+            if profile is None or event is None:
+                return
+            categories = await load_categories(session, profile)
+            counterparties = await load_counterparties(session, profile)
+            match = match_event(event, categories, counterparties)
+            report = await analyze_event(
+                profile=profile,
+                event=event,
+                business_categories=categories,
+                counterparties=counterparties,
+                match_importance=match.importance,
+                matched_counterparties=match.matched_counterparties,
+                use_llm=get_settings().llm_agent_enabled,
+            )
+            analysis = (
+                await session.execute(
+                    select(EventAnalysis).where(
+                        EventAnalysis.profile_id == profile.id,
+                        EventAnalysis.event_id == event.id,
+                    )
+                )
+            ).scalar_one_or_none()
+            if analysis is not None:
+                analysis.report = report
+            tracked = (
+                await session.execute(
+                    select(TrackedItem).where(
+                        TrackedItem.profile_id == profile.id,
+                        TrackedItem.event_id == event.id,
+                    )
+                )
+            ).scalar_one_or_none()
+            if tracked is not None:
+                tracked.report = report
+            await session.commit()
+    except Exception:
+        logger.exception("Tracked analysis failed for event %s", event_id)
+
+
 @router.post("/{event_id}/track", response_model=TrackedItemOut)
 async def track_event(
     event_id: UUID,
+    background_tasks: BackgroundTasks,
     profile: BusinessProfile = Depends(get_current_profile),
     session: AsyncSession = Depends(get_session),
 ) -> TrackedItemOut:
@@ -685,9 +743,33 @@ async def track_event(
     match = match_event(event, categories, counterparties)
 
     if existing is None:
-        report = await _ensure_event_analysis(
-            session, profile, event, categories, counterparties, match
-        )
+        report = await _event_report(session, profile, event.id)
+        pending = report is None or not report.get("analysis_finished_at")
+        if pending:
+            report = pending_report(
+                fallback_report(
+                    profile,
+                    event,
+                    match.importance,
+                    match.matched_counterparties,
+                    bool(profile.reporting_summary),
+                )
+            )
+            analysis = (
+                await session.execute(
+                    select(EventAnalysis).where(
+                        EventAnalysis.profile_id == profile.id,
+                        EventAnalysis.event_id == event.id,
+                    )
+                )
+            ).scalar_one_or_none()
+            if analysis is None:
+                analysis = EventAnalysis(
+                    profile_id=profile.id, event_id=event.id, report=report
+                )
+                session.add(analysis)
+            else:
+                analysis.report = report
         existing = TrackedItem(
             profile_id=profile.id,
             event_id=event.id,
@@ -699,6 +781,14 @@ async def track_event(
         session.add(existing)
         await session.commit()
         await session.refresh(existing)
+        if pending:
+            background_tasks.add_task(
+                _refine_tracked_analysis, session.bind, profile.id, event.id
+            )
+    elif (existing.report or {}).get("analysis_pending"):
+        background_tasks.add_task(
+            _refine_tracked_analysis, session.bind, profile.id, event.id
+        )
 
     feed_item = event_to_feed_item(
         event, match, is_tracked=True, profile=profile, report=existing.report
@@ -711,6 +801,7 @@ async def track_event(
         what_changed=existing.what_changed,
         conclusions_changed=existing.conclusions_changed,
         report=existing.report,
+        analysis_pending=bool((existing.report or {}).get("analysis_pending")),
         created_at=existing.created_at,
         updated_at=existing.updated_at,
         event=feed_item,

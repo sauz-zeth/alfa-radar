@@ -27,7 +27,13 @@ export function TopicCircle({ topic, side, onSelect, onOpen }: TopicCircleProps)
             <span>
               {topic.impactLabel} · {topic.date}
             </span>
-            {topic.changed ? (
+            {topic.processing ? (
+              <>
+                <span className="topic-circle__spinner" aria-hidden="true" />
+                <span className="topic-circle__processing">Агент обрабатывает</span>
+              </>
+            ) : null}
+            {topic.changed && !topic.processing ? (
               <>
                 <span className="topic-circle__marker" />
                 <span>Есть изменения</span>

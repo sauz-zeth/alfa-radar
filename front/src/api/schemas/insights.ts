@@ -150,6 +150,7 @@ export const insightSchema = z.object({
   timeline_total: z.number().int().default(0),
   timeline_current_index: z.number().int().default(0),
   analysis_finished_at: z.string().nullish(),
+  analysis_pending: z.boolean().default(false),
 });
 
 export const horizonSchema = z.enum(["3m", "6m", "12m"]);

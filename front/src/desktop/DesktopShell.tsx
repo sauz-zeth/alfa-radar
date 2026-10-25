@@ -25,6 +25,12 @@ export function DesktopShell({ children }: { children: ReactNode }) {
     queryKey: ["profile"],
     queryFn: (signal) => api.profile.get({ signal }),
   });
+  const tracked = useApiQuery({
+    queryKey: ["tracked", "active-count"],
+    queryFn: (signal) => api.tracked.list({ status: "active" }, { signal }),
+    staleTime: 0,
+  });
+  const trackedCount = tracked.data?.items.length ?? 0;
   const name = profile.data?.profile.entrepreneur_name ?? "";
   const role = profile.data?.profile.role_label ?? "";
   const company = profile.data?.profile.business_name ?? "";
@@ -52,6 +58,9 @@ export function DesktopShell({ children }: { children: ReactNode }) {
                 className={active ? "desktop-topbar__link is-active" : "desktop-topbar__link"}
               >
                 {item.label}
+                {item.to === "/tracked" && trackedCount > 0 ? (
+                  <span className="desktop-topbar__badge">{trackedCount}</span>
+                ) : null}
               </Link>
             );
           })}

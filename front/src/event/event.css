@@ -2216,3 +2216,8 @@
     display: none;
   }
 }
+
+.event-tabs__tab:disabled {
+  opacity: 0.35;
+  cursor: default;
+}

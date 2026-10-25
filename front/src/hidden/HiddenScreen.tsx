@@ -35,6 +35,8 @@ export default function HiddenScreen() {
     queryKey: ["feed", "hidden", activeTab],
     queryFn: (signal) => api.feed.hidden({ tab: activeTab }, { signal }),
     placeholderData: (previous) => previous,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const restore = useApiMutation<unknown, string>({

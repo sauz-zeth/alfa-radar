@@ -29,17 +29,23 @@ export default function SourcesPage() {
   const sources = useApiQuery({
     queryKey: ["sources"],
     queryFn: (signal) => api.sources.state({ signal }),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const profile = useApiQuery({
     queryKey: ["profile"],
     queryFn: (signal) => api.profile.get({ signal }),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const catalog = useApiQuery({
     queryKey: ["sources", "catalog", query],
     queryFn: (signal) => api.sources.catalog({ q: query.trim() || undefined }, { signal }),
     enabled: tab === "catalog",
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const applyState = (state: SourcesState) => {

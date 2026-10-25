@@ -30,7 +30,12 @@ export function TopicCard({ topic, onOpen, variant = "mobile", compact = false }
           <p className="topic-card__date">
             <span>{topic.dateLong}</span>
             {!compact ? <span>· {status}</span> : null}
-            {topic.changed ? (
+            {topic.processing ? (
+              <span className="topic-card__badge topic-card__badge--processing">
+                <span className="topic-card__spinner" aria-hidden="true" />
+                Агент обрабатывает
+              </span>
+            ) : topic.changed ? (
               <span className="topic-card__badge">Выводы изменились</span>
             ) : !compact && topic.updateLabel ? (
               <span className="topic-card__badge topic-card__badge--muted">

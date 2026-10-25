@@ -240,3 +240,24 @@
     flex: 1;
   }
 }
+
+.desktop-topbar__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.desktop-topbar__badge {
+  display: inline-flex;
+  min-width: 17px;
+  height: 17px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #ef3124;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+}

@@ -300,6 +300,8 @@ export default function ReportSummaryScreen() {
   const profile = useApiQuery({
     queryKey: ["profile"],
     queryFn: (signal) => api.profile.get({ signal }),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const desktopTitle = form ? FORM_LABELS[form] : "Саммари отчёта";

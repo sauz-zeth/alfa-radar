@@ -129,6 +129,7 @@ class TrackedItemOut(ORMModel):
     conclusions_changed: bool = False
     questions: list[QuestionOut] = []
     report: dict[str, Any]
+    analysis_pending: bool = False
     created_at: datetime
     updated_at: datetime
     event: FeedItem

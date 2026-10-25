@@ -643,4 +643,5 @@ def build_insight(
         timeline_total=len(points),
         timeline_current_index=0,
         analysis_finished_at=str(finished_at) if finished_at else None,
+        analysis_pending=bool(_report_dict(report).get("analysis_pending")),
     )

@@ -1118,3 +1118,72 @@
     opacity: 0.55;
   }
 }
+
+/* Agent processing state */
+
+.tracked-calm {
+  position: absolute;
+  z-index: 2;
+  top: 118px;
+  right: 0;
+  left: 0;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 11px;
+  line-height: 14px;
+  text-align: center;
+}
+
+.tracked-empty--note {
+  top: 150px;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0 40px;
+  color: #fff;
+  text-align: center;
+}
+
+.tracked-empty__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.tracked-empty__text {
+  max-width: 260px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.topic-circle__spinner,
+.topic-card__spinner {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid rgba(239, 49, 36, 0.25);
+  border-top-color: #ef3124;
+  border-radius: 50%;
+  animation: tracked-spin 0.8s linear infinite;
+}
+
+.topic-circle__processing {
+  color: #ef3124;
+}
+
+.topic-card__badge--processing {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #ef3124;
+}
+
+@keyframes tracked-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

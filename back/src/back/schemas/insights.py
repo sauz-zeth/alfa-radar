@@ -162,3 +162,4 @@ class InsightOut(BaseModel):
     timeline_total: int = 0
     timeline_current_index: int = 0
     analysis_finished_at: str | None = None
+    analysis_pending: bool = False

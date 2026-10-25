@@ -18,6 +18,7 @@ export type Topic = {
   conclusionQuestion: string | null;
   image: string | null;
   changed: boolean;
+  processing: boolean;
   eventsCount: number;
   tone: TopicTone;
 };
@@ -63,6 +64,7 @@ export function toTopic(item: TrackedItem): Topic {
     conclusionQuestion: latestAnswer ? latestAnswer.text.replace(/\?$/, "") : null,
     image,
     changed: item.conclusions_changed,
+    processing: item.analysis_pending,
     eventsCount: item.events.length,
     tone: event.impact === "opportunity" ? "dark" : "light",
   };

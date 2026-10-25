@@ -23,6 +23,7 @@ export const trackedItemSchema = z.object({
   conclusions_changed: z.boolean().default(false),
   questions: z.array(questionSchema).default([]),
   report: unknownRecordSchema,
+  analysis_pending: z.boolean().default(false),
   created_at: z.string(),
   updated_at: z.string(),
   event: feedItemSchema,

@@ -7,7 +7,6 @@ import { TrackedHeader } from "./TrackedHeader";
 import { TrackedDesktop } from "./TrackedDesktop";
 import { UnchangedSection } from "./UnchangedSection";
 import { toTopic } from "./mapTracked";
-import { TopicCircleSkeleton } from "./TrackedSkeletons";
 import "./tracked.css";
 
 export default function TrackedScreen() {
@@ -21,6 +20,8 @@ export default function TrackedScreen() {
     queryFn: (signal) => api.tracked.list({ status: "all" }, { signal }),
     staleTime: 0,
     refetchOnMount: "always",
+    refetchInterval: (query) =>
+      query.state.data?.items.some((item) => item.analysis_pending) ? 2500 : false,
   });
 
   const topics = useMemo(
@@ -28,7 +29,10 @@ export default function TrackedScreen() {
       (tracked.data?.items ?? [])
         .filter((item) => item.status === "active")
         .map(toTopic)
-        .sort((a, b) => Number(b.changed) - Number(a.changed)),
+        .sort(
+          (a, b) =>
+            Number(b.processing) - Number(a.processing) || Number(b.changed) - Number(a.changed),
+        ),
     [tracked.data],
   );
 
@@ -40,7 +44,7 @@ export default function TrackedScreen() {
     [tracked.data],
   );
 
-  const updatesCount = topics.filter((topic) => topic.changed).length;
+  const updatesCount = topics.filter((topic) => topic.changed || topic.processing).length;
   const selected = Math.min(index, Math.max(0, topics.length - 1));
 
   if (tracked.isPending) {
@@ -80,15 +84,26 @@ export default function TrackedScreen() {
             <TrackedHeader themeCount={topics.length} updatesCount={updatesCount} />
 
             {topics.length > 0 ? (
-              <TopicCarousel
-                topics={topics}
-                index={selected}
-                onSelect={setIndex}
-                onOpen={(topic) => navigate(`/event/${topic.eventId}`)}
-              />
+              <>
+                {updatesCount === 0 ? (
+                  <p className="tracked-calm">
+                    Новых изменений нет — агент продолжает следить за темами
+                  </p>
+                ) : null}
+                <TopicCarousel
+                  topics={topics}
+                  index={selected}
+                  onSelect={setIndex}
+                  onOpen={(topic) => navigate(`/event/${topic.eventId}`)}
+                />
+              </>
             ) : (
-              <div className="tracked-empty">
-                <TopicCircleSkeleton />
+              <div className="tracked-empty tracked-empty--note">
+                <p className="tracked-empty__title">Пока ничего не отслеживается</p>
+                <p className="tracked-empty__text">
+                  Добавьте новость из ленты — агент начнёт следить за темой и покажет здесь
+                  изменения.
+                </p>
               </div>
             )}
           </div>

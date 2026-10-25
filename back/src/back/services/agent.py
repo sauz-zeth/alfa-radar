@@ -1,5 +1,6 @@
 import contextlib
 import logging
+from datetime import UTC, datetime
 from typing import Any
 
 from back.core.constants import (
@@ -347,6 +348,19 @@ def _merge_report(fallback: dict[str, Any], llm_result: dict[str, Any]) -> dict[
     return result
 
 
+def pending_report(fallback: dict[str, Any]) -> dict[str, Any]:
+    report = dict(fallback)
+    report.pop("analysis_finished_at", None)
+    report["analysis_pending"] = True
+    report["agent_steps"] = [
+        {"type": "Старт", "text": "Новость добавлена в отслеживаемое."},
+        {"type": "Данные", "text": "Собираем публикации и сверяем источники."},
+        {"type": "Анализ", "text": "Считаем влияние на показатели вашей компании."},
+        {"type": "Проверка", "text": "Проверяем выводы перед публикацией."},
+    ]
+    return report
+
+
 async def analyze_event(
     profile: BusinessProfile,
     event: NewsEvent,
@@ -360,17 +374,19 @@ async def analyze_event(
     fallback = fallback_report(
         profile, event, match_importance, matched_counterparties, has_reporting
     )
-    if not use_llm:
-        return fallback
-
-    context = _profile_context(profile, business_categories, counterparties)
-    try:
-        llm_result = await get_llm().complete_json(
-            system=AGENT_SYSTEM,
-            user=agent_prompt(context, _event_context(event)),
-            fallback=fallback,
-        )
-    except Exception:
-        logger.exception("Agent LLM failed, using deterministic report")
-        return fallback
-    return _merge_report(fallback, llm_result)
+    report = fallback
+    if use_llm:
+        context = _profile_context(profile, business_categories, counterparties)
+        try:
+            llm_result = await get_llm().complete_json(
+                system=AGENT_SYSTEM,
+                user=agent_prompt(context, _event_context(event)),
+                fallback=fallback,
+            )
+        except Exception:
+            logger.exception("Agent LLM failed, using deterministic report")
+        else:
+            report = _merge_report(fallback, llm_result)
+    report.pop("analysis_pending", None)
+    report["analysis_finished_at"] = datetime.now(UTC).strftime("%d.%m %H:%M")
+    return report

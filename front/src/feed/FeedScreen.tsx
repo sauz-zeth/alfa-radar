@@ -51,6 +51,7 @@ export function FeedScreen() {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["feed"] });
+      void queryClient.invalidateQueries({ queryKey: ["tracked"] });
     },
   });
 
@@ -72,7 +73,6 @@ export function FeedScreen() {
       ),
     [trackedOverrides, visiblePosts],
   );
-
   const scrollToTop = useCallback(() => {
     feedRef.current?.scrollTo({ top: 0 });
   }, []);

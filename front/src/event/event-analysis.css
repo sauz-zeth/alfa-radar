@@ -228,3 +228,30 @@
     display: none;
   }
 }
+
+.event-analysis__live {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 16px 0;
+  color: #ef3124;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.event-analysis__spinner {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid rgba(239, 49, 36, 0.25);
+  border-top-color: #ef3124;
+  border-radius: 50%;
+  animation: event-analysis-spin 0.8s linear infinite;
+}
+
+@keyframes event-analysis-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

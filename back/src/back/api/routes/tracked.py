@@ -158,6 +158,7 @@ async def _out(
         conclusions_changed=item.conclusions_changed,
         questions=questions,
         report=item.report,
+        analysis_pending=bool((item.report or {}).get("analysis_pending")),
         created_at=item.created_at,
         updated_at=item.updated_at,
         event=feed_item,

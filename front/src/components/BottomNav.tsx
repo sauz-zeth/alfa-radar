@@ -1,3 +1,4 @@
+import { useApi, useApiQuery } from "../api";
 import lightFeedIcon from "../assets/icons/light/nav-feed.svg";
 import lightProfileIcon from "../assets/icons/light/nav-profile.svg";
 import lightSourcesIcon from "../assets/icons/light/nav-sources-active.svg";
@@ -18,6 +19,13 @@ function isCurrent(path: string, to: string): boolean {
 
 export function BottomNav() {
   const { path } = useRouter();
+  const api = useApi();
+  const tracked = useApiQuery({
+    queryKey: ["tracked", "active-count"],
+    queryFn: (signal) => api.tracked.list({ status: "active" }, { signal }),
+    staleTime: 0,
+  });
+  const trackedCount = tracked.data?.items.length ?? 0;
 
   if (path.startsWith("/event/")) return null;
 
@@ -38,7 +46,14 @@ export function BottomNav() {
               : item.id === "topics"
                 ? "bottom-nav__icon bottom-nav__icon--topics"
                 : "bottom-nav__icon";
-          const content = <img src={item.icon} alt="" className={iconClass} />;
+          const content = (
+            <>
+              <img src={item.icon} alt="" className={iconClass} />
+              {item.id === "topics" && trackedCount > 0 ? (
+                <span className="bottom-nav__badge">{trackedCount}</span>
+              ) : null}
+            </>
+          );
 
           if (!item.to) {
             return (

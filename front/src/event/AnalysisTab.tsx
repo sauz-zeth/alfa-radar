@@ -40,6 +40,12 @@ export function AnalysisTab({ detail }: AnalysisTabProps) {
   return (
     <section className="event-section event-analysis">
       <SectionHeader title="Ход анализа" tight />
+      {detail.analysis_pending ? (
+        <p className="event-analysis__live" aria-live="polite">
+          <span className="event-analysis__spinner" aria-hidden="true" />
+          Агент работает — вкладки откроются, когда анализ завершится
+        </p>
+      ) : null}
       <p className="event-analysis__meta">{meta}</p>
 
       <div className="event-analysis__layout">

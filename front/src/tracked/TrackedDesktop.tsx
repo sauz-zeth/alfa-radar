@@ -40,8 +40,8 @@ export function TrackedDesktop({ topics, archived, onOpen }: TrackedDesktopProps
     [archived, query],
   );
 
-  const changed = filteredTopics.filter((topic) => topic.changed);
-  const unchanged = filteredTopics.filter((topic) => !topic.changed);
+  const changed = filteredTopics.filter((topic) => topic.changed || topic.processing);
+  const unchanged = filteredTopics.filter((topic) => !topic.changed && !topic.processing);
 
   return (
     <div className="tracked-desktop">

@@ -145,6 +145,8 @@ export default function Profile() {
   const profile = useApiQuery({
     queryKey: ["profile"],
     queryFn: (signal) => api.profile.get({ signal }),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const rename = useApiMutation<Counterparty[], { id: string; name: string }>({

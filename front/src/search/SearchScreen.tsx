@@ -97,12 +97,15 @@ export default function SearchScreen() {
     queryKey: ["search", trimmed],
     queryFn: (signal) => api.search.search({ q: trimmed }, { signal }),
     enabled: active,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const history = useApiQuery({
     queryKey: ["search-history"],
     queryFn: (signal) => api.search.history({ signal }),
     staleTime: 0,
+    refetchOnMount: "always",
   });
 
   useEffect(() => {

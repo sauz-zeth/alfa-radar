@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, useApi, useApiMutation, useApiQuery, useQueryClient } from "../api";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { useRouter } from "../router";
@@ -46,6 +46,8 @@ export default function EventScreen() {
     queryFn: (signal) => api.feed.detail(eventId, { signal }),
     enabled: Boolean(eventId),
     staleTime: 0,
+    refetchOnMount: "always",
+    refetchInterval: (query) => (query.state.data?.analysis_pending ? 2500 : false),
   });
 
   const trackMutation = useApiMutation<unknown, boolean>({
@@ -81,6 +83,12 @@ export default function EventScreen() {
   });
 
   const event = useMemo(() => (detail.data ? toEvent(detail.data) : null), [detail.data]);
+  const processing = detail.data?.analysis_pending ?? false;
+  const shownTab: EventTab = processing ? "Ход анализа" : tab;
+
+  useEffect(() => {
+    if (processing) setTab("Ход анализа");
+  }, [processing]);
   const tracked = trackedOverride ?? detail.data?.is_tracked ?? false;
   const comparison = detail.data?.comparison;
   const compareGroups = [
@@ -197,12 +205,13 @@ export default function EventScreen() {
         {event && detail.data ? (
           <div className="event-body">
             <EventTabs
-              active={tab}
+              active={shownTab}
               onChange={setTab}
+              locked={processing}
               onAllStories={() => navigate("/tracked")}
             />
 
-            {tab === "Разбор" ? (
+            {shownTab === "Разбор" ? (
               <>
                 <div className="event-razbor">
                   <section className="event-section event-razbor__main">
@@ -264,7 +273,7 @@ export default function EventScreen() {
               </>
             ) : (
               <EventTabContent
-                tab={tab}
+                tab={shownTab}
                 detail={detail.data}
                 event={event}
                 onAsk={submitQuestion}
