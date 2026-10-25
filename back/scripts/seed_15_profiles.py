@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
+import csv
 import json
 import random
 import subprocess
@@ -27,14 +29,52 @@ from back.config import get_settings
 from back.services.categories import heuristic_category_weights
 
 try:
-    from seed import ensure_user, seed_categories, seed_channels, seed_demo_counterparties
+    from seed import (
+        company_record,
+        ensure_user,
+        resolve_data_dir,
+        seed_categories,
+        seed_channels,
+        seed_companies,
+        seed_demo_counterparties,
+        seed_payments,
+        seed_person_links,
+    )
     from seed_demo_companies import COMPANY_COLUMNS, build_companies, build_payments
 except ImportError:  # running as `python -m scripts.seed_15_profiles`
-    from scripts.seed import ensure_user, seed_categories, seed_channels, seed_demo_counterparties
+    from scripts.seed import (
+        company_record,
+        ensure_user,
+        resolve_data_dir,
+        seed_categories,
+        seed_channels,
+        seed_companies,
+        seed_demo_counterparties,
+        seed_payments,
+        seed_person_links,
+    )
     from scripts.seed_demo_companies import COMPANY_COLUMNS, build_companies, build_payments
 
 COUNT = 15
 COMPANY_PREFIX = "DEMO15"
+
+REFERENCE_UIDS = (
+    "U_71020",
+    "U_42698",
+    "U_8501",
+    "U_88590",
+    "U_74980",
+    "U_109161",
+    "U_83337",
+    "U_132290",
+    "U_30566",
+    "U_2644",
+    "U_174285",
+    "U_223799",
+    "U_92383",
+    "U_218649",
+    "U_137980",
+)
 
 ENTREPRENEURS = (
     "Андрей Волков",
@@ -55,21 +95,21 @@ ENTREPRENEURS = (
 )
 
 BUSINESSES = (
-    "Уралпрокат",
-    "Северная логистика",
-    "СтройГрад",
-    "Розница Плюс",
-    "АгроНива",
+    "ОптТрейд",
+    "Вкус и Точка",
     "Кодекс Софт",
-    "МашТех",
-    "ХимСинтез",
-    "ФинансПартнёр",
-    "ЭнергоСбыт",
-    "НефтеПоток",
-    "ЛесПром",
-    "ФармЛайн",
+    "СтройМонтаж",
+    "ТрансЛогистик",
+    "ФондСервис",
+    "Клиника Плюс",
+    "ПромРемонт",
+    "ОнлайнМаркет",
+    "АвтоПлюс",
+    "БухУчёт Про",
     "ТурВектор",
-    "МедиаПульс",
+    "ФитнесЛайф",
+    "ЛесПром",
+    "СтройГрад",
 )
 
 ROLES = ("owner", "ceo", "cfo", "chief_accountant", "treasurer", "c_level")
@@ -85,6 +125,27 @@ def build_demo_companies(count: int = 60) -> list[dict]:
     for index, company in enumerate(companies, start=1):
         company["uid"] = f"{COMPANY_PREFIX}{index:03d}"
     return companies
+
+
+def load_reference_companies(data_dir: Path) -> list[dict] | None:
+    path = data_dir / "df_Uid_data_hack.csv"
+    if not path.exists():
+        return None
+    wanted = set(REFERENCE_UIDS)
+    found: dict[str, dict] = {}
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle, delimiter=";")
+        for row in reader:
+            uid = (row.get("SYNTHETIC_U") or "").strip()
+            if uid not in wanted:
+                continue
+            company = dict(zip(COMPANY_COLUMNS, company_record(row), strict=True))
+            company["tags"] = json.loads(company["tags"])
+            found[uid] = company
+    missing = wanted - found.keys()
+    if missing:
+        raise SystemExit(f"В CSV нет компаний из reference_uids.json: {sorted(missing)}")
+    return [found[uid] for uid in REFERENCE_UIDS]
 
 
 async def _apply_migrations() -> None:
@@ -155,7 +216,7 @@ async def _ensure_profile(
             _json(company["tags"]),
         )
 
-    for item in heuristic_category_weights(SimpleNamespace(**company)):  # type: ignore[arg-type]
+    for item in heuristic_category_weights(SimpleNamespace(**company)):
         await conn.execute(
             """
             INSERT INTO business_categories (
@@ -182,6 +243,7 @@ async def main() -> None:
         action="store_true",
         help="Assume the schema is already migrated",
     )
+    parser.add_argument("--data-dir", help="Directory with df_*_hack.csv files")
     args = parser.parse_args()
 
     if not args.skip_migrations:
@@ -193,9 +255,22 @@ async def main() -> None:
     try:
         await seed_categories(conn)
         await seed_channels(conn)
-        all_companies = build_demo_companies()
-        await _seed_companies(conn, all_companies)
-        companies = all_companies[:COUNT]
+        data_dir = None
+        with contextlib.suppress(SystemExit):
+            data_dir = resolve_data_dir(args.data_dir)
+        reference = load_reference_companies(data_dir) if data_dir else None
+        if reference:
+            print(f"companies: reference data from {data_dir}")
+            await seed_companies(conn, data_dir, 0)
+            if settings.seed_with_payments:
+                await seed_payments(conn, data_dir)
+            await seed_person_links(conn, data_dir)
+            await _seed_companies(conn, reference)
+            companies = reference
+        else:
+            all_companies = build_demo_companies()
+            await _seed_companies(conn, all_companies)
+            companies = all_companies[:COUNT]
 
         print(f"\n{'login':<8} {'password':<10} {'company':<14} business")
         for index, company in enumerate(companies):
