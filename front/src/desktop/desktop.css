@@ -81,6 +81,7 @@
     border: 0;
     background: transparent;
     color: #202020;
+    color-scheme: light;
     font: inherit;
     font-size: 14px;
     outline: none;
@@ -158,6 +159,25 @@
     font-size: 13px;
     text-align: left;
     cursor: pointer;
+  }
+
+  .desktop-topbar__search input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .desktop-topbar__clear {
+    display: grid;
+    flex: none;
+    width: 20px;
+    height: 20px;
+    place-items: center;
+    border-radius: 50%;
+    color: #202020;
+    cursor: pointer;
+  }
+
+  .desktop-topbar__clear:hover {
+    background: rgba(32, 32, 32, 0.08);
   }
 
   .desktop-topbar__user {

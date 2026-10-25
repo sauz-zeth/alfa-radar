@@ -115,8 +115,31 @@ export function HeaderSearch() {
           }
         }}
       />
-      <span>Ctrl K</span>
-
+      {query ? (
+        <button
+          type="button"
+          className="desktop-topbar__clear"
+          aria-label="Очистить поиск"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            setQuery("");
+            setDebounced("");
+            setOpen(false);
+            setActive(-1);
+          }}
+        >
+          <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
+            <path
+              d="M2 2l8 8M10 2l-8 8"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      ) : (
+        <span>Ctrl K</span>
+      )}
       {showList ? (
         <div className="desktop-search-pop" id={listId} role="listbox" aria-label="Подсказки поиска">
           {results.isPending ? (
