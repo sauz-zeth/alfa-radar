@@ -7,7 +7,6 @@ import type { FeedPost as FeedPostModel } from "./types";
 type FeedPostProps = {
   post: FeedPostModel;
   onToggleTracked: (id: string) => void;
-  desktop?: boolean;
 };
 
 function sourceCountLabel(count: number): string {
@@ -20,7 +19,7 @@ function sourceCountLabel(count: number): string {
 
 const SLIDE_DURATION_MS = 5000;
 
-export function FeedPost({ post, onToggleTracked, desktop = false }: FeedPostProps) {
+export function FeedPost({ post, onToggleTracked }: FeedPostProps) {
   const mediaRef = useRef<HTMLDivElement>(null);
   const postRef = useRef<HTMLElement>(null);
   const [activeSource, setActiveSource] = useState(0);
@@ -76,19 +75,6 @@ export function FeedPost({ post, onToggleTracked, desktop = false }: FeedPostPro
         ))}
       </div>
       <div className="feed-post__scrim" aria-hidden="true" />
-
-      {desktop && source ? (
-        <div className="post-source-chip">
-          <span className="post-source-chip__avatar" style={{ background: source.color }}>
-            {source.initials}
-          </span>
-          <span className="post-source-chip__name">{source.name}</span>
-          <span className="post-source-chip__dot" aria-hidden="true">
-            ·
-          </span>
-          <time className="post-source-chip__time">{source.time}</time>
-        </div>
-      ) : null}
 
       <div className="post-rail">
         <div className="post-rail__score">
@@ -170,11 +156,7 @@ export function FeedPost({ post, onToggleTracked, desktop = false }: FeedPostPro
           </p>
         </div>
 
-        <ImpactBlock
-          metrics={post.metrics}
-          title={desktop ? "Что это значит для вас" : undefined}
-          action={desktop ? { label: "Открыть разбор", to: `/event/${post.id}` } : undefined}
-        />
+        <ImpactBlock metrics={post.metrics} />
       </div>
     </article>
   );
