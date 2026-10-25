@@ -40,15 +40,16 @@ class Settings:
         default_factory=lambda: float(os.getenv("CHANNEL_JOIN_RETRY", "600"))
     )
     join_delay_min: float = field(
-        default_factory=lambda: float(os.getenv("JOIN_DELAY_MIN", "30"))
+        default_factory=lambda: float(os.getenv("JOIN_DELAY_MIN", "3"))
     )
     join_delay_max: float = field(
-        default_factory=lambda: float(os.getenv("JOIN_DELAY_MAX", "90"))
+        default_factory=lambda: float(os.getenv("JOIN_DELAY_MAX", "8"))
     )
-    join_batch: int = field(default_factory=lambda: int(os.getenv("JOIN_BATCH", "2")))
+    join_batch: int = field(default_factory=lambda: int(os.getenv("JOIN_BATCH", "5")))
     join_daily_limit: int = field(
         default_factory=lambda: int(os.getenv("JOIN_DAILY_LIMIT", "20"))
     )
+    avatar_batch: int = field(default_factory=lambda: int(os.getenv("AVATAR_BATCH", "3")))
     join_state: Path = field(
         default_factory=lambda: Path(os.getenv("JOIN_STATE", "state/joins.json"))
     )

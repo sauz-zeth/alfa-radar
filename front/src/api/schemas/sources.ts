@@ -8,6 +8,7 @@ export const channelSchema = z.object({
   kind: z.string().default("catalog"),
   subscribed: z.boolean().default(false),
   recommended: z.boolean().default(false),
+  avatar_url: z.string().nullish(),
 });
 
 export const sourcesStateSchema = z.object({

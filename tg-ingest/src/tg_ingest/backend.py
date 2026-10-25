@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -36,3 +37,17 @@ async def send_post(http: httpx.AsyncClient, settings: Settings, payload: dict[s
             await asyncio.sleep(2 ** (attempt - 1))
     logger.error("post dropped after %s attempts: %s", settings.retries, payload["url"])
     return False
+
+
+async def upload_avatar(
+    http: httpx.AsyncClient, settings: Settings, channel_id: str, photo: bytes
+) -> str:
+    response = await http.put(
+        f"/api/ingest/channels/{quote(channel_id, safe='')}/avatar",
+        content=photo,
+        headers={"X-Ingest-Token": settings.ingest_token, "Content-Type": "image/jpeg"},
+    )
+    response.raise_for_status()
+    avatar_url = str(response.json()["avatar_url"])
+    logger.info("cached avatar for %s: %s", channel_id, avatar_url)
+    return avatar_url

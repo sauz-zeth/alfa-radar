@@ -15,6 +15,7 @@ def _channel_out(channel: Channel, subscribed: bool) -> ChannelOut:
         kind=channel.kind,
         subscribed=subscribed,
         recommended=channel.is_recommended,
+        avatar_url=(channel.meta or {}).get("avatar_url"),
     )
 
 

@@ -133,7 +133,11 @@ export default function SourcesPage() {
               onClick={() => toggleChannel(channel)}
             >
               <span className="catalog-avatar" data-tone={channelTone(channel)} aria-hidden="true">
-                {channelInitials(channel.name)}
+                {channel.avatar_url ? (
+                  <img src={channel.avatar_url} alt="" loading="lazy" />
+                ) : (
+                  channelInitials(channel.name)
+                )}
               </span>
               <span className="catalog-body">
                 <span className="catalog-name">{channel.name}</span>

@@ -497,3 +497,43 @@ async def test_ingest_channels_returns_subscriptions(api_env) -> None:
     items = {item["handle"]: item for item in response.json()["items"]}
     assert items["@twin_test_channel"]["subscribers"] == 1
     assert items["@twin_test_channel"]["name"] == "@twin_test_channel"
+
+
+async def test_ingest_avatar_upload(api_env, tmp_path, monkeypatch) -> None:
+    import back.services.avatars as avatars
+
+    monkeypatch.setattr(avatars, "AVATAR_DIR", tmp_path)
+    client, _, headers, _ = api_env
+    ingest_headers = {"X-Ingest-Token": get_settings().ingest_token}
+
+    await client.post(
+        "/api/sources/channels",
+        headers=headers,
+        json={"query": "@twin_avatar_channel"},
+    )
+    channels = await client.get("/api/ingest/channels", headers=ingest_headers)
+    channel = next(
+        item for item in channels.json()["items"] if item["handle"] == "@twin_avatar_channel"
+    )
+    assert channel["avatar_url"] is None
+
+    upload = await client.put(
+        f"/api/ingest/channels/{channel['id']}/avatar",
+        headers={**ingest_headers, "Content-Type": "image/jpeg"},
+        content=b"\xff\xd8\xfffake-jpeg",
+    )
+    assert upload.status_code == 200
+    avatar_url = upload.json()["avatar_url"]
+    assert avatar_url.startswith("/static/avatars/")
+    assert (tmp_path / avatar_url.rsplit("/", 1)[-1]).exists()
+
+    sources = await client.get("/api/sources", headers=headers)
+    mine = next(item for item in sources.json()["channels"] if item["id"] == channel["id"])
+    assert mine["avatar_url"] == avatar_url
+
+    bad = await client.put(
+        f"/api/ingest/channels/{channel['id']}/avatar",
+        headers={**ingest_headers, "Content-Type": "text/plain"},
+        content=b"not an image",
+    )
+    assert bad.status_code == 415

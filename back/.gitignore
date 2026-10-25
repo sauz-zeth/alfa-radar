@@ -9,3 +9,4 @@ dist/
 *.egg-info/
 models/
 data/
+src/back/static/avatars/

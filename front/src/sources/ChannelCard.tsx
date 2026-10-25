@@ -31,7 +31,11 @@ export function ChannelCard({ channel, index, onToggle, disabled, variant = "mob
           className="channel-folder__avatar"
           style={{ "--tilt": `${isDesktop ? 10 : cardTilt(index)}deg` } as CSSProperties}
         >
-          {channelInitials(channel.name)}
+          {channel.avatar_url ? (
+            <img className="channel-folder__photo" src={channel.avatar_url} alt="" loading="lazy" />
+          ) : (
+            channelInitials(channel.name)
+          )}
         </span>
 
         <span className="channel-folder__glass">

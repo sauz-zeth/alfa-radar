@@ -11,6 +11,7 @@ class ChannelOut(BaseModel):
     kind: str = "catalog"
     subscribed: bool = False
     recommended: bool = False
+    avatar_url: str | None = None
 
 
 class SourcesState(BaseModel):

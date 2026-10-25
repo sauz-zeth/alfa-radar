@@ -295,10 +295,20 @@ uv run python scripts/ingest_rss.py https://example.com/rss https://example.com/
 ### Telegram
 
 Отдельный подсервис `tg-ingest/` логинится в Telegram как обычный аккаунт (Telethon),
-периодически забирает `GET /api/ingest/channels` (объединение подписок пользователей),
-подписывает на них твинка и шлёт новые посты в этот же `POST /api/ingest/posts` с
-`X-Ingest-Token`. Запуск, вход по номеру/коду и хранение сессии — в
+периодически забирает `GET /api/ingest/channels`, подписывает твинка на каналы с
+подписчиками (`subscribers > 0`) и шлёт новые посты в этот же `POST /api/ingest/posts`
+с `X-Ingest-Token`. Запуск, вход по номеру/коду и хранение сессии — в
 [`tg-ingest/README.md`](../tg-ingest/README.md).
+
+Каталог источников — 93 реальных канала из
+[`docs/ТГ_каналы_для_новостной_аналитики_кейс_Альфа_Банка_1.md`](../docs/ТГ_каналы_для_новостной_аналитики_кейс_Альфа_Банка_1.md).
+Аватарки каналов кэшируются подсервисом:
+
+- `GET /api/ingest/channels` — все активные каналы с `handle` и числом подписчиков;
+- `PUT /api/ingest/channels/{channel_id}/avatar` — тело `image/jpeg|png|webp` до 2 МБ,
+  `X-Ingest-Token`; файл сохраняется в `src/back/static/avatars`, а URL пишется в
+  `channels.meta.avatar_url`;
+- `GET /api/sources` и `/api/sources/catalog` отдают `avatar_url` для фронта.
 
 ### Ленивый разбор события
 

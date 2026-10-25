@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,12 +10,14 @@ from back.db.models import Channel, Post, ProfileChannel
 from back.db.session import get_session
 from back.schemas.common import Page
 from back.schemas.ingest import (
+    IngestAvatarOut,
     IngestChannelList,
     IngestChannelOut,
     IngestPostOut,
     IngestPostRequest,
     IngestPostTrace,
 )
+from back.services.avatars import MAX_AVATAR_BYTES, save_avatar
 from back.services.pipeline import ingest_from_profile
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
@@ -42,9 +44,10 @@ async def list_ingest_channels(
                 Channel.id,
                 Channel.name,
                 Channel.handle,
+                Channel.meta,
                 subscribers.label("subscribers"),
             )
-            .join(ProfileChannel, ProfileChannel.channel_id == Channel.id)
+            .outerjoin(ProfileChannel, ProfileChannel.channel_id == Channel.id)
             .where(
                 Channel.is_active.is_(True),
                 Channel.handle.is_not(None),
@@ -61,10 +64,38 @@ async def list_ingest_channels(
                 name=row.name,
                 handle=row.handle,
                 subscribers=row.subscribers,
+                avatar_url=(row.meta or {}).get("avatar_url"),
             )
             for row in rows
         ]
     )
+
+
+@router.put(
+    "/channels/{channel_id}/avatar",
+    response_model=IngestAvatarOut,
+    dependencies=[Depends(require_ingest_token)],
+)
+async def upload_channel_avatar(
+    channel_id: str,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+) -> IngestAvatarOut:
+    channel = await session.get(Channel, channel_id)
+    if channel is None:
+        raise HTTPException(status_code=404, detail="Канал не найден")
+    data = await request.body()
+    if not data:
+        raise HTTPException(status_code=422, detail="Пустой файл аватарки")
+    if len(data) > MAX_AVATAR_BYTES:
+        raise HTTPException(status_code=413, detail="Файл аватарки больше 2 МБ")
+    try:
+        avatar_url = save_avatar(channel_id, data)
+    except ValueError as exc:
+        raise HTTPException(status_code=415, detail=str(exc)) from exc
+    channel.meta = {**(channel.meta or {}), "avatar_url": avatar_url}
+    await session.commit()
+    return IngestAvatarOut(avatar_url=avatar_url)
 
 
 @router.post("/posts", response_model=IngestPostOut, dependencies=[Depends(require_ingest_token)])

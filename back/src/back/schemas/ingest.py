@@ -52,7 +52,12 @@ class IngestChannelOut(BaseModel):
     name: str
     handle: str
     subscribers: int
+    avatar_url: str | None = None
 
 
 class IngestChannelList(BaseModel):
     items: list[IngestChannelOut]
+
+
+class IngestAvatarOut(BaseModel):
+    avatar_url: str

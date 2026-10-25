@@ -3,6 +3,7 @@ import json
 import logging
 import random
 import time
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -13,30 +14,48 @@ from telethon.errors import FloodWaitError, RPCError, UserAlreadyParticipantErro
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.types import Channel
 
+from .backend import upload_avatar
 from .config import Settings
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class ChannelInfo:
+    id: str
+    handle: str
+    avatar_url: str | None = None
+    subscribers: int = 1
 
 
 def _key(handle: str) -> str:
     return handle.strip().lstrip("@").lower()
 
 
-def _keyed(handles: list[str]) -> dict[str, str]:
-    return {_key(handle): handle for handle in handles}
+def _keyed(infos: list[ChannelInfo]) -> dict[str, ChannelInfo]:
+    return {_key(info.handle): info for info in infos}
 
 
 def _today() -> str:
     return datetime.now(UTC).date().isoformat()
 
 
-async def fetch_channels(http: httpx.AsyncClient, settings: Settings) -> list[str]:
+async def fetch_channels(http: httpx.AsyncClient, settings: Settings) -> list[ChannelInfo]:
     response = await http.get(
         settings.channels_path, headers={"X-Ingest-Token": settings.ingest_token}
     )
     response.raise_for_status()
     items = response.json().get("items", [])
-    return [str(item["handle"]) for item in items if item.get("handle")]
+    return [
+        ChannelInfo(
+            id=str(item["id"]),
+            handle=str(item["handle"]),
+            avatar_url=item.get("avatar_url"),
+            subscribers=int(item.get("subscribers", 0)),
+        )
+        for item in items
+        if item.get("handle")
+    ]
 
 
 class JoinLimiter:
@@ -102,6 +121,7 @@ class ChannelRegistry:
         self._failed: dict[str, float] = {}
         self._active_ids: set[int] = set()
         self._joins_cycle = 0
+        self._avatar_checked: set[str] = set()
         self.limiter = JoinLimiter(settings.join_state, settings.join_daily_limit)
 
     @property
@@ -170,25 +190,68 @@ class ChannelRegistry:
         self._failed.pop(key, None)
         self._active_ids.add(entity.id)
 
+    async def _cache_avatar(
+        self, http: httpx.AsyncClient, entity: Any, info: ChannelInfo
+    ) -> None:
+        key = _key(info.handle)
+        if key in self._avatar_checked:
+            return
+        try:
+            photo = await self.client.download_profile_photo(entity, file=bytes)
+        except Exception as exc:
+            logger.warning("cannot download avatar %s: %s", info.handle, exc)
+            return
+        if not photo:
+            self._avatar_checked.add(key)
+            return
+        try:
+            await upload_avatar(http, self.settings, info.id, photo)
+        except (httpx.HTTPError, KeyError, ValueError) as exc:
+            logger.warning("cannot upload avatar %s: %s", info.handle, exc)
+            return
+        self._avatar_checked.add(key)
+
     async def sync(self, http: httpx.AsyncClient, *, join: bool = True) -> None:
         self._joins_cycle = 0
-        manual = _keyed(list(self.settings.channels))
+        manual = _keyed(
+            [ChannelInfo(id="", handle=handle) for handle in self.settings.channels]
+        )
         try:
-            handles = await fetch_channels(http, self.settings)
+            fetched = await fetch_channels(http, self.settings)
         except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
             logger.warning("cannot fetch channels from backend: %s", exc)
             wanted = manual
         else:
-            wanted = {**manual, **_keyed(handles)}
-        for handle in wanted.values():
-            key = _key(handle)
+            wanted = {**manual, **_keyed(fetched)}
+        infos = list(wanted.values())
+        join_targets = [info for info in infos if info.subscribers > 0 or not info.id]
+        for info in join_targets:
+            key = _key(info.handle)
             if self._cooling(key):
                 continue
-            entity = await self._resolve(handle)
+            entity = await self._resolve(info.handle)
             if entity is None:
                 continue
             if join:
-                await self._join(handle, entity)
+                await self._join(info.handle, entity)
             if key in self._joined:
                 self._active_ids.add(entity.id)
+            if join and info.id and not info.avatar_url:
+                await self._cache_avatar(http, entity, info)
+
+        if join:
+            avatar_targets = [
+                info
+                for info in infos
+                if info.id and info.subscribers <= 0 and not info.avatar_url
+            ]
+            for info in avatar_targets[: self.settings.avatar_batch]:
+                key = _key(info.handle)
+                if key in self._avatar_checked or self._cooling(key):
+                    continue
+                entity = await self._resolve(info.handle)
+                if entity is None:
+                    continue
+                await self._cache_avatar(http, entity, info)
+
         self._active_ids = {self._entities[key].id for key in wanted if key in self._joined}
