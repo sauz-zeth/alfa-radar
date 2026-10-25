@@ -4,6 +4,7 @@ export type NavigateOptions = { replace?: boolean };
 
 export type RouterContextValue = {
   path: string;
+  search: string;
   navigate: (to: string, options?: NavigateOptions) => void;
 };
 

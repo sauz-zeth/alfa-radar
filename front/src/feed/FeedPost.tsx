@@ -8,6 +8,8 @@ type FeedPostProps = {
   post: FeedPostModel;
   onToggleTracked: (id: string) => void;
   desktop?: boolean;
+  desktopSourceIndex?: number;
+  onDesktopSourceChange?: (index: number) => void;
 };
 
 function sourceCountLabel(count: number): string {
@@ -20,13 +22,42 @@ function sourceCountLabel(count: number): string {
 
 const SLIDE_DURATION_MS = 5000;
 
-export function FeedPost({ post, onToggleTracked, desktop = false }: FeedPostProps) {
+export function FeedPost({
+  post,
+  onToggleTracked,
+  desktop = false,
+  desktopSourceIndex,
+  onDesktopSourceChange,
+}: FeedPostProps) {
   const mediaRef = useRef<HTMLDivElement>(null);
   const postRef = useRef<HTMLElement>(null);
   const [activeSource, setActiveSource] = useState(0);
   const [inView, setInView] = useState(false);
   const [documentVisible, setDocumentVisible] = useState(true);
-  const source = post.sources[activeSource] ?? post.sources[0];
+  const controlledSource = desktop && desktopSourceIndex !== undefined;
+  const currentSource = controlledSource ? desktopSourceIndex : activeSource;
+  const source = post.sources[currentSource] ?? post.sources[0];
+
+  const selectSource = useCallback(
+    (index: number) => {
+      const next = Math.max(0, Math.min(index, post.sources.length - 1));
+      if (controlledSource && onDesktopSourceChange) {
+        onDesktopSourceChange(next);
+        return;
+      }
+      setActiveSource(next);
+    },
+    [controlledSource, onDesktopSourceChange, post.sources.length],
+  );
+
+  useEffect(() => {
+    if (!controlledSource || desktopSourceIndex === undefined) return;
+    const media = mediaRef.current;
+    if (!media || !media.clientWidth) return;
+    const current = Math.round(media.scrollLeft / media.clientWidth);
+    if (current === desktopSourceIndex) return;
+    media.scrollTo({ left: desktopSourceIndex * media.clientWidth, behavior: "smooth" });
+  }, [controlledSource, desktopSourceIndex]);
 
   useEffect(() => {
     const node = postRef.current;
@@ -51,20 +82,23 @@ export function FeedPost({ post, onToggleTracked, desktop = false }: FeedPostPro
     const media = mediaRef.current;
     if (!media || media.clientWidth === 0) return;
     const index = Math.round(media.scrollLeft / media.clientWidth);
-    setActiveSource((current) => (current === index ? current : index));
-  }, []);
+    selectSource(index);
+  }, [selectSource]);
 
-  const showSource = useCallback((index: number) => {
-    const media = mediaRef.current;
-    if (!media) return;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    media.scrollTo({ left: index * media.clientWidth, behavior: reduceMotion ? "auto" : "smooth" });
-    setActiveSource(index);
-  }, []);
+  const showSource = useCallback(
+    (index: number) => {
+      const media = mediaRef.current;
+      if (!media) return;
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      media.scrollTo({ left: index * media.clientWidth, behavior: reduceMotion ? "auto" : "smooth" });
+      selectSource(index);
+    },
+    [selectSource],
+  );
 
   const advance = useCallback(() => {
-    showSource((activeSource + 1) % post.sources.length);
-  }, [activeSource, post.sources.length, showSource]);
+    showSource((currentSource + 1) % post.sources.length);
+  }, [currentSource, post.sources.length, showSource]);
 
   return (
     <article className="feed-post" ref={postRef} aria-labelledby={`${post.id}-title`}>
@@ -128,22 +162,22 @@ export function FeedPost({ post, onToggleTracked, desktop = false }: FeedPostPro
                 <button
                   key={item.id}
                   type="button"
-                  className={index === activeSource ? "is-current" : undefined}
+                  className={index === currentSource ? "is-current" : undefined}
                   aria-label={`Публикация ${index + 1} из ${post.sources.length}: ${item.name}`}
-                  aria-current={index === activeSource ? "true" : undefined}
+                  aria-current={index === currentSource ? "true" : undefined}
                   onClick={() => showSource(index)}
                 >
                   <span
                     aria-hidden="true"
                     className={
-                      index < activeSource
+                      index < currentSource
                         ? "story-fill is-complete"
-                        : index === activeSource
+                        : index === currentSource
                           ? "story-fill is-running"
                           : "story-fill"
                     }
                     style={{ animationDuration: `${SLIDE_DURATION_MS}ms` }}
-                    onAnimationEnd={index === activeSource ? advance : undefined}
+                    onAnimationEnd={index === currentSource ? advance : undefined}
                   />
                 </button>
               ))}

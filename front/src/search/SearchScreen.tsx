@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ApiError,
   useApi,
@@ -6,7 +6,7 @@ import {
   type SearchCompany,
   type SearchNews,
 } from "../api";
-import { Link } from "../router";
+import { Link, useRouter } from "../router";
 import "./search.css";
 
 const MIN_QUERY = 2;
@@ -71,7 +71,14 @@ function NewsRow({ item }: { item: SearchNews }) {
 
 export default function SearchScreen() {
   const api = useApi();
-  const [query, setQuery] = useState("");
+  const { search } = useRouter();
+  const urlQuery = new URLSearchParams(search).get("q") ?? "";
+  const [query, setQuery] = useState(urlQuery);
+
+  useEffect(() => {
+    setQuery(urlQuery);
+  }, [urlQuery]);
+
   const trimmed = query.trim();
   const active = trimmed.length >= MIN_QUERY;
 

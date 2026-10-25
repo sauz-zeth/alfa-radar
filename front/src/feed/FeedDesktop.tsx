@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import bookmarkIcon from "../assets/icons/bookmark.svg";
 import { ApiError, useApi, useApiQuery, type FeedItemDetail, type ScoreComponent } from "../api";
 import { Link } from "../router";
 import { FeedFilters } from "./FeedFilters";
@@ -25,54 +26,62 @@ function scoreValue(item: ScoreComponent): string {
   return `×${ratio.toLocaleString("ru-RU", { maximumFractionDigits: 1 })}`;
 }
 
-function SourceSummary({ detail }: { detail: FeedItemDetail }) {
-  const sources = detail.sources;
-  const primaryIndex = Math.max(
-    sources.findIndex((source) => source.is_primary),
-    0,
+function RailArrow({ direction }: { direction: "up" | "down" }) {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path d={direction === "up" ? "M4 12.5l6-6 6 6" : "M4 7.5l6 6 6-6"} />
+    </svg>
   );
-  const primary = sources[primaryIndex];
-  if (!primary) return null;
+}
+
+function SourceSummary({
+  detail,
+  index,
+  onChange,
+}: {
+  detail: FeedItemDetail;
+  index: number;
+  onChange: (index: number) => void;
+}) {
+  const sources = detail.sources;
+  const currentIndex = Math.min(index, Math.max(sources.length - 1, 0));
+  const current = sources[currentIndex];
+  if (!current) return null;
 
   return (
     <div className="feed-sources-panel__primary">
       <p className="feed-sources-panel__meta">
-        {formatTime(primary.time)} · {primary.status_label}
+        {formatTime(current.time)} · {current.status_label}
       </p>
-      <p className="feed-sources-panel__name">{primary.name}</p>
-      <p className="feed-sources-panel__text">{primary.text || detail.summary}</p>
-      {sources.length > 0 ? (
+      <p className="feed-sources-panel__name">{current.name}</p>
+      <p className="feed-sources-panel__text">{current.text || detail.summary}</p>
+      <div className="feed-sources-panel__switch">
+        <button
+          type="button"
+          className="feed-sources-panel__switch-button"
+          aria-label="Предыдущий источник"
+          disabled={currentIndex === 0}
+          onClick={() => onChange(currentIndex - 1)}
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M10.5 2.5 5 8l5.5 5.5" />
+          </svg>
+        </button>
         <p className="feed-sources-panel__count">
-          Что пишут · {primaryIndex + 1} из {sources.length}
+          Что пишут · {currentIndex + 1} из {sources.length}
         </p>
-      ) : null}
-    </div>
-  );
-}
-
-function SourceComparison({ detail }: { detail: FeedItemDetail }) {
-  const { agree, differ, single } = detail.comparison;
-  const groups = [
-    { label: "Сходятся", tone: "", items: agree.length ? agree : [detail.summary] },
-    { label: "Расходятся", tone: "is-differ", items: differ },
-    { label: "Пишет один источник", tone: "is-single", items: single },
-  ].filter((group) => group.items.length > 0);
-
-  if (groups.length === 0) return null;
-
-  return (
-    <div className="feed-sources-panel__comparison">
-      <h3 className="feed-sources-panel__subtitle">Сравнение источников</h3>
-      {groups.map((group) => (
-        <div className={`feed-sources-panel__group ${group.tone}`} key={group.label}>
-          <p className="feed-sources-panel__group-label">{group.label}</p>
-          {group.items.map((text, index) => (
-            <p className="feed-sources-panel__point" key={`${group.label}-${index}`}>
-              {text}
-            </p>
-          ))}
-        </div>
-      ))}
+        <button
+          type="button"
+          className="feed-sources-panel__switch-button"
+          aria-label="Следующий источник"
+          disabled={currentIndex >= sources.length - 1}
+          onClick={() => onChange(currentIndex + 1)}
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M5.5 2.5 11 8l-5.5 5.5" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }
@@ -123,13 +132,114 @@ export function FeedDesktop({
 }: FeedDesktopProps) {
   const api = useApi();
   const stageRef = useRef<HTMLDivElement>(null);
+  const stageAnimation = useRef<number | null>(null);
+  const stageLocked = useRef(false);
+  const stageAnimating = useRef(false);
+  const stageUnlockTimer = useRef<number | null>(null);
+  const stageLastWheel = useRef(0);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [sourceIndex, setSourceIndex] = useState(0);
   const signature = posts.map((post) => post.id).join("|");
 
+  const stopStageScroll = () => {
+    if (stageAnimation.current !== null) {
+      cancelAnimationFrame(stageAnimation.current);
+      stageAnimation.current = null;
+    }
+    if (stageUnlockTimer.current !== null) {
+      clearTimeout(stageUnlockTimer.current);
+      stageUnlockTimer.current = null;
+    }
+    stageAnimating.current = false;
+    stageLocked.current = false;
+    if (stageRef.current) stageRef.current.style.scrollSnapType = "";
+  };
+
+  const scheduleStageUnlock = () => {
+    if (stageUnlockTimer.current !== null) clearTimeout(stageUnlockTimer.current);
+    const wait = Math.max(0, 140 - (performance.now() - stageLastWheel.current));
+    stageUnlockTimer.current = window.setTimeout(() => {
+      stageUnlockTimer.current = null;
+      if (!stageAnimating.current) stageLocked.current = false;
+    }, wait);
+  };
+
+  const animateStageTo = (targetIndex: number) => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const target = Math.max(0, Math.min(targetIndex, posts.length - 1));
+    const targetTop = target * stage.clientHeight;
+    const startTop = stage.scrollTop;
+
+    if (Math.abs(targetTop - startTop) < 1) {
+      stageLocked.current = false;
+      return;
+    }
+
+    stageLocked.current = true;
+    stageAnimating.current = true;
+    stage.style.scrollSnapType = "none";
+    const startedAt = performance.now();
+    const duration = 280;
+
+    const step = (now: number) => {
+      const progress = Math.min((now - startedAt) / duration, 1);
+      stage.scrollTop = startTop + (targetTop - startTop) * progress;
+      if (progress < 1) {
+        stageAnimation.current = requestAnimationFrame(step);
+        return;
+      }
+      stage.scrollTop = targetTop;
+      stage.style.scrollSnapType = "";
+      stageAnimation.current = null;
+      stageAnimating.current = false;
+      scheduleStageUnlock();
+    };
+
+    stageAnimation.current = requestAnimationFrame(step);
+  };
+
+  const goToPost = (index: number) => {
+    if (stageLocked.current) return;
+    stageLastWheel.current = 0;
+    animateStageTo(index);
+  };
+
   useEffect(() => {
+    stopStageScroll();
     setActiveIndex(0);
     stageRef.current?.scrollTo({ top: 0 });
   }, [signature]);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const onWheel = (event: WheelEvent) => {
+      if (event.ctrlKey || !event.deltaY) return;
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      event.preventDefault();
+      stageLastWheel.current = performance.now();
+
+      if (stageLocked.current) {
+        if (!stageAnimating.current) scheduleStageUnlock();
+        return;
+      }
+
+      if (!stage.clientHeight || posts.length === 0) return;
+      const current = Math.round(stage.scrollTop / stage.clientHeight);
+      const direction = event.deltaY > 0 ? 1 : -1;
+      const target = Math.max(0, Math.min(current + direction, posts.length - 1));
+      if (target === current) return;
+      animateStageTo(target);
+    };
+
+    stage.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      stage.removeEventListener("wheel", onWheel);
+      stopStageScroll();
+    };
+  }, [posts.length]);
 
   const activePost = posts[Math.min(activeIndex, Math.max(posts.length - 1, 0))];
   const activeId = activePost?.id ?? "";
@@ -140,6 +250,11 @@ export function FeedDesktop({
     enabled: Boolean(activeId),
   });
   const detail = detailQuery.data;
+
+  useEffect(() => {
+    const primary = detail?.sources.findIndex((source) => source.is_primary) ?? 0;
+    setSourceIndex(Math.max(primary, 0));
+  }, [detail?.id]);
 
   const handleStageScroll = () => {
     const stage = stageRef.current;
@@ -164,7 +279,7 @@ export function FeedDesktop({
       </header>
 
       <div className="feed-desktop__body">
-        <aside className="feed-desktop__col" aria-label="Источники и сравнение">
+        <aside className="feed-desktop__col" aria-label="Источники">
           <section className="feed-sources-panel">
             <h2 className="feed-sources-panel__title">Источники и важность</h2>
             {detailQuery.isError ? (
@@ -174,18 +289,25 @@ export function FeedDesktop({
                 {detail.sources.length > 0 ? (
                   <div className="feed-sources-panel__avatars">
                     {detail.sources.map((source, index) => (
-                      <span
-                        className="feed-sources-panel__avatar"
+                      <button
+                        type="button"
+                        className={
+                          index === Math.min(sourceIndex, detail.sources.length - 1)
+                            ? "feed-sources-panel__avatar is-active"
+                            : "feed-sources-panel__avatar"
+                        }
                         style={{ background: avatarColors[index % avatarColors.length] }}
                         key={`${source.name}-${index}`}
+                        aria-label={`Источник ${source.name}`}
+                        aria-pressed={index === Math.min(sourceIndex, detail.sources.length - 1)}
+                        onClick={() => setSourceIndex(index)}
                       >
                         {initials(source.name)}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 ) : null}
-                <SourceSummary detail={detail} />
-                <SourceComparison detail={detail} />
+                <SourceSummary detail={detail} index={sourceIndex} onChange={setSourceIndex} />
               </>
             ) : posts.length === 0 ? null : (
               <p className="feed-desktop__state">Загрузка…</p>
@@ -197,11 +319,55 @@ export function FeedDesktop({
           {posts.length === 0 ? (
             <p className="feed-desktop__empty">Нет новостей по этому фильтру</p>
           ) : (
-            posts.map((post) => (
-              <FeedPost key={post.id} post={post} onToggleTracked={onToggleTracked} desktop />
+            posts.map((post, index) => (
+              <FeedPost
+                key={post.id}
+                post={post}
+                onToggleTracked={onToggleTracked}
+                desktop
+                desktopSourceIndex={index === activeIndex ? sourceIndex : undefined}
+                onDesktopSourceChange={index === activeIndex ? setSourceIndex : undefined}
+              />
             ))
           )}
         </div>
+
+        <aside className="feed-desktop__actions" aria-label="Действия с новостью">
+          <button
+            type="button"
+            className="feed-desktop__action"
+            aria-label="Предыдущая новость"
+            disabled={activeIndex <= 0}
+            onClick={() => goToPost(activeIndex - 1)}
+          >
+            <RailArrow direction="up" />
+          </button>
+          <button
+            type="button"
+            className="feed-desktop__action"
+            aria-label="Следующая новость"
+            disabled={activeIndex >= posts.length - 1}
+            onClick={() => goToPost(activeIndex + 1)}
+          >
+            <RailArrow direction="down" />
+          </button>
+          <button
+            type="button"
+            className={
+              activePost?.tracked
+                ? "feed-desktop__action feed-desktop__action--track is-tracked"
+                : "feed-desktop__action feed-desktop__action--track"
+            }
+            aria-label={activePost?.tracked ? "Не отслеживать тему" : "Отслеживать тему"}
+            aria-pressed={activePost?.tracked ?? false}
+            disabled={!activePost}
+            onClick={() => {
+              if (activePost) onToggleTracked(activePost.id);
+            }}
+          >
+            <img src={bookmarkIcon} alt="" width={22} height={22} />
+          </button>
+        </aside>
 
         <aside className="feed-desktop__col" aria-label="Важность и расчёт">
           {detailQuery.isError ? (

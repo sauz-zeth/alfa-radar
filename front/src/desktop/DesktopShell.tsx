@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useApi, useApiQuery } from "../api";
 import { Link, useRouter } from "../router";
+import { HeaderSearch } from "./HeaderSearch";
 import "./desktop.css";
 
 const NAV = [
@@ -54,16 +55,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <form
-          className="desktop-topbar__search"
-          onSubmit={(event) => {
-            event.preventDefault();
-            navigate("/search");
-          }}
-        >
-          <input type="search" placeholder="Поиск по новостям" aria-label="Поиск по новостям" />
-          <span>Ctrl K</span>
-        </form>
+        <HeaderSearch />
         <div className="desktop-topbar__user">
           <span className="desktop-topbar__avatar">{avatar}</span>
           <span>

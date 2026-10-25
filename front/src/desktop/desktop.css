@@ -65,6 +65,7 @@
   }
 
   .desktop-topbar__search {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -89,6 +90,74 @@
     color: #8b8b8b;
     font-size: 13px;
     white-space: nowrap;
+  }
+
+  .desktop-search-pop {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 50;
+    width: 420px;
+    padding: 6px;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
+    text-align: left;
+  }
+
+  .desktop-search-pop__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .desktop-search-pop__item.is-active {
+    background: #f0f0f0;
+  }
+
+  .desktop-search-pop__label {
+    flex: 1;
+    overflow: hidden;
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .desktop-search-pop__meta {
+    color: #8b8b8b;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .desktop-search-pop__state {
+    margin: 0;
+    padding: 12px;
+    color: #8b8b8b;
+    font-size: 13px;
+  }
+
+  .desktop-search-pop__all {
+    width: 100%;
+    margin-top: 4px;
+    padding: 10px 12px;
+    border: 0;
+    border-top: 1px solid #ededed;
+    border-radius: 0 0 12px 12px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
   }
 
   .desktop-topbar__user {
