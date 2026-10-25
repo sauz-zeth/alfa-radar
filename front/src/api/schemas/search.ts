@@ -21,6 +21,7 @@ export const searchNewsSchema = z.object({
   importance: z.number().int(),
   published_at: z.string(),
   source_name: z.string(),
+  source_count: z.number().int().default(1),
   is_hidden: z.boolean().default(false),
   is_tracked: z.boolean().default(false),
 });

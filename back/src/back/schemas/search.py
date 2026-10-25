@@ -25,6 +25,7 @@ class SearchNewsOut(BaseModel):
     importance: int
     published_at: datetime
     source_name: str
+    source_count: int = 1
     is_hidden: bool = False
     is_tracked: bool = False
 

@@ -22,6 +22,62 @@ function sourceCountLabel(count: number): string {
 
 const SLIDE_DURATION_MS = 5000;
 
+type ProgressLineProps = {
+  sources: FeedPostModel["sources"];
+  current: number;
+  paused: boolean;
+  desktop?: boolean;
+  onSelect: (index: number) => void;
+  onAdvance: () => void;
+};
+
+function ProgressLine({
+  sources,
+  current,
+  paused,
+  desktop = false,
+  onSelect,
+  onAdvance,
+}: ProgressLineProps) {
+  if (sources.length <= 1) return null;
+
+  return (
+    <div
+      className={[
+        "post-card__progress",
+        desktop ? "post-card__progress--desktop" : "",
+        paused ? "is-paused" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      {sources.map((item, index) => (
+        <button
+          key={item.id}
+          type="button"
+          className={index === current ? "is-current" : undefined}
+          aria-label={`Публикация ${index + 1} из ${sources.length}: ${item.name}`}
+          aria-current={index === current ? "true" : undefined}
+          onClick={() => onSelect(index)}
+        >
+          <span
+            aria-hidden="true"
+            className={
+              index < current
+                ? "story-fill is-complete"
+                : index === current
+                  ? "story-fill is-running"
+                  : "story-fill"
+            }
+            style={{ animationDuration: `${SLIDE_DURATION_MS}ms` }}
+            onAnimationEnd={index === current ? onAdvance : undefined}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function FeedPost({
   post,
   onToggleTracked,
@@ -111,19 +167,6 @@ export function FeedPost({
       </div>
       <div className="feed-post__scrim" aria-hidden="true" />
 
-      {desktop && source ? (
-        <div className="post-source-chip">
-          <span className="post-source-chip__avatar" style={{ background: source.color }}>
-            {source.initials}
-          </span>
-          <span className="post-source-chip__name">{source.name}</span>
-          <span className="post-source-chip__dot" aria-hidden="true">
-            ·
-          </span>
-          <time className="post-source-chip__time">{source.time}</time>
-        </div>
-      ) : null}
-
       <div className="post-rail">
         <div className="post-rail__score">
           <div className="post-rail__dial">{post.importance}</div>
@@ -155,34 +198,28 @@ export function FeedPost({
 
         <p className="post-credit">Фото · {source?.name}</p>
 
+        {desktop ? (
+          <ProgressLine
+            sources={post.sources}
+            current={currentSource}
+            paused={paused}
+            desktop
+            onSelect={showSource}
+            onAdvance={advance}
+          />
+        ) : null}
+
+        <div className="feed-post__body">
         <div className="post-card">
-          {post.sources.length > 1 && (
-            <div className={paused ? "post-card__progress is-paused" : "post-card__progress"}>
-              {post.sources.map((item, index) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={index === currentSource ? "is-current" : undefined}
-                  aria-label={`Публикация ${index + 1} из ${post.sources.length}: ${item.name}`}
-                  aria-current={index === currentSource ? "true" : undefined}
-                  onClick={() => showSource(index)}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={
-                      index < currentSource
-                        ? "story-fill is-complete"
-                        : index === currentSource
-                          ? "story-fill is-running"
-                          : "story-fill"
-                    }
-                    style={{ animationDuration: `${SLIDE_DURATION_MS}ms` }}
-                    onAnimationEnd={index === currentSource ? advance : undefined}
-                  />
-                </button>
-              ))}
-            </div>
-          )}
+          {!desktop ? (
+            <ProgressLine
+              sources={post.sources}
+              current={currentSource}
+              paused={paused}
+              onSelect={showSource}
+              onAdvance={advance}
+            />
+          ) : null}
           <Link to={`/event/${post.id}`} className="post-card__head">
             <p className="post-card__topics">{post.topics.join(" · ")}</p>
             <h2 className="post-card__title" id={`${post.id}-title`}>
@@ -207,8 +244,9 @@ export function FeedPost({
         <ImpactBlock
           metrics={post.metrics}
           title={desktop ? "Что это значит для вас" : undefined}
-          action={desktop ? { label: "Открыть разбор", to: `/event/${post.id}` } : undefined}
+          showDetails={!desktop}
         />
+        </div>
       </div>
     </article>
   );

@@ -38,6 +38,47 @@
   text-align: center;
 }
 
+.event-head__menu-wrap {
+  position: relative;
+  display: flex;
+  width: 36px;
+  justify-content: center;
+}
+
+.event-head__menu {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  width: 220px;
+  flex-direction: column;
+  padding: 6px;
+  border-radius: 14px;
+  background: #fff;
+  color: #202020;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.event-head__menu-item {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 9px;
+  color: #202020;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.event-head__menu-item:hover {
+  background: #f2f2f2;
+}
+
+.event-head__menu-item:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
 .event-head__dots {
   display: flex;
   align-items: center;
@@ -1783,7 +1824,7 @@
     background: #fff;
   }
 
-  .desktop-shell .event-head__button:first-child {
+  .desktop-shell .event-head > .event-head__button:first-child {
     width: auto;
     justify-self: start;
     gap: 6px;
@@ -1791,7 +1832,8 @@
     border-radius: 22px;
   }
 
-  .desktop-shell .event-head__button:last-child {
+  .desktop-shell .event-head__menu-wrap {
+    width: 44px;
     justify-self: end;
   }
 

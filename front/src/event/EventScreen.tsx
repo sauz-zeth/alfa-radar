@@ -110,6 +110,21 @@ export default function EventScreen() {
     else navigate("/");
   };
 
+  const shareStory = () => {
+    if (!detail.data) return;
+    const url = `${window.location.origin}/event/${detail.data.id}`;
+    const subject = `История: ${detail.data.title}`;
+    const body = [
+      detail.data.title,
+      detail.data.summary,
+      detail.data.what_it_means,
+      `Подробный разбор: ${url}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
   const focusAsk = () => askRef.current?.focus();
 
   const runStream = async (id: string, text: string) => {
@@ -155,6 +170,7 @@ export default function EventScreen() {
             tracked={tracked}
             pending={trackMutation.isPending}
             onToggleTracked={toggleTracked}
+            onShare={shareStory}
           />
           {event && detail.data ? (
             <>

@@ -351,22 +351,27 @@ export function FeedDesktop({
           >
             <RailArrow direction="down" />
           </button>
-          <button
-            type="button"
-            className={
-              activePost?.tracked
-                ? "feed-desktop__action feed-desktop__action--track is-tracked"
-                : "feed-desktop__action feed-desktop__action--track"
-            }
-            aria-label={activePost?.tracked ? "Не отслеживать тему" : "Отслеживать тему"}
-            aria-pressed={activePost?.tracked ?? false}
-            disabled={!activePost}
-            onClick={() => {
-              if (activePost) onToggleTracked(activePost.id);
-            }}
-          >
-            <img src={bookmarkIcon} alt="" width={22} height={22} />
-          </button>
+          <div className="feed-desktop__action-group">
+            <button
+              type="button"
+              className={
+                activePost?.tracked
+                  ? "feed-desktop__action feed-desktop__action--track is-tracked"
+                  : "feed-desktop__action feed-desktop__action--track"
+              }
+              aria-label={activePost?.tracked ? "Не отслеживать тему" : "Отслеживать тему"}
+              aria-pressed={activePost?.tracked ?? false}
+              disabled={!activePost}
+              onClick={() => {
+                if (activePost) onToggleTracked(activePost.id);
+              }}
+            >
+              <img src={bookmarkIcon} alt="" width={22} height={22} />
+            </button>
+            <span className="feed-desktop__action-label">
+              {activePost?.tracked ? "Отслеживается" : "Отслеживать"}
+            </span>
+          </div>
         </aside>
 
         <aside className="feed-desktop__col" aria-label="Важность и расчёт">

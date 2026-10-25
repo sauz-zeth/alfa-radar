@@ -152,6 +152,7 @@ async def _news_rows(
                 importance=match.importance,
                 published_at=event.published_at,
                 source_name=event.source_name,
+                source_count=len(event.source_posts or []) or 1,
                 is_hidden=action in {"skip", "not_relevant"},
                 is_tracked=event.id in tracked,
             )

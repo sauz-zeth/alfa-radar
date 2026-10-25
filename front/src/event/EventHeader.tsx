@@ -1,12 +1,40 @@
+import { useEffect, useRef, useState } from "react";
+
 type EventHeaderProps = {
   onBack: () => void;
   tracked: boolean;
   pending?: boolean;
   onToggleTracked: () => void;
+  onShare: () => void;
 };
 
-export function EventHeader({ onBack, tracked, pending, onToggleTracked }: EventHeaderProps) {
-  const trackLabel = tracked ? "Не отслеживать тему" : "Отслеживать тему";
+export function EventHeader({
+  onBack,
+  tracked,
+  pending,
+  onToggleTracked,
+  onShare,
+}: EventHeaderProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const closeOnOutside = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [menuOpen]);
 
   return (
     <header className="event-head">
@@ -26,21 +54,51 @@ export function EventHeader({ onBack, tracked, pending, onToggleTracked }: Event
 
       <span className="event-head__title">История темы</span>
 
-      <button
-        type="button"
-        className="event-head__button"
-        aria-label={trackLabel}
-        aria-pressed={tracked}
-        title={trackLabel}
-        disabled={pending}
-        onClick={onToggleTracked}
-      >
-        <span className="event-head__dots" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-        </span>
-      </button>
+      <div className="event-head__menu-wrap" ref={menuRef}>
+        <button
+          type="button"
+          className="event-head__button"
+          aria-label="Действия с историей"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          title="Действия с историей"
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <span className="event-head__dots" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+        </button>
+
+        {menuOpen ? (
+          <div className="event-head__menu" role="menu">
+            <button
+              type="button"
+              className="event-head__menu-item"
+              role="menuitem"
+              onClick={() => {
+                setMenuOpen(false);
+                onShare();
+              }}
+            >
+              Переслать историю
+            </button>
+            <button
+              type="button"
+              className="event-head__menu-item"
+              role="menuitem"
+              disabled={pending}
+              onClick={() => {
+                setMenuOpen(false);
+                onToggleTracked();
+              }}
+            >
+              {tracked ? "Не отслеживать" : "Отслеживать"}
+            </button>
+          </div>
+        ) : null}
+      </div>
     </header>
   );
 }

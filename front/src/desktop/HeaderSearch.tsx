@@ -1,8 +1,13 @@
 import { useEffect, useId, useState } from "react";
 import { useApi, useApiQuery } from "../api";
+import { pluralRu } from "../lib/plural";
 import { useRouter } from "../router";
 
 const MIN_QUERY = 2;
+
+function shortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+}
 
 type Suggestion = {
   key: string;
@@ -43,7 +48,10 @@ export function HeaderSearch() {
         ...results.data.news.slice(0, 4).map((item) => ({
           key: `news-${item.id}`,
           label: item.title,
-          meta: item.source_name,
+          meta: `${item.source_name} · ${shortDate(item.published_at)} · ${pluralRu(
+            item.source_count,
+            ["источник", "источника", "источников"],
+          )}`,
           to: `/event/${item.id}`,
         })),
       ]

@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import {
   ApiError,
   useApi,
+  useApiMutation,
   useApiQuery,
+  useQueryClient,
   type SearchCompany,
   type SearchNews,
 } from "../api";
+import { pluralRu } from "../lib/plural";
 import { Link, useRouter } from "../router";
 import "./search.css";
 
@@ -23,6 +26,10 @@ const impactTones: Record<string, string> = {
 
 function companyMeta(company: SearchCompany): string {
   return [company.city, company.region].filter(Boolean).join(" · ");
+}
+
+function shortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
 }
 
 function CompanyRow({ company }: { company: SearchCompany }) {
@@ -48,14 +55,26 @@ function CompanyRow({ company }: { company: SearchCompany }) {
   );
 }
 
-function NewsRow({ item }: { item: SearchNews }) {
+function NewsRow({
+  item,
+  tracked,
+  pending,
+  onToggleTracked,
+}: {
+  item: SearchNews;
+  tracked: boolean;
+  pending: boolean;
+  onToggleTracked: (id: string, tracked: boolean) => void;
+}) {
   const tone = impactTones[item.impact] ?? "neutral";
 
   return (
-    <li>
+    <li className="search-news-row">
       <Link to={`/event/${item.id}`} className="search-news">
         <span className="search-news__meta">
           <span>{item.source_name}</span>
+          <span>{shortDate(item.published_at)}</span>
+          <span>{pluralRu(item.source_count, ["источник", "источника", "источников"])}</span>
           <span className="search-news__importance" aria-label={`Важность ${item.importance}`}>
             {item.importance}
           </span>
@@ -65,19 +84,41 @@ function NewsRow({ item }: { item: SearchNews }) {
         </span>
         <span className="search-news__title">{item.title}</span>
       </Link>
+      <button
+        type="button"
+        className={tracked ? "search-news__track is-on" : "search-news__track"}
+        aria-pressed={tracked}
+        disabled={pending}
+        onClick={() => onToggleTracked(item.id, tracked)}
+      >
+        {tracked ? "Отслеживается" : "Отслеживать"}
+      </button>
     </li>
   );
 }
 
 export default function SearchScreen() {
   const api = useApi();
+  const queryClient = useQueryClient();
   const { search } = useRouter();
   const urlQuery = new URLSearchParams(search).get("q") ?? "";
   const [query, setQuery] = useState(urlQuery);
+  const [trackedOverrides, setTrackedOverrides] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setQuery(urlQuery);
   }, [urlQuery]);
+
+  const trackMutation = useApiMutation<unknown, { id: string; tracked: boolean }>({
+    mutationFn: ({ id, tracked }) =>
+      tracked ? api.feed.untrack(id) : api.feed.track(id),
+    onSuccess: (_data, variables) => {
+      setTrackedOverrides((current) => ({ ...current, [variables.id]: !variables.tracked }));
+      void queryClient.invalidateQueries({ queryKey: ["search"] });
+      void queryClient.invalidateQueries({ queryKey: ["tracked"] });
+      void queryClient.invalidateQueries({ queryKey: ["feed"] });
+    },
+  });
 
   const trimmed = query.trim();
   const active = trimmed.length >= MIN_QUERY;
@@ -186,7 +227,13 @@ export default function SearchScreen() {
                 </div>
                 <ul className="search-list">
                   {news.map((item) => (
-                    <NewsRow key={item.id} item={item} />
+                    <NewsRow
+                      key={item.id}
+                      item={item}
+                      tracked={trackedOverrides[item.id] ?? item.is_tracked}
+                      pending={trackMutation.isPending && trackMutation.variables?.id === item.id}
+                      onToggleTracked={(id, tracked) => trackMutation.mutate({ id, tracked })}
+                    />
                   ))}
                 </ul>
               </section>
