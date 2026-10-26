@@ -4,7 +4,14 @@ from typing import Any
 
 from back.core.categories import CATEGORY_BY_ID
 from back.core.constants import IMPACT_LABELS, PROGNOSIS_NOTE, Impact
-from back.db.models import BusinessCategory, BusinessProfile, Counterparty, NewsEvent
+from back.db.models import (
+    BusinessCategory,
+    BusinessProfile,
+    Counterparty,
+    EventAnalysis,
+    NewsEvent,
+    ProfileEventScore,
+)
 from back.schemas.feed import CategoryBrief, FeedItem, FeedItemDetail
 from back.schemas.insights import ImpactMetricOut
 
@@ -28,6 +35,7 @@ def match_event(
     event: NewsEvent,
     business_categories: list[BusinessCategory],
     counterparties: list[Counterparty],
+    profile_importance: int | None = None,
 ) -> MatchResult:
     weights = {item.category_id: item.weight for item in business_categories}
     matched: list[CategoryBrief] = []
@@ -46,6 +54,14 @@ def match_event(
         for counterparty in counterparties:
             if counterparty.company_uid in mentioned:
                 matched_counterparties.append(counterparty.display_name)
+
+    if profile_importance is not None:
+        return MatchResult(
+            importance=max(0, min(100, profile_importance)),
+            matched_categories=matched,
+            matched_counterparties=sorted(set(matched_counterparties)),
+            match_reason="Персональная оценка ML-пайплайна по профилю бизнеса.",
+        )
 
     importance = event.importance
     if max_weight > 0:
@@ -124,22 +140,28 @@ def event_to_feed_item(
     is_liked: bool = False,
     likes: int = 0,
     report: dict[str, Any] | None = None,
+    analysis: EventAnalysis | ProfileEventScore | None = None,
 ) -> FeedItem:
     # Local import avoids a cycle: insights imports MatchResult from this module.
     from back.services.insights import build_insight
 
-    insight = build_insight(event, profile, match, report) if profile is not None else None
+    weak = match.importance < 30
+    insight = (
+        build_insight(event, profile, match, report, analysis)
+        if not weak and profile is not None and (not with_details or is_tracked or analysis is not None)
+        else None
+    )
     payload: dict[str, Any] = {
         "id": event.id,
         "title": event.title,
         "summary": event.summary,
-        "what_it_means": event.what_it_means,
+        "what_it_means": "" if weak else event.what_it_means,
         "source_name": event.source_name,
         "source_url": event.source_url,
         "published_at": event.published_at,
         "impact": event.impact,
         "impact_label": _impact_label(event.impact),
-        "importance": match.importance,
+        "importance": 0 if weak else match.importance,
         "categories": _all_categories(event),
         "matched_categories": match.matched_categories,
         "matched_counterparties": match.matched_counterparties,
@@ -150,9 +172,9 @@ def event_to_feed_item(
         "source_count": len(insight.sources) if insight else len(event.source_posts or []) or 1,
         "sources": insight.sources if insight else [],
         "facts": event.facts or [],
-        "impact_metrics": _impact_metrics(event),
+        "impact_metrics": [] if weak else _impact_metrics(event),
         "score_breakdown": insight.score_breakdown if insight else [],
-        "score_why": insight.score_why if insight else match.match_reason,
+        "score_why": "" if weak else (insight.score_why if insight else match.match_reason),
         "impact_share": insight.impact_share if insight else "",
         "is_important_mention": bool(match.matched_counterparties),
         "chain_key": event.chain_key,
@@ -160,8 +182,38 @@ def event_to_feed_item(
         "changed_at": event.published_at if event.update_label else None,
         "conclusions_changed": bool(event.update_label),
         "prognosis_note": PROGNOSIS_NOTE,
-        "detail_note": f"(!) {PROGNOSIS_NOTE}",
+        "detail_note": "" if weak else f"(!) {PROGNOSIS_NOTE}",
+        "related": (
+            bool(analysis.related)
+            if analysis and analysis.related is not None
+            else bool(match.matched_categories)
+        ),
+        "direct": (
+            bool(analysis.direct)
+            if analysis and analysis.direct is not None
+            else bool(match.matched_counterparties)
+        ),
+        "fact": (
+            bool(analysis.fact) if analysis and analysis.fact is not None else bool(event.facts)
+        ),
+        "within_month": (
+            bool(analysis.within_month) if analysis and analysis.within_month is not None else True
+        ),
+        "independent_source_count": (
+            analysis.independent_source_count if analysis else len(event.source_posts or []) or 1
+        ) or 0,
     }
+    if profile is not None and analysis is not None:
+        matched = ", ".join(item.short_name for item in match.matched_categories)
+        if not analysis.related:
+            payload["what_it_means"] = "Новость не оказывает заметного влияния на профиль бизнеса."
+        elif getattr(analysis, "why", None):
+            payload["what_it_means"] = " ".join(
+                " ".join(filter(None, (item.get("highlight"), item.get("text"))))
+                for item in analysis.why
+            )
+        else:
+            payload["what_it_means"] = "Событие связано с профилем вашего бизнеса."
     if with_details:
         if insight is not None:
             payload.update(insight.model_dump())

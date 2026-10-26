@@ -259,6 +259,9 @@ export default function Profile() {
       ? ["поставщик", "поставщика", "поставщиков"]
       : ["покупатель", "покупателя", "покупателей"];
   const reportForms = reportingForms(data.reporting);
+  const reportMarkdown =
+    typeof data.reporting.markdown === "string" ? data.reporting.markdown : "";
+  const reportCount = reportForms.length || (reportMarkdown ? 1 : 0);
   const renameError = rename.isError
     ? rename.error instanceof ApiError
       ? rename.error.detail
@@ -340,9 +343,9 @@ export default function Profile() {
               </h2>
               <span
                 className="profile-summary__badge"
-                aria-label={`Загружено файлов: ${reportForms.length}`}
+                aria-label={`Загружено файлов: ${reportCount}`}
               >
-                {reportForms.length}
+                {reportCount}
               </span>
             </div>
             {reportForms.length > 0 ? (
@@ -362,6 +365,11 @@ export default function Profile() {
                   </li>
                 ))}
               </ul>
+            ) : reportMarkdown ? (
+              <Link to="/profile/reports" className="profile-summary__link">
+                <span className="profile-summary__file">Отчёт.pdf</span>
+                <span className="profile-summary__arrow" aria-hidden="true">↗</span>
+              </Link>
             ) : (
               <p className="profile-summary__empty">Отчёты не загружены</p>
             )}
@@ -737,9 +745,9 @@ export default function Profile() {
                 </h2>
                 <span
                   className="profile-desk-summary__badge"
-                  aria-label={`Загружено файлов: ${reportForms.length}`}
+                  aria-label={`Загружено файлов: ${reportCount}`}
                 >
-                  {reportForms.length}
+                  {reportCount}
                 </span>
               </div>
               {reportForms.length > 0 ? (
@@ -759,6 +767,11 @@ export default function Profile() {
                     </li>
                   ))}
                 </ul>
+              ) : reportMarkdown ? (
+                <Link to="/profile/reports" className="profile-desk-summary__link">
+                  <span className="profile-desk-summary__file">Отчёт.pdf</span>
+                  <span className="profile-desk-summary__arrow" aria-hidden="true">↗</span>
+                </Link>
               ) : (
                 <p className="profile-desk-summary__empty">Отчёты не загружены</p>
               )}

@@ -16,4 +16,4 @@ def test_pending_report_marks_analysis_as_pending() -> None:
 
     assert report["analysis_pending"] is True
     assert "analysis_finished_at" not in report
-    assert report["agent_steps"]
+    assert report["agent_steps"] == []

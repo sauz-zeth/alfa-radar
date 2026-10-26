@@ -1,2 +1,27 @@
 .env
+.env.*
+!.env.example
 .DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.session
+*.session-journal
+tg-ingest/state/
+back/media/
+back/data/
+Отчеты Бизнесов/
+
+# Generated ML artifacts and downloaded models
+ml_artifact/models/
+ml_artifact/outputs/
+ml_artifact/data/raw/
+ml_artifact/data/media/
+ml_artifact/**/*.npz
+ml_artifact/**/*.jsonl
+ml_artifact/**/api_cache/
+ml_artifact/**/state/
+ml_artifact/**/runs/

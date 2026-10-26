@@ -163,6 +163,7 @@ async def api_env():
             importance=10,
             category_ids=[99],
         )
+        weak.is_feed_visible = True
         opportunity = _event(
             "РЖД снижает тариф на перевозку металлов",
             "Скидка 12% с декабря.",
@@ -214,6 +215,12 @@ async def test_mockup_api_flow(api_env) -> None:
     assert risk["facts"][0]["status"] == "Официально"
     assert len(risk["score_breakdown"]) == 4
     assert risk["score_breakdown"][0]["max"] == 5
+    weak_item = next(item for item in feed.json()["items"] if item["id"] == str(ids["weak"]))
+    assert weak_item["importance"] == 0
+    assert weak_item["score_breakdown"] == []
+    assert weak_item["what_it_means"] == ""
+    assert list(items).index("Форум цифровой индустрии") > list(items).index("Повышены экспортные пошлины на металлопрокат")
+    assert items["РЖД снижает тариф на перевозку металлов"]["id"] == str(ids["opportunity"])
 
     weak = await client.get("/api/feed/hidden?tab=weak", headers=headers)
     assert weak.status_code == 200
@@ -266,10 +273,12 @@ async def test_mockup_api_flow(api_env) -> None:
     catalog = await client.get("/api/sources/catalog", headers=headers, params={"q": "металл"})
     assert catalog.json()["total"] >= 2
     custom = await client.post(
-        "/api/sources/channels", headers=headers, json={"query": "@my_channel"}
+        "/api/sources/channels",
+        headers=headers,
+        json={"query": "https://example.com/my-channel.xml"},
     )
     custom_channel = next(
-        item for item in custom.json()["channels"] if item["handle"] == "@my_channel"
+        item for item in custom.json()["channels"] if item["feed_url"] == "https://example.com/my-channel.xml"
     )
     assert custom_channel["kind"] == "custom"
     custom_catalog = await client.get(
@@ -410,7 +419,7 @@ async def test_mockup_api_flow(api_env) -> None:
     )
 
 
-async def test_ingest_pipeline_api(api_env) -> None:
+async def test_ingest_api_receives_posts(api_env) -> None:
     client, ids, headers, session_factory = api_env
     ingest_headers = {"X-Ingest-Token": get_settings().ingest_token}
     profile_id = str(ids["profile"])
@@ -428,14 +437,10 @@ async def test_ingest_pipeline_api(api_env) -> None:
     )
     assert first.status_code == 200
     payload = first.json()
-    assert payload["status"] == "feed"
-    assert payload["news_event_id"] is not None
-    assert payload["importance"] >= 30
-    assert [step["stage"] for step in payload["decision_trace"]][:3] == [
-        "parse",
-        "classify",
-        "cluster",
-    ]
+    assert payload["status"] == "received"
+    assert payload["stage"] == "received"
+    assert payload["news_event_id"] is None
+    assert [step["stage"] for step in payload["decision_trace"]] == ["parse"]
 
     duplicate = await client.post(
         "/api/ingest/posts",
@@ -443,9 +448,8 @@ async def test_ingest_pipeline_api(api_env) -> None:
         json={"text": text, "source": "Деловой вестник", "profile_id": profile_id},
     )
     assert duplicate.status_code == 200
-    assert duplicate.json()["status"] == "source_cluster"
-    assert duplicate.json()["cluster_key"] == payload["cluster_key"]
-    assert duplicate.json()["similarity"] >= 0.85
+    assert duplicate.json()["status"] == "received"
+    assert duplicate.json()["cluster_key"] is None
 
     tracked = await client.post(
         "/api/ingest/posts",
@@ -459,11 +463,8 @@ async def test_ingest_pipeline_api(api_env) -> None:
         },
     )
     assert tracked.status_code == 200
-    assert tracked.json()["status"] == "tracked"
-    assert tracked.json()["tracked_item_id"] is not None
-
-    feed = await client.get("/api/feed", headers=headers)
-    assert any(item["id"] == payload["news_event_id"] for item in feed.json()["items"])
+    assert tracked.json()["status"] == "received"
+    assert tracked.json()["tracked_item_id"] is None
 
     weak = await client.post(
         "/api/ingest/posts",
@@ -475,50 +476,12 @@ async def test_ingest_pipeline_api(api_env) -> None:
         },
     )
     assert weak.status_code == 200
-    assert weak.json()["status"] == "ignored"
+    assert weak.json()["status"] == "received"
 
     trace = await client.get(f"/api/ingest/posts/{payload['id']}", headers=ingest_headers)
     assert trace.status_code == 200
-    assert trace.json()["embedding"]
-
-
-async def test_ingest_channels_returns_subscriptions(api_env) -> None:
-    client, _, headers, _ = api_env
-
-    added = await client.post(
-        "/api/sources/channels",
-        headers=headers,
-        json={"query": "@twin_test_channel"},
-    )
-    assert added.status_code == 200
-
-    ingest_headers = {"X-Ingest-Token": get_settings().ingest_token}
-    response = await client.get("/api/ingest/channels", headers=ingest_headers)
-    assert response.status_code == 200
-    items = {item["handle"]: item for item in response.json()["items"]}
-    assert items["@twin_test_channel"]["subscribers"] == 1
-    assert items["@twin_test_channel"]["name"] == "@twin_test_channel"
-
-
-async def test_ingest_stats_does_not_rename_catalog_channel(api_env) -> None:
-    client, _, headers, _ = api_env
-    ingest_headers = {"X-Ingest-Token": get_settings().ingest_token}
-
-    await client.post("/api/sources/channels", headers=headers, json={"query": "rian_ru"})
-    channels = await client.get("/api/ingest/channels", headers=ingest_headers)
-    channel = next(item for item in channels.json()["items"] if item["handle"] == "@rian_ru")
-    before = channel["name"]
-
-    stats = await client.put(
-        f"/api/ingest/channels/{channel['id']}/stats",
-        headers=ingest_headers,
-        json={"subscribers": 1, "title": "Другое имя"},
-    )
-    assert stats.status_code == 200
-
-    sources = await client.get("/api/sources", headers=headers)
-    mine = next(item for item in sources.json()["channels"] if item["id"] == channel["id"])
-    assert mine["name"] == before
+    assert trace.json()["embedding"] == []
+    assert trace.json()["raw"]["profile_id"] == profile_id
 
 
 async def test_ingest_avatar_upload(api_env, tmp_path, monkeypatch) -> None:
@@ -528,16 +491,9 @@ async def test_ingest_avatar_upload(api_env, tmp_path, monkeypatch) -> None:
     client, _, headers, _ = api_env
     ingest_headers = {"X-Ingest-Token": get_settings().ingest_token}
 
-    await client.post(
-        "/api/sources/channels",
-        headers=headers,
-        json={"query": "@twin_avatar_channel"},
-    )
-    channels = await client.get("/api/ingest/channels", headers=ingest_headers)
-    channel = next(
-        item for item in channels.json()["items"] if item["handle"] == "@twin_avatar_channel"
-    )
-    assert channel["avatar_url"] is None
+    feed_url = "https://example.com/avatar-feed.xml"
+    added = await client.post("/api/sources/channels", headers=headers, json={"query": feed_url})
+    channel = next(item for item in added.json()["channels"] if item["feed_url"] == feed_url)
 
     upload = await client.put(
         f"/api/ingest/channels/{channel['id']}/avatar",
@@ -549,18 +505,10 @@ async def test_ingest_avatar_upload(api_env, tmp_path, monkeypatch) -> None:
     assert avatar_url.startswith("/static/avatars/")
     assert (tmp_path / avatar_url.rsplit("/", 1)[-1]).exists()
 
-    stats = await client.put(
-        f"/api/ingest/channels/{channel['id']}/stats",
-        headers=ingest_headers,
-        json={"subscribers": 12_345, "title": "Twin Avatar Channel"},
-    )
-    assert stats.status_code == 200
-
     sources = await client.get("/api/sources", headers=headers)
     mine = next(item for item in sources.json()["channels"] if item["id"] == channel["id"])
     assert mine["avatar_url"] == avatar_url
-    assert mine["tg_subscribers"] == 12_345
-    assert mine["name"] == "Twin Avatar Channel"
+    assert mine["source_type"] == "rss"
 
     bad = await client.put(
         f"/api/ingest/channels/{channel['id']}/avatar",
@@ -573,11 +521,15 @@ async def test_ingest_avatar_upload(api_env, tmp_path, monkeypatch) -> None:
 async def test_add_rss_source_and_catalog_metadata(api_env) -> None:
     client, _, headers, _ = api_env
 
-    catalog = await client.get("/api/sources/catalog?q=rian_ru", headers=headers)
+    catalog = await client.get("/api/sources/catalog", headers=headers)
     assert catalog.status_code == 200
-    telegram = catalog.json()["items"][0]
-    assert telegram["source_type"] == "telegram"
-    assert telegram["tg_subscribers"] == 3_029_269
+    assert any(item["source_type"] == "rss" for item in catalog.json()["items"])
+    assert any(item["id"] == "rian_ru" for item in catalog.json()["items"])
+    rejected = await client.post(
+        "/api/sources/channels", headers=headers, json={"query": "@rbc_news"}
+    )
+    assert rejected.status_code == 200
+    assert any(item["id"] == "rian_ru" for item in rejected.json()["channels"])
 
     feed_url = "https://example.com/rss/news.xml"
     added = await client.post(
@@ -589,7 +541,6 @@ async def test_add_rss_source_and_catalog_metadata(api_env) -> None:
     rss = next(item for item in added.json()["channels"] if item["feed_url"] == feed_url)
     assert rss["source_type"] == "rss"
     assert rss["kind"] == "custom"
-    assert rss["tg_subscribers"] is None
 
     again = await client.post(
         "/api/sources/channels",
@@ -616,6 +567,20 @@ async def test_rss_poller_lists_subscribed_feeds(api_env, monkeypatch) -> None:
 
     urls = await poller.subscribed_feed_urls()
     assert feed_url in urls
+
+
+async def test_rss_poller_maps_telegram_channels_to_local_rsshub(api_env, monkeypatch) -> None:
+    import back.services.rss_poller as poller
+
+    client, _, headers, session_factory = api_env
+    monkeypatch.setattr(poller, "SessionLocal", session_factory)
+    monkeypatch.setattr(poller.get_settings(), "rsshub_base_url", "http://rsshub:1200")
+
+    added = await client.post("/api/sources/channels", headers=headers, json={"query": "@rbc_news"})
+    assert added.status_code == 200
+
+    urls = await poller.subscribed_feed_urls()
+    assert "http://rsshub:1200/telegram/channel/rbc_news" in urls
 
 
 async def test_business_options_dedupe_activities(api_env) -> None:

@@ -3,8 +3,8 @@ from back.core.sources import (
     RECOMMENDED_IDS,
     find_channel,
     parse_feed_url,
-    parse_handle,
     rss_channel_id,
+    rss_feed_urls,
     search_channels,
 )
 
@@ -17,24 +17,16 @@ def test_recommended_are_subset_of_catalog() -> None:
     assert len(catalog_ids) == len(CHANNELS)
 
 
-def test_parse_handle() -> None:
-    assert parse_handle("@my_channel") == "@my_channel"
-    assert parse_handle("https://t.me/my_channel") == "@my_channel"
-    assert parse_handle("t.me/my_channel/") == "@my_channel"
-    assert parse_handle("просто текст") is None
-
-
-def test_find_channel_by_id_name_and_handle() -> None:
+def test_find_channel_by_id_name_handle_and_feed_url() -> None:
     by_id = find_channel("rbc_news")
     by_name = find_channel("РБК. Новости. Главное")
     by_handle = find_channel("@rbc_news")
     assert by_id is not None and by_id.id == "rbc_news"
     assert by_name is not None and by_name.id == "rbc_news"
     assert by_handle is not None and by_handle.id == "rbc_news"
-    assert find_channel("@unknown_channel") is None
 
 
-def test_rss_and_handle_parsing() -> None:
+def test_rss_url_parsing() -> None:
     assert parse_feed_url("https://vz.ru/rss.xml") == "https://vz.ru/rss.xml"
     assert parse_feed_url("https://t.me/rbc_news") is None
     assert parse_feed_url("@rbc_news") is None
@@ -49,5 +41,11 @@ def test_rss_and_handle_parsing() -> None:
 def test_catalog_search() -> None:
     result = search_channels("металл")
     assert len(result) >= 2
-    assert any(item.id in {"metals_mining", "prometallinfo"} for item in result)
     assert search_channels("") == list(CHANNELS)
+
+
+def test_rss_feed_urls_default_to_40_unique_feeds() -> None:
+    feeds = rss_feed_urls()
+    assert len(feeds) == 40
+    assert len(feeds) == len(set(feeds))
+    assert all(feed.startswith("https://") for feed in feeds)

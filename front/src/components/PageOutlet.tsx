@@ -8,8 +8,10 @@ export function PageOutlet() {
   const Page = resolveRoute(path) ?? NotFound;
 
   return (
-    <Suspense fallback={<p className="loading">Loading…</p>}>
-      <Page />
+    <Suspense fallback={null}>
+      <div key={path} className="page-transition">
+        <Page />
+      </div>
     </Suspense>
   );
 }

@@ -238,6 +238,12 @@
 }
 
 @media (min-width: 1200px) {
+  .report-summary-portal {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+  }
+
   .desktop-shell .report-summary {
     height: auto;
     padding: 8px 16px 32px;
@@ -261,7 +267,7 @@
 
   .report-summary-modal {
     display: flex;
-    width: min(960px, 100%);
+    width: min(1200px, 100%);
     flex-direction: column;
     gap: 8px;
     margin: auto;
@@ -324,7 +330,8 @@
   }
 
   .report-summary-modal__body {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 488px);
     align-items: flex-start;
     gap: 32px;
     padding: 32px;
@@ -335,6 +342,10 @@
   .report-summary-modal__body--solo .report-summary-modal__summary {
     width: auto;
     flex: 1;
+  }
+
+  .report-summary-modal__body--solo {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .report-summary-modal__body--state {
@@ -352,15 +363,23 @@
 
   .report-summary-modal__summary {
     display: flex;
-    width: 360px;
-    flex: none;
+    min-width: 0;
+    width: auto;
     flex-direction: column;
     gap: 28px;
   }
 
   .report-summary-modal__markdown.markdown-body {
+    min-width: 0;
+    overflow-wrap: anywhere;
     font-size: 20px;
     line-height: 28px;
+  }
+
+  .report-summary-modal__markdown.markdown-body table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
   }
 
   .report-summary-modal__markdown.markdown-body h2 {

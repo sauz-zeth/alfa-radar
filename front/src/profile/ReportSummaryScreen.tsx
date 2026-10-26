@@ -1,4 +1,5 @@
 import { useCallback, useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ApiError, useApi, useApiQuery, type ProfileStats } from "../api";
 import { MarkdownView } from "../components/MarkdownView";
 import { useMediaQuery } from "../lib/useMediaQuery";
@@ -249,8 +250,8 @@ function DesktopReportModal({
     };
   }, [onClose]);
 
-  return (
-    <>
+  return createPortal((
+    <div className="report-summary-portal desktop-shell">
       <div className="report-summary-background" aria-hidden="true" inert>
         <ProfilePage />
       </div>
@@ -285,8 +286,8 @@ function DesktopReportModal({
           {children}
         </section>
       </div>
-    </>
-  );
+    </div>
+  ), document.body);
 }
 
 export default function ReportSummaryScreen() {
@@ -341,6 +342,37 @@ export default function ReportSummaryScreen() {
   const reporting = asRecord(data.reporting);
   const forms = asRecord(reporting?.forms);
   const entry = form && forms ? asRecord(forms[form]) : null;
+  const fullMarkdown = asString(reporting?.markdown);
+
+  if (!form && fullMarkdown) {
+    if (isDesktop) {
+      return (
+        <DesktopReportModal title="Саммари отчётов" onClose={close}>
+          <div className="report-summary-modal__body report-summary-modal__body--solo">
+            <div className="report-summary-modal__summary">
+              <MarkdownView
+                markdown={fullMarkdown}
+                className="report-summary__markdown report-summary-modal__markdown"
+              />
+            </div>
+          </div>
+        </DesktopReportModal>
+      );
+    }
+    return (
+      <div className="report-summary">
+        <div className="report-summary__inner">
+          <SummaryHeader />
+          <section className="report-summary__card">
+            <div className="report-summary__file">
+              <h2 className="report-summary__filename">Саммари отчётов</h2>
+              <MarkdownView markdown={fullMarkdown} className="report-summary__markdown" />
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   if (!form || !entry) {
     if (isDesktop) {

@@ -36,7 +36,10 @@ export function UnchangedSection({ topics, onOpen, variant = "mobile", emptyNote
         </ul>
 
         {topics.length === 0 ? (
-          <p className="tracked-desk-note">{emptyNote ?? "Пока без изменений"}</p>
+          <div className="tracked-desk-subempty">
+            <span className="tracked-desk-subempty__dot" aria-hidden="true" />
+            <span>{emptyNote ?? "Пока без изменений"}</span>
+          </div>
         ) : null}
       </section>
     );

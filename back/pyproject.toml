@@ -12,13 +12,20 @@ dependencies = [
     "argon2-cffi>=25.1.0",
     "asyncpg>=0.32.0",
     "fastapi>=0.143.3",
+    "feedparser>=6.0.14",
     "httpx>=0.28.1",
+    "ImageHash>=4.3,<5",
+    "numpy>=2.0,<3",
+    "onnxruntime>=1.31,<2",
     "openpyxl>=3.1.5",
+    "Pillow>=10,<13",
     "pydantic-settings>=2.16.0",
     "pyjwt>=2.10.1",
     "pypdf>=6.1.1",
     "python-multipart>=0.0.20",
     "sqlalchemy[asyncio]>=2.1.5",
+    "sentencepiece>=0.2,<1",
+    "transformers==4.57.1",
     "uvicorn[standard]>=0.54.0",
 ]
 
@@ -51,7 +58,7 @@ ignore = ["B008"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-pythonpath = ["src"]
+pythonpath = ["src", ".."]
 testpaths = ["tests"]
 
 [tool.mypy]

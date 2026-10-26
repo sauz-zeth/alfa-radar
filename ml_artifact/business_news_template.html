@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ленты бизнеса</title>
+<style>
+.why-highlight{font-size:1.25em;font-weight:750;color:#17231b}
+:root{font-family:system-ui,-apple-system,sans-serif;color:#202824;background:#f7f8f7;font-size:14px;letter-spacing:0}
+*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit;color:inherit}button,summary,select{cursor:pointer}
+header{background:#fff;border-bottom:1px solid #dce2de;padding:18px 28px;display:flex;gap:20px;align-items:center;justify-content:space-between}
+h1{font-size:23px;margin:0}h2{font-size:19px;margin:0 0 12px}h3{font-size:16px;margin:10px 0;line-height:1.5}
+p{line-height:1.6}a{color:#176653}small,.muted{color:#657069;font-size:12px}.layout{max-width:1560px;margin:auto;display:grid;grid-template-columns:310px minmax(0,1fr)}
+aside{padding:24px;border-right:1px solid #dce2de;min-width:0}main{padding:24px 30px;min-width:0}
+label{display:grid;gap:7px;font-size:12px;font-weight:600}input,select,button{background:#fff;border:1px solid #cbd5ce;border-radius:5px;padding:9px 10px;min-width:0;max-width:100%;min-height:38px}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid #148569;outline-offset:3px}
+button:hover{background:#edf3ef}button:disabled{opacity:.4;cursor:default}.filters{display:grid;grid-template-columns:2fr 1.5fr 1fr;gap:12px;margin:20px 0}
+.filters .dates{display:grid;grid-template-columns:1fr 1fr;gap:10px}.filters .reset{align-self:end}.stats{display:flex;gap:8px 22px;flex-wrap:wrap;color:#526259;padding:12px 0;border-top:1px solid #dce2de;border-bottom:1px solid #dce2de}
+.stats b{color:#202824}.event{padding:20px 0;border-bottom:1px solid #dce2de;overflow-wrap:anywhere}.event-top{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.score{font-variant-numeric:tabular-nums;color:#086449;font-weight:700;background:#e2f1e9;padding:5px 8px;border-radius:4px;white-space:nowrap}
+.category{color:#8a4920;font-size:12px;font-weight:600}.preview{white-space:pre-wrap;line-height:1.6;margin:8px 0}.meta{display:flex;gap:8px 16px;flex-wrap:wrap;color:#657069;font-size:12px}
+details{margin-top:12px}summary{padding:7px 0;font-weight:600;font-size:13px}summary:hover{color:#086449}.scroll-table{overflow:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:12px;margin:8px 0}th,td{text-align:left;border-bottom:1px solid #e2e6e3;padding:9px 7px}th{color:#657069;font-weight:500}td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.weights td:first-child{width:73%}.weight-bar{height:3px;background:#e2e6e3;margin-top:5px}.weight-bar span{display:block;height:100%;background:#288368}
+.publication{padding:18px 0;border-top:1px dashed #d4dcd6}.publication .text{white-space:pre-wrap;line-height:1.7;margin:12px 0;overflow-wrap:anywhere}.tag{display:inline-block;color:#5d655e;margin:5px 14px 0 0;font-size:12px}
+.cluster-images{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}.cluster-images figure{margin:0}.cluster-images img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:4px;background:#eef1ee}.cluster-images figcaption{font-size:11px;color:#657069;margin-top:4px;overflow-wrap:anywhere}@media(max-width:650px){.cluster-images{grid-template-columns:repeat(2,minmax(0,1fr))}}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eef1ee;padding:12px;border-radius:4px;font-size:12px;line-height:1.6}dl{font-size:13px;line-height:1.6}dt{color:#657069;margin-top:9px}dd{margin:0;overflow-wrap:anywhere}
+.pager{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:22px 0}.empty{padding:45px 0;color:#657069}.activity{margin:12px 0 4px;line-height:1.5}.count{font-variant-numeric:tabular-nums}
+@media(max-width:850px){header{padding:16px;align-items:flex-start;flex-direction:column;gap:8px}.layout{display:block}aside{padding:16px;border-right:0;border-bottom:1px solid #dce2de}main{padding:20px 16px}.filters{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.filters{grid-template-columns:1fr}h1{font-size:21px}.event-top{align-items:flex-start}header .muted{overflow-wrap:anywhere}.pager{flex-wrap:wrap}.pager button{flex:1}.stats{gap:8px 16px}}
+</style>
+</head>
+<body>
+<header><h1>Ленты бизнеса</h1><div class="muted" id="dataset"></div></header>
+<div class="layout">
+<aside>
+<label>Бизнес / UID<select id="uid"></select></label>
+<div id="profile"></div>
+<details id="weights-panel"><summary>Влияние категорий</summary><p id="category-count" class="muted"></p><div id="weights"></div><button id="export-profile">Скачать профили JSON</button><p class="muted" id="profile-notice">Измените уровни, скачайте JSON и передайте его скрипту через --profiles. Изменения не пересчитывают готовые оценки.</p></details>
+<details><summary>Выбранные источники (до 40)</summary><div id="selected-sources"></div></details>
+<details><summary>Все данные бизнеса</summary><div id="account"></div></details>
+<details><summary>Параметры скоринга</summary><pre id="scoring"></pre></details>
+<details><summary>Исходный корпус</summary><pre id="corpus"></pre></details>
+</aside>
+<main>
+__METRICS_REPORT__
+<h2 id="feed-title">Новости</h2>
+<div class="stats" id="stats" aria-live="polite"></div>
+<div class="filters">
+<label>Поиск<input id="query" type="search" placeholder="Текст, источник, ID"></label>
+<label>Категория<select id="category"><option value="">Все категории</option></select></label>
+<label>Сортировка<select id="sort"><option value="score">По важности и свежести</option><option value="date">Сначала новые</option><option value="sources">По числу источников</option></select></label>
+<div class="dates"><label>С (UTC)<input id="from" type="date"></label><label>По (UTC)<input id="to" type="date"></label></div>
+<label>Минимальная важность I<input id="min-score" type="number" min="0" max="100" step="1" value="0"></label><label>Раздел<select id="section"></select></label>
+<button type="button" class="reset" id="reset">Сбросить фильтры</button>
+</div>
+<div id="feed"></div>
+<nav class="pager" aria-label="Страницы ленты"><button id="prev" type="button">Назад</button><span id="page-info" class="muted"></span><button id="next" type="button">Далее</button></nav>
+</main>
+</div>
+<noscript>Для просмотра лент требуется JavaScript.</noscript>
+<script id="news-data" type="application/json">__BUSINESS_NEWS_DATA__</script>
+<script>
+'use strict';
+const data=JSON.parse(document.getElementById('news-data').textContent);
+const $=id=>document.getElementById(id);
+const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const raw=value=>'<pre>'+esc(JSON.stringify(value,null,2))+'</pre>';
+const date=value=>value?new Date(value).toLocaleString('ru-RU',{timeZone:'UTC'})+' UTC':'—';
+const day=value=>value?new Date(value).toISOString().slice(0,10):'';
+const number=value=>typeof value==='number'?value.toFixed(2):'—';
+const metricsByEvent=new Map((data.metrics?.per_news||[]).map(m=>[String(m.event_id),m]));
+if($('download-metrics'))$('download-metrics').addEventListener('click',()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(data.metrics,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='metrics.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
+const profiles=new Map(data.profiles.map(p=>[p.uid,p]));
+const accounts=new Map(data.accounts.map(a=>[a.uid,a]));
+const feeds=new Map(data.recommendations.map(r=>[r.uid,r.clusters||[]]));
+const edits=Object.fromEntries(data.profiles.map(p=>[p.uid,{...p.category_impacts}]));
+const statuses={feed:'Лента',weak:'Слабое влияние',tracked:'Отслеживаемое · Обновление',candidate:'Кандидаты · без оценки LLM',ignored:'Не важно',excluded:'Реклама / мусор',error:'Ошибки'};
+const pageSize=20;
+let page=0;
+$('dataset').textContent=(data.scoring.mode==='llm'?'LLM-ранжирование':'Кандидатогенерация · без оценок LLM')+' · '+data.profiles.length+' бизнесов'+(data.progress?' · обработано '+data.progress.processed+'/'+data.progress.total:'');
+$('scoring').textContent=JSON.stringify(data.scoring,null,2);
+$('corpus').textContent=JSON.stringify(data.corpus||{},null,2);
+$('uid').innerHTML=data.profiles.map(p=>'<option value="'+esc(p.uid)+'">'+esc(p.uid)+' · '+esc(p.activity)+'</option>').join('');
+function renderProfile(){
+  const p=profiles.get($('uid').value);if(!p)return;
+  const a=accounts.get(p.uid)||{};
+  $('profile').innerHTML='<p class="activity"><b>'+esc(p.activity)+'</b></p><dl><dt>ОКВЭД</dt><dd>'+esc(p.okved)+'</dd><dt>Регион</dt><dd>'+esc(p.region)+'</dd><dt>Продукты</dt><dd>'+esc((a.products||[]).join(', '))+'</dd></dl>';
+  $('weights').innerHTML='<table><thead><tr><th>Категория</th><th>Влияние</th></tr></thead><tbody>'+Object.entries(edits[p.uid]).map(([label,value])=>'<tr><td>'+esc(label)+'</td><td><select data-category="'+esc(label)+'">'+['прямое','косвенное','не важно'].map(level=>'<option'+(value===level?' selected':'')+'>'+level+'</option>').join('')+'</select></td></tr>').join('')+'</tbody></table>';
+  $('category-count').textContent='Выбрано '+Object.values(edits[p.uid]).filter(v=>v!=='не важно').length+' / 8 категорий (прямое + косвенное)';
+  const types=p.source_types||{};
+  $('selected-sources').innerHTML='<p>'+esc((p.selected_sources||[]).length)+' / 40 источников · Telegram: '+esc(types.telegram??'—')+' · RSS: '+esc(types.rss??'—')+'</p><ul>'+(p.selected_sources||[]).map(name=>'<li>'+esc(name)+'</li>').join('')+'</ul><p class="muted">'+esc(p.source_selection?.reason||'Подборка не сохранена в этом старом отчёте')+'</p>';
+  $('account').innerHTML=raw(a);
+  const clusters=feeds.get(p.uid)||[];
+  const labels=[...new Set(clusters.flatMap(c=>(c.matched_labels||[]).map(l=>l.label)))].sort();
+  $('category').innerHTML='<option value="">Все категории</option>'+labels.map(l=>'<option>'+esc(l)+'</option>').join('');
+  const counts={};for(const c of clusters)counts[c.status]=(counts[c.status]||0)+1;
+  $('section').innerHTML=Object.entries(statuses).map(([key,label])=>'<option value="'+key+'">'+label+' ('+(counts[key]||0)+')</option>').join('')+'<option value="">Все разделы</option>';
+  $('section').value=data.scoring.mode==='llm'?(['feed','weak','tracked','error','ignored','excluded'].find(key=>counts[key])||'feed'):'candidate';
+  $('feed-title').textContent='Новости · '+p.uid;
+}
+$('weights').addEventListener('change',e=>{
+ const category=e.target.dataset.category;if(!category)return;
+ const values=edits[$('uid').value], previous=values[category];
+ const updated={...values,[category]:e.target.value};
+ const count=Object.values(updated).filter(v=>v!=='не важно').length;
+ if(count>8){e.target.value=previous;$('profile-notice').textContent='Максимум 8 категорий: сначала переведите одну из выбранных в «не важно».';return;}
+ values[category]=e.target.value;
+ $('category-count').textContent='Выбрано '+count+' / 8 категорий (прямое + косвенное)';
+ $('profile-notice').textContent='Есть изменения. Скачайте профили и повторите расчёт с --profiles. Текущие карточки рассчитаны по прежним уровням.';
+});
+$('export-profile').addEventListener('click',()=>{
+  if(Object.values(edits).some(values=>Object.values(values).filter(v=>v!=='не важно').length>8)){$('profile-notice').textContent='В одном из профилей больше 8 категорий. Уменьшите выбор перед экспортом.';return;}
+  const url=URL.createObjectURL(new Blob([JSON.stringify(edits,null,2)],{type:'application/json'}));
+  const a=document.createElement('a');a.href=url;a.download='business_profiles.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+function imageSrc(path){if(!path)return '';if(/^(https?:|data:|file:)/i.test(path))return path;if(path.startsWith('/'))return 'file://'+path;return path;}
+function clusterImages(c){const images=(c.images||[]).slice(0,4);if(!images.length)return '';return '<div class="cluster-images">'+images.map(i=>'<figure><a href="'+esc(imageSrc(i.path))+'" target="_blank" rel="noopener"><img loading="lazy" src="'+esc(imageSrc(i.path))+'" alt="Фото кластера"></a><figcaption>'+esc(i.source||'')+(i.origin_url?' · <a href="'+esc(i.origin_url)+'" target="_blank" rel="noopener">источник</a>':'')+'</figcaption></figure>').join('')+'</div>';}
+function publication(m){
+  const id=String(m.post_id||'');
+  const href=m.url||(/^[a-zA-Z0-9_]+\/[0-9]+$/.test(id)?'https://t.me/'+id:'');
+  const link=href?'<a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(id||href)+'</a>':esc(id);
+  return '<section class="publication"><div class="meta"><b>'+esc(m.source)+'</b><span>'+esc(date(m.date))+'</span>'+link+'</div><div class="text">'+esc(m.text)+'</div></section>';
+}
+function event(c){
+  const a=c.assessment;
+  const telemetry=metricsByEvent.get(String(c.event_id));
+  const metricDetails=telemetry?'<details><summary>Время и расходы этой новости · '+number(telemetry.processing_seconds)+' с · API: '+telemetry.current_run.api_calls+'</summary>'+raw(telemetry)+'</details>':'';
+  let analysis='';
+  if(a){
+    analysis=((Array.isArray(a.why)&&a.why.length)?'<div class="preview"><b>Почему:</b><ul>'+a.why.map(item=>'<li><strong class="why-highlight">'+esc(item.highlight)+'</strong> '+esc(item.text)+'</li>').join('')+'</ul></div>':'')+'<div class="meta">Qwen · '+esc(c.model)+'</div>';
+    analysis+='<details><summary>Расчёт важности</summary><p>I = 40×related + 25×direct + 20×fact + 15×within_month = '+number(c.importance)+'</p><table><tr><th>Признак</th><th>Значение</th></tr><tr><td>Связано с бизнесом</td><td>'+esc(a.related)+'</td></tr><tr><td>Прямое влияние</td><td>'+esc(a.direct)+'</td></tr><tr><td>Факт</td><td>'+esc(a.fact)+'</td></tr><tr><td>В течение месяца</td><td>'+esc(a.within_month)+'</td></tr></table><p>С учётом свежести: '+number(c.rank_score)+'.</p></details>';
+  }else analysis='<p class="preview">'+esc((c.members[0]?.text||'').slice(0,500))+'</p>';
+  return '<article class="event"><div class="event-top"><span class="meta">#'+esc(c.event_id)+' · '+esc(date(c.date))+'</span><span class="score">'+(a?'I '+number(c.importance):esc(statuses[c.status]||c.status))+'</span></div><h3>'+esc(c.headline||'Без заголовка')+'</h3><div class="category">'+esc(c.impact)+' · '+esc(c.decisive_label)+(c.topic_id!==undefined?' · Обновление темы '+esc(c.topic_id):'')+'</div>'+clusterImages(c)+(c.routing?.qwen_multi_source?'<p class="category">Сразу полный анализ: более 5 независимых источников</p>':'')+analysis+metricDetails+(c.error?'<p>'+esc(c.error)+'</p>':'')+'<div class="meta">Источников: '+esc(c.sources)+' · Независимых групп: '+esc(c.independent_sources??'—')+' · Публикаций: '+c.members.length+'</div><details><summary>Сработавшие категории</summary><table><tr><th>Категория</th><th>Влияние</th><th>p / порог</th></tr>'+(c.matched_labels||[]).map(l=>'<tr><td>'+esc(l.label)+'</td><td>'+esc(l.impact)+'</td><td>'+number(l.probability)+' / '+number(l.threshold)+'</td></tr>').join('')+'</table></details><details><summary>Исходные публикации ('+c.members.length+')</summary>'+c.members.map(publication).join('')+'</details><details><summary>JSON результата</summary>'+raw(c)+'</details></article>';
+}
+function render(){
+  const clusters=feeds.get($('uid').value)||[];
+  const q=$('query').value.trim().toLocaleLowerCase('ru'),category=$('category').value;
+  const from=$('from').value,to=$('to').value;
+  const visible=clusters.filter(c=>{
+    if($('section').value&&c.status!==$('section').value)return false;
+    if(Number($('min-score').value)>0&&(c.importance??-1)<Number($('min-score').value))return false;
+    if(category&&!(c.matched_labels||[]).some(l=>l.label===category))return false;
+    if((from||to)&&!c.members.some(m=>{const d=day(m.date);return d&&(!from||d>=from)&&(!to||d<=to)}))return false;
+    return !q||JSON.stringify(c).toLocaleLowerCase('ru').includes(q);
+  });
+  visible.sort((a,b)=>($('sort').value==='date'?String(b.date||'').localeCompare(String(a.date||'')):$('sort').value==='sources'?b.sources-a.sources:(b.rank_score??-1)-(a.rank_score??-1))||String(a.event_id).localeCompare(String(b.event_id)));
+  const pages=Math.max(1,Math.ceil(visible.length/pageSize));page=Math.min(page,pages-1);
+  $('stats').textContent='Событий: '+visible.length+' / '+clusters.length+' · Публикаций: '+visible.reduce((n,c)=>n+c.members.length,0);
+  $('feed').innerHTML=visible.slice(page*pageSize,(page+1)*pageSize).map(event).join('')||'<p class="empty">В этом разделе нет новостей. Выберите другой раздел или измените фильтры.</p>';
+  $('page-info').textContent='Страница '+(page+1)+' из '+pages;$('prev').disabled=page===0;$('next').disabled=page>=pages-1;
+}
+function reset(){for(const id of ['query','from','to','category'])$(id).value='';$('sort').value='score';$('min-score').value=0;page=0;}
+$('uid').addEventListener('change',()=>{reset();renderProfile();render();location.hash=encodeURIComponent($('uid').value)});
+for(const id of ['query','category','sort','from','to','min-score','section'])$(id).addEventListener('input',()=>{page=0;render()});
+$('reset').addEventListener('click',()=>{reset();render()});
+$('prev').addEventListener('click',()=>{page--;render();$('feed-title').scrollIntoView()});
+$('next').addEventListener('click',()=>{page++;render();$('feed-title').scrollIntoView()});
+function fromHash(){let uid;try{uid=decodeURIComponent(location.hash.slice(1))}catch{return}if(profiles.has(uid)&&$('uid').value!==uid){$('uid').value=uid;reset();renderProfile();render()}}
+window.addEventListener('hashchange',fromHash);renderProfile();render();fromHash();
+</script>
+</body>
+</html>

@@ -170,7 +170,7 @@ export default function SourcesPage() {
         ) : null}
       </form>
 
-      {catalog.isPending ? <p className="sources-note">Ищем каналы…</p> : null}
+      {catalog.isPending ? <p className="sources-note">Ищем источники…</p> : null}
       {catalog.isError ? <p className="form-error">Не удалось загрузить каталог</p> : null}
 
       <ul className="catalog-list">
@@ -196,7 +196,7 @@ export default function SourcesPage() {
                   {channel.name}
                 </span>
                 <span className="catalog-topics">
-                  {channel.handle ?? channel.topics}
+                  {channel.handle ?? channel.feed_url ?? channel.topics}
                   {channel.tg_subscribers
                     ? ` · ${formatSubscribers(channel.tg_subscribers)}`
                     : ""}
@@ -378,7 +378,7 @@ export default function SourcesPage() {
               <span className="sources-hint__cover sources-hint__cover--front">{covers[0]}</span>
             </span>
             <div className="sources-hint__text">
-              <p className="sources-hint__label">Подобрали каналы под профиль</p>
+              <p className="sources-hint__label">Подобрали источники под профиль</p>
               <p className="sources-hint__value">{recommended.join(" · ") || "Ваш бизнес"}</p>
             </div>
           </section>

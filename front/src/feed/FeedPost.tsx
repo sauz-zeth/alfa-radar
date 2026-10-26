@@ -170,7 +170,7 @@ export function FeedPost({
       <div className="post-rail">
         <div className="post-rail__score">
           <div className="post-rail__dial">{post.importance}</div>
-          <span className="post-rail__label">Важность</span>
+          <span className="post-rail__label">Важность для бизнеса</span>
         </div>
         <button
           type="button"
@@ -244,7 +244,7 @@ export function FeedPost({
         <ImpactBlock
           metrics={post.metrics}
           title={desktop ? "Что это значит для вас" : undefined}
-          showDetails={!desktop}
+          showDetails={!desktop && post.metrics.length > 0}
         />
         </div>
       </div>

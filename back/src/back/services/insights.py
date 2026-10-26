@@ -99,8 +99,35 @@ def source_posts(event: NewsEvent) -> list[SourcePostOut]:
 
 
 def score_breakdown(
-    event: NewsEvent, match: MatchResult, profile: BusinessProfile
+    event: NewsEvent,
+    match: MatchResult,
+    profile: BusinessProfile,
+    analysis: Any | None = None,
 ) -> tuple[list[ScoreComponentOut], str, str]:
+    if analysis is not None:
+        factors = (
+            ("related", "Связь с бизнесом", 40),
+            ("direct", "Прямое влияние", 25),
+            ("fact", "Подтверждённый факт", 20),
+            ("within_month", "Актуальность до месяца", 15),
+        )
+        components = [
+            ScoreComponentOut(
+                key=key,
+                label=label,
+                value=weight if getattr(analysis, key) else 0,
+                max=weight,
+                text=(
+                    f"Фактор учтён: +{weight} баллов."
+                    if getattr(analysis, key)
+                    else "Фактор не подтверждён: 0 баллов."
+                ),
+            )
+            for key, label, weight in factors
+        ]
+        names = ", ".join(item.short_name for item in match.matched_categories) or "профиль бизнеса"
+        return components, f"Оценка ML по четырём признакам; связь: {names}.", names
+
     scale = max(1, min(5, round(match.importance / 20)))
     directness = 1.0 if match.matched_counterparties else 0.8 if match.matched_categories else 0.6
     if match.matched_counterparties:
@@ -511,6 +538,9 @@ def agent_log(event: NewsEvent, report: dict[str, Any] | None = None) -> list[Ag
             text=str(item.get("text") or ""),
             is_correction=bool(item.get("is_correction")),
             at=str(item.get("at")) if item.get("at") else None,
+            tool=str(item.get("tool")) if item.get("tool") else None,
+            field=str(item.get("field")) if item.get("field") else None,
+            source_ids=[str(value) for value in item.get("source_ids", [])],
         )
         for item in steps
         if isinstance(item, dict) and item.get("text")
@@ -615,8 +645,9 @@ def build_insight(
     profile: BusinessProfile,
     match: MatchResult,
     report: dict[str, Any] | None = None,
+    analysis: Any | None = None,
 ) -> InsightOut:
-    components, score_why, impact_share = score_breakdown(event, match, profile)
+    components, score_why, impact_share = score_breakdown(event, match, profile, analysis)
     questions = open_questions(event, profile, report)
     points = timeline(event)
     finished_at = _report_dict(report).get("analysis_finished_at")

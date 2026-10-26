@@ -70,6 +70,17 @@ export default function TrackedScreen() {
     );
   }
 
+  if (topics.length === 0 && archived.length === 0) {
+    return (
+      <div className="tracked-page tracked-page--empty">
+        <div className="tracked-empty-screen">
+          <h1>Отслеживаемое</h1>
+          <p>Сначала добавьте новости в ленте, чтобы следить за темами здесь.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="tracked-page">
       {isDesktop ? (

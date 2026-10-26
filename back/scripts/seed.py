@@ -11,7 +11,6 @@ import argparse
 import asyncio
 import csv
 import json
-import math
 import uuid
 from pathlib import Path
 from types import SimpleNamespace
@@ -468,7 +467,6 @@ async def create_demo_profile(conn: asyncpg.Connection, user_id: uuid.UUID, logi
             item["weight"],
             item["rationale"],
         )
-    await seed_demo_counterparties(conn, profile_id, company["uid"])
     print(f"{login}: profile created for {company['uid']}")
 
 
@@ -502,57 +500,6 @@ async def seed_demo_feedback(conn: asyncpg.Connection, user_id: uuid.UUID) -> No
     print(f"{profile_id}: demo feedback skipped {len(records)}")
 
 
-async def seed_demo_counterparties(
-    conn: asyncpg.Connection, profile_id: uuid.UUID, company_uid: str
-) -> None:
-    for direction, filter_column, company_column, label in (
-        ("supplier", "payer", "beneficiary", "Поставщик"),
-        ("buyer", "beneficiary", "payer", "Покупатель"),
-    ):
-        rows = await conn.fetch(
-            f"""
-            SELECT {company_column} AS uid,
-                   sum(amount) AS amount,
-                   sum("count") AS cnt
-            FROM payments
-            WHERE {filter_column} = $1
-            GROUP BY {company_column}
-            ORDER BY 2 DESC
-            LIMIT 10
-            """,
-            company_uid,
-        )
-        total = sum(float(row["amount"] or 0) for row in rows)
-        for index, row in enumerate(rows, start=1):
-            amount = float(row["amount"] or 0)
-            cnt = int(row["cnt"] or 0)
-            share = amount / total if total else 0.0
-            importance = min(
-                100,
-                round(share * 80 + min(math.log1p(cnt) / math.log1p(1000), 1.0) * 20),
-            )
-            await conn.execute(
-                """
-                INSERT INTO counterparties (
-                    id, profile_id, company_uid, direction, total_amount,
-                    payments_count, share, importance, default_name, note
-                )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-                ON CONFLICT (profile_id, company_uid, direction) DO NOTHING
-                """,
-                uuid.uuid4(),
-                profile_id,
-                row["uid"],
-                direction,
-                amount,
-                cnt,
-                round(share, 4),
-                importance,
-                f"{label} {index}",
-                f"{share:.0%} оборота, {cnt} платежей",
-            )
-
-
 async def main() -> None:
     parser = argparse.ArgumentParser(description="Seed Alfa Future database")
     parser.add_argument("--data-dir", help="Directory with df_*_hack.csv files")
@@ -562,7 +509,13 @@ async def main() -> None:
     args = parser.parse_args()
 
     settings = get_settings()
-    data_dir = resolve_data_dir(args.data_dir)
+    data_dir = None
+    try:
+        data_dir = resolve_data_dir(args.data_dir)
+    except SystemExit:
+        if args.data_dir:
+            raise
+        print("seed: CSV dataset not found; seeding categories, sources, news and demo users only")
     dsn = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
     conn = await asyncpg.connect(dsn)
     try:
@@ -571,11 +524,12 @@ async def main() -> None:
             await conn.execute(RESET_SQL)
         await seed_categories(conn)
         await seed_channels(conn)
-        limit = args.limit or settings.seed_company_limit
-        await seed_companies(conn, data_dir, limit)
-        if not args.skip_payments and settings.seed_with_payments:
-            await seed_payments(conn, data_dir)
-        await seed_person_links(conn, data_dir)
+        if data_dir:
+            limit = args.limit or settings.seed_company_limit
+            await seed_companies(conn, data_dir, limit)
+            if not args.skip_payments and settings.seed_with_payments:
+                await seed_payments(conn, data_dir)
+            await seed_person_links(conn, data_dir)
         await seed_news(conn)
 
         demo_id = await ensure_user(conn, settings.demo_login, settings.demo_password)

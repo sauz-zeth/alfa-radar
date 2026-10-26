@@ -310,6 +310,7 @@ async def reanalyze(
         match_importance=match.importance,
         matched_counterparties=match.matched_counterparties,
         use_llm=get_settings().llm_agent_enabled,
+        events=events,
     )
     if payload and payload.question:
         report["user_question"] = payload.question

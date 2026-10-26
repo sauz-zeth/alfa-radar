@@ -28,3 +28,12 @@ def save_avatar(channel_id: str, data: bytes) -> str:
     tmp.write_bytes(data)
     tmp.replace(path)
     return f"/static/avatars/{path.name}"
+
+
+def get_avatar_url(channel_id: str) -> str | None:
+    name = _SAFE_NAME.sub("_", channel_id).strip("_") or "channel"
+    return next(
+        (f"/static/avatars/{name}.{extension}" for extension in ("jpg", "png", "webp")
+         if (AVATAR_DIR / f"{name}.{extension}").is_file()),
+        None,
+    )

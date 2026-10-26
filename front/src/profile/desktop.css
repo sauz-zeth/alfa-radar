@@ -107,21 +107,22 @@
 
   .profile-desk-company__monogram {
     display: flex;
-    width: 74px;
-    height: 90px;
+    width: 64px;
+    height: 64px;
     flex: none;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #f7f7f7;
-    font-size: 44px;
-    font-weight: 600;
-    letter-spacing: -2px;
-    line-height: 0.82;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    line-height: 1;
   }
 
   .profile-desk-company__monogram .is-accent {
-    color: var(--accent);
+    color: inherit;
   }
 
   .profile-desk-metrics {
@@ -290,6 +291,11 @@
   .profile-desk-summary__empty {
     margin: 0;
     color: #737373;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .profile-desk-summary__markdown {
     font-size: 14px;
     line-height: 20px;
   }

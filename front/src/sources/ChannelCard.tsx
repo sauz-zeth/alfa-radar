@@ -15,14 +15,12 @@ export function ChannelCard({ channel, index, onToggle, disabled, variant = "mob
   const isDesktop = variant === "desktop";
   // У кастомных каналов topics = "добавлен вами" — это дублирует статус «свой».
   const topics = channel.kind === "custom" ? "" : channel.topics;
+  const subscribers = channel.tg_subscribers ? formatSubscribers(channel.tg_subscribers) : "";
   const meta = isDesktop
     ? `${channel.recommended ? "по профилю" : "свой"}${topics ? ` · ${topics}` : ""}`
     : channel.recommended
       ? "Профиль"
       : "Свой";
-  const subscribers = channel.tg_subscribers
-    ? formatSubscribers(channel.tg_subscribers)
-    : "";
 
   return (
     <button

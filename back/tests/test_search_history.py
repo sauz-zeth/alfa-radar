@@ -1,5 +1,6 @@
 from back.db.models import BusinessProfile
 from back.services.search import (
+    _rank_events_by_embedding,
     clear_history,
     remember_query,
     remove_history,
@@ -43,3 +44,18 @@ def test_short_query_not_remembered() -> None:
     profile = _profile()
     remember_query(profile, "a")
     assert search_history(profile).items == []
+
+
+def test_embedding_search_ranks_events_and_keeps_best_post_score() -> None:
+    from uuid import uuid4
+
+    first, second = uuid4(), uuid4()
+    ranked = _rank_events_by_embedding(
+        [
+            (first, [1.0, 0.0]),
+            (first, [0.8, 0.6]),
+            (second, [0.0, 1.0]),
+        ],
+        [1.0, 0.0],
+    )
+    assert ranked == [(first, 1.0), (second, 0.0)]

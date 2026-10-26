@@ -3,7 +3,6 @@ import { useApi, useApiMutation, useQueryClient } from "../api";
 import { Link } from "../router";
 import arrowInk from "../assets/icons/tracked/arrow-ink.svg";
 import { TopicCard } from "./TopicCard";
-import { TopicCardSkeleton } from "./TrackedSkeletons";
 import { UnchangedSection } from "./UnchangedSection";
 import { eventsLabel, storiesLabel, type Topic } from "./mapTracked";
 
@@ -78,7 +77,13 @@ export function TrackedDesktop({ topics, archived, onOpen }: TrackedDesktopProps
           </ul>
 
           {changed.length === 0 && topics.length === 0 ? (
-            <TopicCardSkeleton />
+            <div className="tracked-desk-empty">
+              <span className="tracked-desk-empty__icon" aria-hidden="true">+</span>
+              <div>
+                <strong>Пока ничего не отслеживается</strong>
+                <p>Добавьте новость из ленты, чтобы следить за темой здесь.</p>
+              </div>
+            </div>
           ) : changed.length === 0 ? (
             <p className="tracked-desk-note">{query ? "Ничего не найдено" : "Новых изменений нет"}</p>
           ) : null}
@@ -123,7 +128,10 @@ export function TrackedDesktop({ topics, archived, onOpen }: TrackedDesktopProps
             </ul>
 
             {filteredArchived.length === 0 ? (
-              <p className="tracked-desk-note">{query ? "Ничего не найдено" : "В архиве пусто"}</p>
+              <div className="tracked-desk-subempty tracked-desk-subempty--archive">
+                <span className="tracked-desk-subempty__dot" aria-hidden="true" />
+                <span>{query ? "Ничего не найдено" : "В архиве пусто"}</span>
+              </div>
             ) : null}
           </section>
         </aside>

@@ -435,9 +435,9 @@ describe("sources", () => {
     await api.sources.catalog({ q: "банк" });
     expectRequest(lastCall(calls), "GET", "/api/sources/catalog", { q: "банк" });
 
-    await api.sources.addChannel({ query: "https://t.me/news" });
+    await api.sources.addChannel({ query: "https://example.com/rss.xml" });
     expectRequest(lastCall(calls), "POST", "/api/sources/channels");
-    expectJsonBody(lastCall(calls), { query: "https://t.me/news" });
+    expectJsonBody(lastCall(calls), { query: "https://example.com/rss.xml" });
 
     await api.sources.subscribe("channel-1");
     expectRequest(

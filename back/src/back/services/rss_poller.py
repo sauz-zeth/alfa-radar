@@ -13,17 +13,26 @@ logger = logging.getLogger(__name__)
 
 
 async def subscribed_feed_urls() -> list[str]:
+    settings = get_settings()
     async with SessionLocal() as session:
         rows = await session.execute(
-            select(Channel.meta["feed_url"].astext)
+            select(Channel.meta["feed_url"].astext, Channel.handle)
             .join(ProfileChannel, ProfileChannel.channel_id == Channel.id)
             .where(
                 Channel.is_active.is_(True),
-                Channel.meta["feed_url"].astext.is_not(None),
+                (Channel.meta["feed_url"].astext.is_not(None) | Channel.handle.is_not(None)),
             )
             .distinct()
         )
-        return [str(row[0]) for row in rows]
+        urls = []
+        for feed_url, handle in rows:
+            if feed_url:
+                urls.append(str(feed_url))
+            elif handle:
+                username = str(handle).lstrip("@").strip("/")
+                if username:
+                    urls.append(f"{settings.rsshub_base_url.rstrip('/')}/telegram/channel/{username}")
+        return list(dict.fromkeys(urls))
 
 
 async def _poll_feed(
@@ -46,7 +55,9 @@ async def _poll_feed(
 async def poll_once() -> None:
     settings = get_settings()
     urls = await subscribed_feed_urls()
+    logger.info("rss poll started feeds=%s", len(urls))
     if not urls:
+        logger.info("rss poll finished feeds=0")
         return
     semaphore = asyncio.Semaphore(settings.rss_poll_concurrency)
     async with httpx.AsyncClient(
@@ -58,6 +69,7 @@ async def poll_once() -> None:
                 for url in urls
             )
         )
+    logger.info("rss poll finished feeds=%s", len(urls))
 
 
 async def rss_poll_loop() -> None:

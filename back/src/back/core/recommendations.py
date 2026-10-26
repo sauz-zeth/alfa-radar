@@ -240,7 +240,6 @@ def recommend_ids(profile_category_ids: set[int], limit: int = RECOMMENDATIONS_L
     per_type = limit // 2
     general_tg = general_target // 2 + general_target % 2
     general_rss = general_target - general_tg
-
     selected: list[SourceCandidate] = []
     for source_type, general_slots in (("telegram", general_tg), ("rss", general_rss)):
         pool = [item for item in candidates() if item.source_type == source_type]
@@ -260,14 +259,10 @@ def recommend_ids(profile_category_ids: set[int], limit: int = RECOMMENDATIONS_L
             ]
         )
         related_pool = _ranked(
-            [
-                item
-                for item in pool
-                if not item.is_general and item.category_ids & related
-            ]
+            [item for item in pool if not item.is_general and item.category_ids & related]
         )
         picks = general_pool[:general_slots]
-        seen: set[str] = {item.id for item in picks}
+        seen = {item.id for item in picks}
         for ranked in (industry_pool, other_pool, related_pool):
             for item in ranked:
                 if len(picks) >= per_type:

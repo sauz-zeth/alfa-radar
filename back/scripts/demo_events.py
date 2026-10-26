@@ -880,6 +880,46 @@ CHAIN_HISTORY = [
 
 DEMO_EVENTS.extend(CHAIN_HISTORY)
 
+# Profile-specific demo stories: each chain spans several dates so the tracked view
+# can show how the conclusion changed over time.
+for _event in DEMO_EVENTS:
+    _chain = {
+        "marketplace-returns": "retail-returns",
+        "ai-law": "software-ai",
+        "construction-mortgage": "construction-demand",
+    }.get(_event["slug"])
+    if _chain:
+        _event["chain_key"] = _chain
+
+DEMO_EVENTS.extend(
+    [
+        _history_event(
+            "retail-returns-1", chain_key="retail-returns", title="Маркетплейсы обсуждают единые правила возврата",
+            summary="Крупные площадки предложили унифицировать сроки и порядок возврата товаров.", days_ago=18,
+            importance=55, impact="mixed", source_name="АКИТ", text="Ритейл обсуждает единый стандарт возвратов."),
+        _history_event(
+            "retail-returns-2", chain_key="retail-returns", title="Введён расширенный срок возврата для покупателей",
+            summary="Площадки согласовали расширенный срок возврата и новые требования к упаковке.", days_ago=11,
+            importance=63, impact="risk", source_name="Роспотребнадзор", text="Новые требования опубликованы для продавцов."),
+        _history_event(
+            "software-ai-1", chain_key="software-ai", title="Проект правил для генеративного ИИ вынесен на обсуждение",
+            summary="Регулятор предложил маркировать синтетический контент и хранить журналы генерации.", days_ago=20,
+            importance=57, impact="mixed", source_name="Минцифры России", text="Проект правил опубликован для обсуждения."),
+        _history_event(
+            "software-ai-2", chain_key="software-ai", title="Компании готовят реестр моделей и журналирование",
+            summary="ИТ-рынок оценивает затраты на аудит моделей и хранение запросов пользователей.", days_ago=12,
+            importance=68, impact="risk", source_name="РБК", text="Разработчики готовят процессы контроля ИИ."),
+        _history_event(
+            "construction-demand-1", chain_key="construction-demand", title="Лимиты льготной ипотеки предложили сократить",
+            summary="Правительство обсудило адресное сокращение лимитов по регионам.", days_ago=22,
+            importance=58, impact="risk", source_name="ДОМ.РФ", text="Обсуждаются новые параметры программы."),
+        _history_event(
+            "construction-demand-2", chain_key="construction-demand", title="Застройщики пересчитали продажи по новым лимитам",
+            summary="Девелоперы закладывают более длинный цикл сделки и рост стоимости проектного финансирования.", days_ago=14,
+            importance=66, impact="risk", source_name="Коммерсантъ", text="Компании обновили планы продаж и финансирования."),
+    ]
+)
+
 
 def seeded_events() -> list[dict]:
     result = []

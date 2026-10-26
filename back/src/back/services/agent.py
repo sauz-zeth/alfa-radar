@@ -1,6 +1,9 @@
+import asyncio
 import contextlib
 import logging
+import re
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from back.core.constants import (
@@ -16,6 +19,233 @@ from back.services.counterparties import counterparty_context
 from back.services.reporting import reporting_context
 
 logger = logging.getLogger(__name__)
+
+BANK_ANALYTICS_DIR = Path(__file__).resolve().parents[3] / "data" / "bank_analytics"
+
+_BANK_STEMS = {
+    "пошлин": "пошлин",
+    "пошлина": "пошлин",
+    "экспорт": "экспорт",
+    "экспортн": "экспорт",
+    "металлург": "металлург",
+    "метал": "металл",
+    "сталь": "сталь",
+    "прокат": "прокат",
+    "ставк": "ставк",
+    "инфляц": "инфляц",
+    "ключев": "ставк",
+}
+
+
+def _bank_terms(value: str) -> set[str]:
+    terms: set[str] = set()
+    for token in re.findall(r"[а-яёa-z0-9]+", value.lower()):
+        if len(token) < 4:
+            continue
+        stem = next(
+            (stem for prefix, stem in _BANK_STEMS.items() if token.startswith(prefix)),
+            token,
+        )
+        terms.add(stem)
+    return terms
+
+
+def search_bank_analytics(query: str) -> list[dict[str, str]]:
+    """Local RAG adapter; Markdown is preferred, PDF remains a fallback."""
+    terms = _bank_terms(query)
+    if not terms or not BANK_ANALYTICS_DIR.exists():
+        return []
+    results: list[dict[str, str]] = []
+    paths = sorted(BANK_ANALYTICS_DIR.glob("*.md")) + sorted(BANK_ANALYTICS_DIR.glob("*.pdf"))
+    for path in paths:
+        try:
+            if path.suffix.lower() == ".md":
+                text = path.read_text(encoding="utf-8", errors="ignore")
+            else:
+                from pypdf import PdfReader
+
+                text = "\n".join(
+                    (page.extract_text() or "") for page in PdfReader(path).pages[:4]
+                )
+        except Exception:
+            continue
+        text = re.sub(r"<!--.*?-->", " ", text, flags=re.DOTALL)
+        haystack = f"{path.stem.lower()}\n{text.lower()}"
+        score = sum(haystack.count(term) for term in terms)
+        if len([term for term in terms if term in haystack]) < min(2, len(terms)):
+            continue
+        if score:
+            excerpt = ""
+            for paragraph in (part.strip() for part in re.split(r"\n\s*\n", text)):
+                if not paragraph:
+                    continue
+                if len(excerpt) + len(paragraph) > 1800:
+                    break
+                excerpt = f"{excerpt}\n\n{paragraph}" if excerpt else paragraph
+            results.append(
+                {"id": path.name, "title": path.stem, "text": excerpt, "score": str(score)}
+            )
+    return sorted(results, key=lambda item: int(item["score"]), reverse=True)[:3]
+
+
+def run_agent_cycle(
+    profile: BusinessProfile,
+    event: NewsEvent,
+    events: list[NewsEvent],
+    report: dict[str, Any] | None = None,
+    *,
+    bank_search: Any = search_bank_analytics,
+    max_steps: int = 12,
+    on_step: Any = None,
+) -> dict[str, Any]:
+    """Close report gaps using deterministic tools and retain an auditable journal."""
+    state = dict(
+        report
+        or fallback_report(profile, event, event.importance, [], bool(profile.reporting_summary))
+    )
+    state.setdefault("what_happened", [])
+    state.setdefault("risks", [])
+    state.setdefault("opportunities", [])
+    state.setdefault("actions", [])
+    state.setdefault("alfa", None)
+    state.setdefault("field_origins", {})
+    for field in ("what_happened", "impact", "risks", "opportunities", "actions", "scenarios"):
+        if state.get(field) and field not in state["field_origins"]:
+            state["field_origins"][field] = "AI"
+    state.setdefault("agent_steps", [])
+    state.setdefault("source_ids", [])
+    gaps = ["what_happened", "impact", "risks", "opportunities", "scenarios", "actions", "alfa"]
+    bank_results: list[dict[str, str]] = []
+
+    def log(tool: str, text: str, **extra: Any) -> None:
+        if len(state["agent_steps"]) >= max_steps:
+            return
+        step = {"type": "Инструмент", "text": text, "tool": tool, **extra}
+        state["agent_steps"].append(step)
+        if on_step is not None:
+            on_step(step)
+
+    def fill(field: str, value: Any, source_ids: list[str]) -> None:
+        state[field] = value
+        state.setdefault("field_sources", {})[field] = source_ids
+        state["field_origins"][field] = "Альфа-Банк" if source_ids and any(
+            source_id in state.get("source_ids", []) for source_id in source_ids
+        ) else "AI"
+        log("fill", f"Заполнено поле «{field}».", field=field, source_ids=source_ids)
+
+    log(
+        "get_events",
+        f"Загружено событий истории: {len(events)}.",
+        source_ids=[str(item.id) for item in events],
+    )
+    if events:
+        source_ids = [str(item.id) for item in events]
+        if not state["what_happened"]:
+            text = event.summary
+            if len(events) > 1:
+                previous = sorted(events, key=lambda item: item.published_at)[-2]
+                text = (
+                    f"{event.summary} Изменение относительно предыдущей новости: "
+                    f"{event.title} после «{previous.title}»."
+                )
+            fill("what_happened", [text], source_ids)
+        if len(events) > 1:
+            log(
+                "diff_events",
+                "Сравнены последняя и предыдущая новости истории.",
+                source_ids=source_ids[-2:],
+            )
+
+    if any(
+        field in gaps
+        for field in ("impact", "risks", "opportunities", "scenarios", "actions", "alfa")
+    ):
+        try:
+            bank_results = bank_search(f"{event.title} {event.summary}") or []
+        except Exception as exc:
+            bank_results = []
+            state["bank_search_error"] = str(exc)
+            state["bank_search_performed"] = False
+            log(
+                "search_bank_analytics",
+                "Поиск аналитики банка завершился ошибкой.",
+                error=str(exc),
+            )
+        else:
+            log(
+                "search_bank_analytics",
+                f"Найдено документов Альфа-Банка: {len(bank_results)}.",
+                source_ids=[item["id"] for item in bank_results],
+            )
+            state["bank_search_performed"] = True
+        if bank_results:
+            state["source_ids"] = [item["id"] for item in bank_results]
+            if "alfa" not in state or not state.get("alfa"):
+                fill(
+                    "alfa",
+                    {"author": "Аналитика Альфа-Банка", "text": bank_results[0]["text"][:500]},
+                    [bank_results[0]["id"]],
+                )
+        elif state.get("bank_search_performed"):
+            state["bank_unavailable"] = "У Альфа-Банка нет релевантной аналитики по этой истории."
+            state["alfa"] = None
+            log("mark_unavailable", state["bank_unavailable"], field="alfa", source_ids=[])
+            state["ai_fallback_used"] = True
+
+    if not state.get("risks") and event.impact in {"risk", "mixed"}:
+        fill(
+            "risks",
+            ["Событие может увеличить расходы или снизить выручку компании."],
+            [str(event.id)],
+        )
+        state["field_origins"]["risks"] = "AI"
+    if not state.get("opportunities") and event.impact in {"opportunity", "mixed"}:
+        fill(
+            "opportunities",
+            ["Изменение может открыть окно для пересмотра условий или роста выручки."],
+            [str(event.id)],
+        )
+        state["field_origins"]["opportunities"] = "AI"
+    if not state.get("risks") and event.impact not in {"risk", "mixed"}:
+        state["risks_unavailable"] = (
+            "Для нейтрального или позитивного события отдельный риск не выявлен."
+        )
+        log("mark_unavailable", state["risks_unavailable"], field="risks", source_ids=[])
+    if not state.get("opportunities") and event.impact not in {"opportunity", "mixed"}:
+        state["opportunities_unavailable"] = (
+            "Для нейтрального или негативного события отдельная возможность не выявлена."
+        )
+        log(
+            "mark_unavailable",
+            state["opportunities_unavailable"],
+            field="opportunities",
+            source_ids=[],
+        )
+    if not state.get("actions"):
+        fill("actions", _actions(_role_focus(profile), event.impact), [str(event.id)])
+    if not state.get("scenarios"):
+        fill(
+            "scenarios",
+            {"status": "calculated", "horizons": ["3m", "6m", "12m"]},
+            [str(event.id)],
+        )
+        log(
+            "calc",
+            "Сценарии рассчитаны кодом на горизонтах 3/6/12 месяцев.",
+            formula_id="scenario_set",
+        )
+    unavailable = {
+        "alfa" if state.get("bank_unavailable") else "",
+        "risks" if state.get("risks_unavailable") else "",
+        "opportunities" if state.get("opportunities_unavailable") else "",
+    }
+    state["agent_gaps"] = [
+        field for field in gaps if not state.get(field) and field not in unavailable
+    ]
+    state["analysis_pending"] = bool(state["agent_gaps"])
+    if not state["analysis_pending"]:
+        state["analysis_finished_at"] = datetime.now(UTC).strftime("%d.%m %H:%M")
+    return state
 
 ROLE_FOCUS: dict[Role, str] = {
     Role.OWNER: "стоимость бизнеса, стратегические риски и решения собственника",
@@ -207,16 +437,7 @@ def fallback_report(
         "opportunities": opportunities,
         "role_focus": role_focus,
         "actions": _actions(role_focus, impact),
-        "agent_steps": [
-            {"type": "Старт", "text": "Получены новость и профиль бизнеса."},
-            {"type": "Данные", "text": "Загружены роль, категории, контрагенты и отчётность."},
-            {
-                "type": "Расчёт",
-                "text": "Оценена важность и тип влияния (риск/возможность/смешанное).",
-            },
-            {"type": "Проверка", "text": "Проверено, что в выводе нет цифр, которых нет в данных."},
-            {"type": "Готово", "text": "Сформированы выводы и действия."},
-        ],
+        "agent_steps": [],
         "reporting_used": has_reporting,
         "prognosis_note": PROGNOSIS_NOTE,
     }
@@ -352,12 +573,7 @@ def pending_report(fallback: dict[str, Any]) -> dict[str, Any]:
     report = dict(fallback)
     report.pop("analysis_finished_at", None)
     report["analysis_pending"] = True
-    report["agent_steps"] = [
-        {"type": "Старт", "text": "Новость добавлена в отслеживаемое."},
-        {"type": "Данные", "text": "Собираем публикации и сверяем источники."},
-        {"type": "Анализ", "text": "Считаем влияние на показатели вашей компании."},
-        {"type": "Проверка", "text": "Проверяем выводы перед публикацией."},
-    ]
+    report["agent_steps"] = []
     return report
 
 
@@ -369,12 +585,26 @@ async def analyze_event(
     match_importance: int,
     matched_counterparties: list[str],
     use_llm: bool = True,
+    events: list[NewsEvent] | None = None,
+    on_step: Any = None,
 ) -> dict[str, Any]:
     has_reporting = bool(profile.reporting_summary)
     fallback = fallback_report(
         profile, event, match_importance, matched_counterparties, has_reporting
     )
-    report = fallback
+    report = dict(fallback)
+    report["agent_steps"] = []
+    emitted_steps: list[dict[str, Any]] = []
+
+    async def emit(step: dict[str, Any]) -> None:
+        emitted_steps.append(step)
+        if on_step is not None:
+            await on_step(step)
+
+    if on_step is not None:
+        await emit(
+            {"type": "Анализ", "text": "Агент начал анализ новости.", "tool": "llm_analysis"}
+        )
     if use_llm:
         context = _profile_context(profile, business_categories, counterparties)
         try:
@@ -387,6 +617,16 @@ async def analyze_event(
             logger.exception("Agent LLM failed, using deterministic report")
         else:
             report = _merge_report(fallback, llm_result)
-    report.pop("analysis_pending", None)
+    if on_step is None:
+        report = run_agent_cycle(profile, event, events or [event], report)
+    else:
+        loop = asyncio.get_running_loop()
+        report = await asyncio.to_thread(
+            run_agent_cycle, profile, event, events or [event], report,
+            on_step=lambda step: asyncio.run_coroutine_threadsafe(
+                emit(step), loop
+            ).result(),
+        )
+        report["agent_steps"] = emitted_steps
     report["analysis_finished_at"] = datetime.now(UTC).strftime("%d.%m %H:%M")
     return report

@@ -43,7 +43,7 @@ export function AnalysisTab({ detail }: AnalysisTabProps) {
       {detail.analysis_pending ? (
         <p className="event-analysis__live" aria-live="polite">
           <span className="event-analysis__spinner" aria-hidden="true" />
-          Агент работает — вкладки откроются, когда анализ завершится
+          Агент выполняет анализ — журнал обновляется по мере работы
         </p>
       ) : null}
       <p className="event-analysis__meta">{meta}</p>

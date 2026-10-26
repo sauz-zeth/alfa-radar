@@ -59,6 +59,11 @@ class FeedItem(BaseModel):
     feedback: FeedbackOut | None = None
     prognosis_note: str
     detail_note: str
+    related: bool = False
+    direct: bool = False
+    fact: bool = False
+    within_month: bool = False
+    independent_source_count: int = 0
 
 
 class FeedItemDetail(FeedItem, InsightOut):

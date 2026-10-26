@@ -117,6 +117,9 @@ class AgentStepOut(BaseModel):
     text: str
     is_correction: bool = False
     at: str | None = None
+    tool: str | None = None
+    field: str | None = None
+    source_ids: list[str] = []
 
 
 class ImpactTileOut(BaseModel):

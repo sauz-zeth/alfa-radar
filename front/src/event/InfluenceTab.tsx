@@ -1,6 +1,8 @@
 import { Fragment, useState } from "react";
 import { useApi, useApiQuery, type FeedItemDetail } from "../api";
+import { MarkdownView } from "../components/MarkdownView";
 import { SectionHeader } from "./SectionHeader";
+import { buildEffectChain } from "./influenceText";
 import "./event-influence.css";
 
 type InfluenceTabProps = {
@@ -33,7 +35,7 @@ export function InfluenceTab({ detail }: InfluenceTabProps) {
   const factor = factorMetric ? `${factorMetric.value} ${factorMetric.label}`.trim() : null;
   const consequence = primary
     ? `${primary.value} ${primary.label}`.trim()
-    : detail.impact_tiles[0]?.value ?? detail.what_it_means;
+    : detail.impact_tiles[0]?.value ?? null;
   const profileData = profile.data;
   const exportShare = metrics
     .map((item) => item.note?.match(/(?:доле экспорта|доля экспорта)[^\d]*(\d+(?:[.,]\d+)?%)/i)?.[1])
@@ -56,11 +58,13 @@ export function InfluenceTab({ detail }: InfluenceTabProps) {
       ]
     : [];
 
-  const chain = [
-    { label: "Событие", value: detail.title, note: "" },
-    { label: "Фактор", value: factor ?? detail.theses[0]?.text ?? detail.summary, note: "" },
-    { label: "Последствие", value: consequence, note: primary ? "Вывод AI" : "" },
-  ];
+  const chain = buildEffectChain({
+    title: detail.title,
+    factor,
+    whatItMeans: detail.what_it_means,
+    consequence,
+    impactLabel: detail.impact_label,
+  });
 
   const calcPanel = (extra?: string) =>
     open && canExplain ? (
@@ -238,14 +242,10 @@ export function InfluenceTab({ detail }: InfluenceTabProps) {
             <article className="event-alfa">
               <div className="event-alfa__accent" />
               <p className="event-alfa__label">Аналитика Альфа-Банка</p>
-              <div className="event-alfa__text">
-                {alfa.text
-                  .split(/\n{2,}/)
-                  .filter(Boolean)
-                  .map((paragraph, index) => (
-                    <p key={index}>{paragraph}</p>
-                  ))}
-              </div>
+              <MarkdownView
+                markdown={alfa.text.replace(/<!--.*?-->/gs, "")}
+                className="event-alfa__text"
+              />
               {alfa.author ? <p className="event-alfa__author">{alfa.author}</p> : null}
             </article>
           </section>

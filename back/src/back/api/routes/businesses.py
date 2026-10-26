@@ -124,6 +124,7 @@ async def business_options(
                     select(Company)
                     .where(filters)
                     .order_by(
+                        case((func.lower(Company.uid) == term.lower(), 0), else_=1),
                         case((Company.uid.ilike(f"{term}%"), 0), else_=1),
                         Company.revenue.desc().nullslast(),
                         Company.uid,
@@ -154,7 +155,7 @@ async def business_options(
             (
                 await session.execute(
                     select(Company)
-                    .where(Company.revenue.is_not(None), Company.uid.not_in(existing))
+                    .where(Company.uid.not_in(existing))
                     .order_by(Company.revenue.desc().nullslast(), Company.uid)
                     .limit(limit * 20)
                 )
@@ -170,6 +171,13 @@ async def business_options(
                 continue
             seen.add(key)
             rows.append(row)
+        # Small/demo datasets can have fewer than `limit` distinct activities.
+        # Still return 15 cards when companies exist.
+        if len(rows) < limit:
+            for row in extra:
+                if len(rows) >= limit or row.uid in {item.uid for item in rows}:
+                    break
+                rows.append(row)
     items = [BusinessListItem.model_validate(row) for row in rows]
     return BusinessOptionsResponse(mode="featured", items=items, total=len(items))
 

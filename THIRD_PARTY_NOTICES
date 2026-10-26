@@ -1,0 +1,39 @@
+# Third-party notices
+
+This repository contains application code and references to external components.
+Their licenses remain with their respective authors.
+
+## Runtime components
+
+- Python 3.14, uv 0.12.7, FastAPI, SQLAlchemy, Alembic, asyncpg, Pydantic,
+  Uvicorn, httpx, feedparser, NumPy, ONNX Runtime, Transformers, Pillow,
+  ImageHash, Telethon: versions are pinned by `back/uv.lock`, `ml_pipeline/uv.lock`,
+  and `ml_artifact/requirements.txt`; consult each package's license metadata.
+- React, React DOM, TanStack Query, Zod, Bun, and Playwright: versions are pinned
+  by `front/bun.lock`; consult each package's license metadata.
+- PostgreSQL `17-alpine`, `diygod/rsshub`, Python, and Bun container images are
+  declared in `docker-compose.yml` and the Dockerfiles.
+
+## Models
+
+- `sauz-zeth/rubert-news-classification` is the project ruBERT classifier source:
+  https://huggingface.co/sauz-zeth/rubert-news-classification
+- The checked-out ONNX ruBERT artifact, when supplied locally, is expected at
+  `ml_artifact/models/rubert_int4/` and includes `model.onnx`, `metadata.json`,
+  and the tokenizer directory.
+- BGE-M3 ONNX INT8 source: `skatzR/USER-BGE-M3-ONNX-INT8`, revision recorded in
+  `ml_artifact/models/manifest.json`.
+- BGE reranker ONNX INT8 source: `keisuke-miyako/bge-reranker-base-onnx-int8`,
+  revision recorded in `ml_artifact/models/manifest.json`.
+- The model artifacts are intentionally not committed. Download or receive them
+  separately, verify their upstream licenses, and place them under
+  `ml_artifact/models/` before enabling `ML_WORKER_ENABLED=true`.
+- Hugging Face pages are the authoritative source for model-card licenses and
+  usage restrictions; verify those terms before redistributing downloaded weights.
+
+## Data and services
+
+- RSS/Atom feeds, RSSHub, and any OpenAI-compatible LLM gateway are external
+  services. The repository includes only source URLs and integration code.
+- The demo uses synthetic companies, payments, events, and test accounts. Private
+  hackathon CSV/PDF files and Telegram session files are not part of the release.

@@ -22,6 +22,7 @@ from back.db.models import (
     EventQuestion,
     Feedback,
     NewsEvent,
+    ProfileEventScore,
     TrackedItem,
 )
 from back.db.session import SessionLocal, get_session
@@ -157,31 +158,6 @@ async def _event_report(
     return tracked.report if tracked is not None else None
 
 
-async def _ensure_event_analysis(
-    session: AsyncSession,
-    profile: BusinessProfile,
-    event: NewsEvent,
-    categories,
-    counterparties,
-    match: MatchResult,
-) -> dict[str, Any]:
-    report = await _event_report(session, profile, event.id)
-    if report is not None:
-        return report
-    report = await analyze_event(
-        profile=profile,
-        event=event,
-        business_categories=categories,
-        counterparties=counterparties,
-        match_importance=match.importance,
-        matched_counterparties=match.matched_counterparties,
-        use_llm=get_settings().llm_agent_enabled,
-    )
-    session.add(EventAnalysis(profile_id=profile.id, event_id=event.id, report=report))
-    await session.commit()
-    return report
-
-
 router = APIRouter(prefix="/feed", tags=["feed"])
 
 HIDDEN_TABS = {
@@ -237,6 +213,19 @@ def _is_stale(event: NewsEvent) -> bool:
     return datetime.now(UTC) - published >= STALE_AFTER
 
 
+async def _profile_score(
+    session: AsyncSession, profile: BusinessProfile, event_id: UUID
+) -> ProfileEventScore | None:
+    return (
+        await session.execute(
+            select(ProfileEventScore).where(
+                ProfileEventScore.profile_id == profile.id,
+                ProfileEventScore.event_id == event_id,
+            )
+        )
+    ).scalar_one_or_none()
+
+
 def _hidden_item(
     event: NewsEvent,
     match: MatchResult,
@@ -281,13 +270,30 @@ async def _hidden_rows(
             )
         ).scalars()
     )
+    scores = {
+        row.event_id: row
+        for row in (
+            await session.execute(
+                select(ProfileEventScore).where(
+                    ProfileEventScore.profile_id == profile.id,
+                    ProfileEventScore.event_id.in_([event.id for event in events]),
+                )
+            )
+        ).scalars()
+    }
     stale: list[HiddenItem] = []
     weak: list[HiddenItem] = []
     skipped: list[HiddenItem] = []
     for event in events:
         row = feedback_by_event.get(event.id)
         action = row.action if row else None
-        match = match_event(event, categories, counterparties)
+        score = scores.get(event.id)
+        match = match_event(
+            event,
+            categories,
+            counterparties,
+            profile_importance=score.importance if score else None,
+        )
         age = _age_days(event)
         if age > HIDDEN_TTL:
             continue
@@ -358,17 +364,26 @@ async def get_feed(
         ).scalars()
     )
 
-    query = select(NewsEvent).where(
-        NewsEvent.is_active.is_(True), NewsEvent.is_feed_visible.is_(True)
-    )
+    query = select(NewsEvent).where(NewsEvent.is_active.is_(True))
     if impact is not None:
         query = query.where(NewsEvent.impact == impact.value)
     if q:
         pattern = f"%{q.strip()}%"
         query = query.where(NewsEvent.title.ilike(pattern) | NewsEvent.summary.ilike(pattern))
     events = list((await session.execute(query)).scalars())
+    scores = {
+        row.event_id: row
+        for row in (
+            await session.execute(
+                select(ProfileEventScore).where(
+                    ProfileEventScore.profile_id == profile.id,
+                    ProfileEventScore.event_id.in_([event.id for event in events]),
+                )
+            )
+        ).scalars()
+    }
 
-    selected_events: list[tuple[NewsEvent, MatchResult]] = []
+    selected_events: list[tuple[NewsEvent, MatchResult, ProfileEventScore | None]] = []
     for event in events:
         if category is not None and category not in (event.category_ids or []):
             continue
@@ -376,17 +391,29 @@ async def get_feed(
             continue
         if not include_skipped and event.id in skipped_ids:
             continue
-        match = match_event(event, categories, counterparties)
-        if (
-            not include_hidden
-            and event.id not in important_ids
-            and (match.importance < 30 or _is_stale(event))
-        ):
+        score = scores.get(event.id)
+        match = match_event(
+            event,
+            categories,
+            counterparties,
+            profile_importance=score.importance if score else None,
+        )
+        if match.importance < 30 and event.id not in important_ids and event.id in tracked_ids:
             continue
-        selected_events.append((event, match))
+        if not include_hidden and event.id not in important_ids and _is_stale(event):
+            continue
+        selected_events.append((event, match, score))
+        logger.info(
+            "feed selected profile_id=%s event_id=%s importance=%s categories=%s tracked=%s",
+            profile.id,
+            event.id,
+            match.importance,
+            [item.id for item in match.matched_categories],
+            event.id in tracked_ids,
+        )
 
     like_counts, liked_ids = await _like_maps(
-        session, profile, [event.id for event, _ in selected_events]
+        session, profile, [event.id for event, _, _ in selected_events]
     )
     enriched = [
         (
@@ -397,12 +424,18 @@ async def get_feed(
                 profile=profile,
                 is_liked=event.id in liked_ids,
                 likes=like_counts.get(event.id, 0),
+                analysis=score,
             ),
             event,
         )
-        for event, match in selected_events
+        for event, match, score in selected_events
     ]
-    enriched.sort(key=lambda pair: (-pair[0].importance, -recency_key(pair[1]).timestamp()))
+    strong = [pair for pair in enriched if pair[0].importance >= 30]
+    weak = sorted(
+        (pair for pair in enriched if pair[0].importance < 30),
+        key=lambda pair: (-pair[0].source_count, -recency_key(pair[1]).timestamp()),
+    )[:10]
+    enriched = sorted(strong, key=lambda pair: (-pair[0].importance, -recency_key(pair[1]).timestamp())) + weak
     total = len(enriched)
     return Page[FeedItem](
         items=[item for item, _ in enriched[offset : offset + limit]],
@@ -526,11 +559,22 @@ async def get_event(
     categories = await load_categories(session, profile)
     counterparties = await load_counterparties(session, profile)
     tracked_ids = await load_tracked_ids(session, profile)
-    match = match_event(event, categories, counterparties)
-    counts, liked_ids = await _like_maps(session, profile, [event.id])
-    report = await _ensure_event_analysis(
-        session, profile, event, categories, counterparties, match
+    score = (
+        await session.execute(
+            select(ProfileEventScore).where(
+                ProfileEventScore.profile_id == profile.id,
+                ProfileEventScore.event_id == event.id,
+            )
+        )
+    ).scalar_one_or_none()
+    match = match_event(
+        event,
+        categories,
+        counterparties,
+        profile_importance=score.importance if score else None,
     )
+    counts, liked_ids = await _like_maps(session, profile, [event.id])
+    report = await _event_report(session, profile, event.id) if event.id in tracked_ids else None
     item = event_to_feed_item(
         event,
         match,
@@ -540,6 +584,7 @@ async def get_event(
         is_liked=event.id in liked_ids,
         likes=counts.get(event.id, 0),
         report=report,
+        analysis=score,
     )
     assert isinstance(item, FeedItemDetail)
     return await _decorate_detail(session, profile, item, event)
@@ -567,7 +612,13 @@ async def ask_question(
     categories = await load_categories(session, profile)
     counterparties = await load_counterparties(session, profile)
     tracked_ids = await load_tracked_ids(session, profile)
-    match = match_event(event, categories, counterparties)
+    score = await _profile_score(session, profile, event.id)
+    match = match_event(
+        event,
+        categories,
+        counterparties,
+        profile_importance=score.importance if score else None,
+    )
     counts, liked_ids = await _like_maps(session, profile, [event.id])
     report = await _event_report(session, profile, event.id)
 
@@ -595,6 +646,7 @@ async def ask_question(
         is_liked=event.id in liked_ids,
         likes=counts.get(event.id, 0),
         report=report,
+        analysis=score,
     )
     assert isinstance(item, FeedItemDetail)
     return await _decorate_detail(session, profile, item, event)
@@ -666,9 +718,7 @@ async def ask_question_stream(
     )
 
 
-async def _refine_tracked_analysis(
-    bind: Any, profile_id: UUID, event_id: UUID
-) -> None:
+async def _refine_tracked_analysis(bind: Any, profile_id: UUID, event_id: UUID) -> None:
     try:
         factory = async_sessionmaker(bind, expire_on_commit=False)
         async with factory() as session:
@@ -684,15 +734,12 @@ async def _refine_tracked_analysis(
                 return
             categories = await load_categories(session, profile)
             counterparties = await load_counterparties(session, profile)
-            match = match_event(event, categories, counterparties)
-            report = await analyze_event(
-                profile=profile,
-                event=event,
-                business_categories=categories,
-                counterparties=counterparties,
-                match_importance=match.importance,
-                matched_counterparties=match.matched_counterparties,
-                use_llm=get_settings().llm_agent_enabled,
+            score = await _profile_score(session, profile, event.id)
+            match = match_event(
+                event,
+                categories,
+                counterparties,
+                profile_importance=score.importance if score else None,
             )
             analysis = (
                 await session.execute(
@@ -702,6 +749,43 @@ async def _refine_tracked_analysis(
                     )
                 )
             ).scalar_one_or_none()
+            tracked = (
+                await session.execute(
+                    select(TrackedItem).where(
+                        TrackedItem.profile_id == profile.id,
+                        TrackedItem.event_id == event.id,
+                    )
+                )
+            ).scalar_one_or_none()
+            report_state = dict(
+                (analysis.report if analysis else None)
+                or (tracked.report if tracked else None)
+                or {}
+            )
+            report_state["agent_steps"] = []
+            persisted_steps: list[dict[str, Any]] = []
+
+            async def persist_step(step: dict[str, Any]) -> None:
+                persisted_steps.append(step)
+                report_state["agent_steps"] = list(persisted_steps)
+                report_state["analysis_pending"] = True
+                if analysis is not None:
+                    analysis.report = dict(report_state)
+                if tracked is not None:
+                    tracked.report = dict(report_state)
+                await session.commit()
+
+            report = await analyze_event(
+                profile=profile,
+                event=event,
+                business_categories=categories,
+                counterparties=counterparties,
+                match_importance=match.importance,
+                matched_counterparties=match.matched_counterparties,
+                use_llm=get_settings().llm_agent_enabled,
+                events=[event],
+                on_step=persist_step,
+            )
             if analysis is not None:
                 analysis.report = report
             tracked = (
@@ -740,7 +824,13 @@ async def track_event(
     ).scalar_one_or_none()
     categories = await load_categories(session, profile)
     counterparties = await load_counterparties(session, profile)
-    match = match_event(event, categories, counterparties)
+    score = await _profile_score(session, profile, event.id)
+    match = match_event(
+        event,
+        categories,
+        counterparties,
+        profile_importance=score.importance if score else None,
+    )
 
     if existing is None:
         report = await _event_report(session, profile, event.id)
@@ -764,9 +854,7 @@ async def track_event(
                 )
             ).scalar_one_or_none()
             if analysis is None:
-                analysis = EventAnalysis(
-                    profile_id=profile.id, event_id=event.id, report=report
-                )
+                analysis = EventAnalysis(profile_id=profile.id, event_id=event.id, report=report)
                 session.add(analysis)
             else:
                 analysis.report = report
@@ -782,16 +870,12 @@ async def track_event(
         await session.commit()
         await session.refresh(existing)
         if pending:
-            background_tasks.add_task(
-                _refine_tracked_analysis, session.bind, profile.id, event.id
-            )
+            background_tasks.add_task(_refine_tracked_analysis, session.bind, profile.id, event.id)
     elif (existing.report or {}).get("analysis_pending"):
-        background_tasks.add_task(
-            _refine_tracked_analysis, session.bind, profile.id, event.id
-        )
+        background_tasks.add_task(_refine_tracked_analysis, session.bind, profile.id, event.id)
 
     feed_item = event_to_feed_item(
-        event, match, is_tracked=True, profile=profile, report=existing.report
+        event, match, is_tracked=True, profile=profile, report=existing.report, analysis=score
     )
     return TrackedItemOut(
         id=existing.id,

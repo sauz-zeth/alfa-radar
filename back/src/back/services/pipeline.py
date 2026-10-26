@@ -394,6 +394,7 @@ async def _create_tracked(
         match_importance=match.importance,
         matched_counterparties=match.matched_counterparties,
         use_llm=get_settings().llm_agent_enabled,
+        events=[event],
     )
     tracked = TrackedItem(
         profile_id=profile.id,

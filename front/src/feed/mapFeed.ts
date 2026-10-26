@@ -58,6 +58,7 @@ export function toFeedPost(item: FeedItem): FeedPost {
     (category) => category.short_name,
   );
   const impact = impacts[item.impact] ?? { tone: "neutral" as ImpactTone, label: item.impact_label };
+  const importance = item.importance;
 
   return {
     id: item.id,
@@ -68,13 +69,15 @@ export function toFeedPost(item: FeedItem): FeedPost {
     note: item.prognosis_note,
     impact: impact.tone,
     impactLabel: impact.label,
-    importance: item.importance,
+    importance,
     sources,
-    metrics: item.impact_metrics.map((metric) => ({
-      value: metric.value,
-      note: metric.note,
-      tone: metric.tone ?? undefined,
-    })),
+    metrics: item.impact_metrics.length
+      ? item.impact_metrics.map((metric) => ({
+          value: metric.value,
+          note: metric.note,
+          tone: metric.tone ?? undefined,
+        }))
+      : [{ value: "Для вашего бизнеса", note: item.what_it_means }],
     tracked: item.is_tracked,
   };
 }

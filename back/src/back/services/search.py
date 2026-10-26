@@ -5,7 +5,15 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from back.core.constants import IMPACT_LABELS, Impact
-from back.db.models import BusinessProfile, Company, Counterparty, Feedback, NewsEvent, TrackedItem
+from back.db.models import (
+    BusinessProfile,
+    Company,
+    Counterparty,
+    Feedback,
+    NewsEvent,
+    Post,
+    TrackedItem,
+)
 from back.schemas.search import (
     SearchCompanyOut,
     SearchHistoryItem,
@@ -14,9 +22,19 @@ from back.schemas.search import (
     SearchResponse,
 )
 from back.services.feed import match_event
+from back.services.ml import cosine, get_classifier
 from back.services.personalization import load_categories, load_counterparties
 
 HISTORY_LIMIT = 10
+
+
+def _rank_events_by_embedding(
+    posts: list[tuple[object, list[float]]], query_embedding: list[float]
+) -> list[tuple[object, float]]:
+    scores: dict[object, float] = {}
+    for event_id, embedding in posts:
+        scores[event_id] = max(scores.get(event_id, -1.0), cosine(query_embedding, embedding))
+    return sorted(scores.items(), key=lambda item: item[1], reverse=True)
 
 
 def _impact_label(value: str) -> str:
@@ -119,12 +137,38 @@ async def _news_rows(
 ) -> tuple[list[SearchNewsOut], int]:
     categories = await load_categories(session, profile)
     counterparties = await load_counterparties(session, profile)
-    pattern = f"%{term}%"
-    query = select(NewsEvent).where(
-        NewsEvent.is_active.is_(True),
-        or_(NewsEvent.title.ilike(pattern), NewsEvent.summary.ilike(pattern)),
+    events = list(
+        (
+            await session.execute(
+                select(NewsEvent).where(NewsEvent.is_active.is_(True))
+            )
+        ).scalars()
     )
-    events = list((await session.execute(query)).scalars())
+    event_by_id = {event.id: event for event in events}
+    query_embedding = get_classifier().embed(term)
+    post_rows = list(
+        (
+            await session.execute(
+                select(Post.news_event_id, Post.embedding).where(
+                    Post.news_event_id.is_not(None), Post.embedding.is_not(None)
+                )
+            )
+        ).all()
+    )
+    ranked = _rank_events_by_embedding(
+        [(event_id, embedding) for event_id, embedding in post_rows if event_id in event_by_id],
+        query_embedding,
+    )
+    scores = dict(ranked)
+    for event in events:
+        if event.id not in scores and (
+            term.casefold() in event.title.casefold()
+            or term.casefold() in event.summary.casefold()
+        ):
+            scores[event.id] = 1.0
+    events = [event_by_id[event_id] for event_id, _ in sorted(
+        scores.items(), key=lambda item: item[1], reverse=True
+    )]
     feedback = {
         row.event_id: row.action
         for row in (
@@ -157,7 +201,13 @@ async def _news_rows(
                 is_tracked=event.id in tracked,
             )
         )
-    rows.sort(key=lambda item: (-item.importance, -item.published_at.timestamp()))
+    rows.sort(
+        key=lambda item: (
+            -scores.get(item.id, -1.0),
+            -item.importance,
+            -item.published_at.timestamp(),
+        )
+    )
     return rows[:30], len(rows)
 
 

@@ -5,6 +5,8 @@ import { formatMoney } from "../format";
 import { OnboardingLayout } from "../OnboardingLayout";
 import type { StepProps } from "./types";
 
+const REPORTING_COMPANY_UIDS = new Set(["U_71020", "U_30566", "U_2644", "U_137980", "U_8501"]);
+
 function products(item: BusinessListItem): string[] {
   return Object.entries(productLabels)
     .filter(([key]) => Boolean(item[key as keyof BusinessListItem]))
@@ -79,7 +81,11 @@ export function BusinessStep({ state, onDone }: StepProps) {
             >
               <span className="business-card__top">
                 <span className="business-card__uid">{item.uid}</span>
-                {item.revenue_segment ? <span className="badge">{item.revenue_segment}</span> : null}
+                <span className="business-card__badges">
+                  <span className="badge">Готовая компания</span>
+                  {REPORTING_COMPANY_UIDS.has(item.uid) ? <span className="badge">Доступны отчеты</span> : null}
+                  {item.revenue_segment ? <span className="badge">{item.revenue_segment}</span> : null}
+                </span>
               </span>
               <span className="business-card__title">{item.main_okved_name ?? "Бизнес без отраслевого кода"}</span>
               <span className="business-card__meta">

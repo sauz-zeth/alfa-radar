@@ -1,5 +1,3 @@
-import type { Channel } from "../api";
-
 export const channelTones = ["dark", "red", "light"] as const;
 
 export type ChannelTone = (typeof channelTones)[number];
@@ -34,11 +32,9 @@ export function cardTilt(index: number): number {
 }
 
 export function formatSubscribers(count: number): string {
-  if (count >= 1_000_000) {
-    return `${(count / 1_000_000).toFixed(1).replace(".", ",")} млн`;
-  }
-  if (count >= 1_000) {
-    return `${Math.round(count / 1_000)} тыс.`;
-  }
+  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1).replace(".", ",")} млн`;
+  if (count >= 1_000) return `${Math.round(count / 1_000)} тыс.`;
   return String(count);
 }
+
+import type { Channel } from "../api";

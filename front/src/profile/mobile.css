@@ -129,21 +129,22 @@
 
 .profile-company-mobile__monogram {
   display: flex;
-  width: 74px;
-  height: 90px;
+  width: 56px;
+  height: 56px;
   flex: none;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #f7f7f7;
-  font-size: 44px;
-  font-weight: 600;
-  letter-spacing: -2px;
-  line-height: 0.82;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  line-height: 1;
 }
 
 .profile-company-mobile__monogram .is-accent {
-  color: var(--accent);
+  color: inherit;
 }
 
 .profile-metrics {
@@ -323,6 +324,12 @@
   margin: 8px 0 0;
   padding: 8px 0;
   color: #737373;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.profile-summary__markdown {
+  margin-top: 8px;
   font-size: 14px;
   line-height: 20px;
 }

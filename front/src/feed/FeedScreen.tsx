@@ -9,6 +9,7 @@ import { FeedEndScreen } from "./FeedEndScreen";
 import { FeedPost } from "./FeedPost";
 import { FeedTopBar } from "./FeedTopBar";
 import { buildFilters, toFeedPost } from "./mapFeed";
+import { rankFeed } from "./ranking";
 import "./feed.css";
 
 const FEED_LIMIT = 30;
@@ -55,7 +56,7 @@ export function FeedScreen() {
     },
   });
 
-  const posts = useMemo(() => (feedQuery.data?.items ?? []).map(toFeedPost), [feedQuery.data]);
+  const posts = useMemo(() => rankFeed(feedQuery.data?.items ?? []).map(toFeedPost), [feedQuery.data]);
   const filters = useMemo(() => buildFilters(posts), [posts]);
   const hiddenCount =
     hiddenQuery.data?.tabs.reduce((sum, tab) => sum + tab.count, 0) ?? hiddenQuery.data?.total ?? 0;
@@ -73,6 +74,7 @@ export function FeedScreen() {
       ),
     [trackedOverrides, visiblePosts],
   );
+  const isEmptyFeed = !feedQuery.isPending && posts.length === 0;
   const scrollToTop = useCallback(() => {
     feedRef.current?.scrollTo({ top: 0 });
   }, []);
@@ -143,6 +145,13 @@ export function FeedScreen() {
       ) : feedQuery.isPending ? (
         <div className="feed-state">
           <p>Загрузка ленты…</p>
+        </div>
+      ) : isEmptyFeed ? (
+        <div className="feed-state feed-state--recommendations">
+          <div className="feed-empty-screen">
+            <h1>Лента</h1>
+            <p>Анализируем ваши рекомендации, это может занять несколько минут.</p>
+          </div>
         </div>
       ) : isDesktop ? (
         <FeedDesktop

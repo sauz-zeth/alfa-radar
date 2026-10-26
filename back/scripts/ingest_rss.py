@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import sys
+from datetime import UTC, datetime, timedelta
 
 import httpx
 from sqlalchemy import select
@@ -46,7 +47,9 @@ async def main(urls: list[str]) -> None:
         ) as client:
             for url in urls:
                 try:
-                    ingested, skipped = await ingest_feed(session, url, profile, client)
+                    ingested, skipped = await ingest_feed(
+                        session, url, profile, client, since=datetime.now(UTC) - timedelta(hours=48)
+                    )
                 except (httpx.HTTPError, ValueError) as exc:
                     print(f"{url}: failed ({exc})")
                     continue

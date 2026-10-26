@@ -65,7 +65,7 @@ export function SourcesHeader({
           className={tab === "channels" ? "sources-tab is-active" : "sources-tab"}
           onClick={() => onTabChange("channels")}
         >
-          Каналы
+          Источники
           <span className="sources-tab__count">{channelCount}</span>
         </button>
         <button

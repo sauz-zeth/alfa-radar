@@ -101,6 +101,20 @@ img {
   background: var(--ink);
 }
 
+.page-transition {
+  height: 100%;
+  animation: page-appear 220ms ease-out both;
+}
+
+@keyframes page-appear {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition { animation: none; }
+}
+
 @media (min-width: 900px) {
   :root {
     --app-width: 480px;

@@ -38,6 +38,11 @@ class IngestPostOut(BaseModel):
     status: str
     stage: str
     decision_trace: list[dict[str, Any]]
+    media: list[dict[str, Any]]
+    attempt_count: int = 0
+    lease_until: datetime | None = None
+    last_error: str | None = None
+    status_updated_at: datetime | None = None
     created_at: datetime
 
 
@@ -47,29 +52,7 @@ class IngestPostTrace(IngestPostOut):
     embedding: list[float]
 
 
-class IngestChannelOut(BaseModel):
-    id: str
-    name: str
-    handle: str
-    subscribers: int
-    manual_subscribers: int = 0
-    avatar_url: str | None = None
-    source_type: str = "telegram"
-    tg_subscribers: int | None = None
-
-
-class IngestChannelList(BaseModel):
-    items: list[IngestChannelOut]
-
-
 class IngestAvatarOut(BaseModel):
     avatar_url: str
 
 
-class IngestChannelStats(BaseModel):
-    subscribers: int = Field(ge=0)
-    title: str | None = Field(default=None, min_length=1, max_length=128)
-
-
-class IngestChannelStatsOut(BaseModel):
-    tg_subscribers: int

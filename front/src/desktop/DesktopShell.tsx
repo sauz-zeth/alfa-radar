@@ -7,11 +7,9 @@ import "./desktop.css";
 
 const NAV = [
   { label: "Лента", to: "/" },
-  { label: "Поиск", to: "/search" },
   { label: "Отслеживаемое", to: "/tracked" },
   { label: "Источники", to: "/sources" },
   { label: "Профиль", to: "/profile" },
-  { label: "Скрытые", to: "/hidden" },
 ];
 
 function isCurrent(path: string, to: string): boolean {
@@ -46,7 +44,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
       <header className="desktop-topbar">
         <Link to="/" className="desktop-topbar__brand">
           <Logo className="desktop-topbar__logo" />
-          <span>Лента новостей</span>
+          <span>Альфа Радар</span>
         </Link>
         <nav className="desktop-topbar__nav" aria-label="Основная навигация">
           {NAV.map((item) => {

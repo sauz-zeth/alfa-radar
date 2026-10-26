@@ -62,6 +62,11 @@ export const feedItemSchema = z.object({
     .nullish(),
   prognosis_note: z.string(),
   detail_note: z.string(),
+  related: z.boolean().default(false),
+  direct: z.boolean().default(false),
+  fact: z.boolean().default(false),
+  within_month: z.boolean().default(false),
+  independent_source_count: z.number().int().default(0),
 });
 
 export const feedItemDetailSchema = feedItemSchema.extend(insightSchema.shape);

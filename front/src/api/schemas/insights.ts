@@ -105,6 +105,9 @@ export const agentStepSchema = z.object({
   text: z.string(),
   is_correction: z.boolean().default(false),
   at: z.string().nullish(),
+  tool: z.string().nullish(),
+  field: z.string().nullish(),
+  source_ids: z.array(z.string()).default([]),
 });
 
 export const impactTileSchema = z.object({

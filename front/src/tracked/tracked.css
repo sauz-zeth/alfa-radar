@@ -11,6 +11,51 @@
   display: none;
 }
 
+.tracked-page--empty {
+  display: grid;
+  min-height: 100%;
+  padding: 32px;
+  place-items: center;
+}
+
+.tracked-empty-screen {
+  width: min(100%, 520px);
+  padding: 48px 40px;
+  border-radius: 32px;
+  background: #f7f7f7;
+  text-align: center;
+}
+
+.tracked-empty-screen h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+}
+
+.tracked-empty-screen p {
+  margin: 12px auto 0;
+  color: #858585;
+  font-size: 15px;
+  line-height: 22px;
+}
+
+@media (max-width: 1199px) {
+  .tracked-page--empty {
+    min-height: calc(100% - 104px);
+    padding: 24px;
+  }
+
+  .tracked-empty-screen {
+    padding: 36px 24px;
+    border-radius: 28px;
+  }
+
+  .tracked-empty-screen h1 {
+    font-size: 27px;
+  }
+}
+
 /* Hero */
 
 .tracked-hero {
@@ -800,6 +845,32 @@
     font-size: 14px;
   }
 
+  .tracked-desk-subempty {
+    display: flex;
+    min-height: 84px;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px;
+    border-radius: 20px;
+    background: #ededed;
+    color: #858585;
+    font-size: 14px;
+  }
+
+  .tracked-desk-subempty__dot {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border-radius: 50%;
+    background: #c9c9c9;
+  }
+
+  .tracked-desk-subempty--archive {
+    min-height: 74px;
+    padding: 16px 0 0;
+    background: transparent;
+  }
+
   .topic-card--desktop {
     display: grid;
     width: 100%;
@@ -1117,6 +1188,44 @@
   .tracked-archive-panel__resume:disabled {
     opacity: 0.55;
   }
+}
+
+.tracked-desk-empty {
+  display: flex;
+  min-height: 220px;
+  align-items: center;
+  gap: 18px;
+  padding: 28px;
+  border-radius: 28px;
+  background: #f7f7f7;
+}
+
+.tracked-desk-empty__icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  flex: none;
+  place-items: center;
+  border-radius: 16px;
+  background: #ef3124;
+  color: #fff;
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.tracked-desk-empty strong {
+  display: block;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.tracked-desk-empty p {
+  max-width: 320px;
+  margin: 6px 0 0;
+  color: #858585;
+  font-size: 14px;
+  line-height: 20px;
 }
 
 /* Agent processing state */

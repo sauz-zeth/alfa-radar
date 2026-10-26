@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 from back.db.models import BusinessProfile, Company, NewsEvent
-from back.services.agent import _merge_report
+from back.services.agent import _merge_report, analyze_event, fallback_report, run_agent_cycle
 from back.services.feed import match_event
 from back.services.insights import (
     build_insight,
@@ -251,3 +251,104 @@ def test_merge_report_passes_agent_ui_fields() -> None:
     assert merged["actions"][0]["deadline_label"] == "до 31 октября"
     assert [item["is_primary"] for item in merged["actions"]] == [True, False]
     assert merged["agent_steps"][0]["is_correction"] is True
+
+
+def test_agent_cycle_closes_gaps_and_logs_tools() -> None:
+    event = _event()
+    report = run_agent_cycle(_profile(), event, [event], {})
+
+    assert report["analysis_pending"] is False
+    assert report["agent_gaps"] == []
+    assert report["what_happened"]
+    assert report["agent_steps"]
+    assert any(step.get("tool") == "get_events" for step in report["agent_steps"])
+    assert any(step.get("tool") == "fill" for step in report["agent_steps"])
+
+
+def test_analysis_starts_with_an_empty_journal() -> None:
+    assert fallback_report(_profile(), _event(), 80, [], False)["agent_steps"] == []
+
+
+async def test_analysis_journal_matches_steps_emitted_during_agent_work() -> None:
+    event = _event()
+    emitted = []
+
+    async def on_step(step) -> None:
+        emitted.append(step)
+
+    report = await analyze_event(
+        _profile(), event, [], [], 80, [], use_llm=False, on_step=on_step
+    )
+
+    assert emitted
+    assert emitted[0]["type"] == "Анализ"
+    assert emitted[0]["tool"] == "llm_analysis"
+    assert report["agent_steps"] == emitted
+
+
+def test_agent_cycle_marks_missing_bank_materials() -> None:
+    report = run_agent_cycle(_profile(), _event(), [_event()], {}, bank_search=lambda _: [])
+
+    assert report["bank_search_performed"] is True
+    assert report["alfa"] is None
+    assert report["bank_unavailable"]
+    assert report["agent_gaps"] == []
+
+
+def test_bank_search_prefers_markdown_and_ai_fallback_is_explicit(tmp_path, monkeypatch) -> None:
+    from back.services import agent
+
+    monkeypatch.setattr(agent, "BANK_ANALYTICS_DIR", tmp_path)
+    (tmp_path / "rate.md").write_text(
+        "Ставка и экспортные пошлины для металлургии", encoding="utf-8"
+    )
+    result = agent.search_bank_analytics("экспортные пошлины металлургия")
+    assert result[0]["id"] == "rate.md"
+
+    report = run_agent_cycle(_profile(), _event(), [_event()], {}, bank_search=lambda _: [])
+    assert report["bank_unavailable"]
+    assert report["ai_fallback_used"] is True
+    assert report["field_origins"]["risks"] == "AI"
+
+
+def test_bank_search_ranks_topic_document_above_incidental_match(tmp_path, monkeypatch) -> None:
+    from back.services import agent
+
+    monkeypatch.setattr(agent, "BANK_ANALYTICS_DIR", tmp_path)
+    (tmp_path / "macro.md").write_text("Макроэкономика: экспорт вырос", encoding="utf-8")
+    (tmp_path / "Russian_Steels.md").write_text(
+        "Российская сталь: экспортные пошлины, металлургия, цены на прокат",
+        encoding="utf-8",
+    )
+    result = agent.search_bank_analytics("повышение экспортной пошлины металлургия")
+    assert result[0]["id"] == "Russian_Steels.md"
+
+
+def test_bank_search_drops_page_markers_and_keeps_whole_paragraphs(tmp_path, monkeypatch) -> None:
+    from back.services import agent
+
+    monkeypatch.setattr(agent, "BANK_ANALYTICS_DIR", tmp_path)
+    (tmp_path / "bonds.md").write_text(
+        "#### Долговой рынок\n<!-- конец стр. 1 -->\n---\n\n"
+        "Рынок облигаций разделился на сегменты.\n\n" + "Подробности выпуска. " * 200,
+        encoding="utf-8",
+    )
+    result = agent.search_bank_analytics("рынок облигаций выпуска")
+
+    text = result[0]["text"]
+    assert "<!--" not in text
+    assert len(text) <= 1800
+    assert text.endswith(".")
+
+
+def test_agent_cycle_rejects_bank_dependent_fill_without_search() -> None:
+    def unavailable(_: str) -> list[dict[str, str]]:
+        raise RuntimeError("offline")
+
+    report = run_agent_cycle(
+        _profile(), _event(), [_event()], {}, bank_search=unavailable
+    )
+    assert report["bank_search_performed"] is False
+    assert report["bank_search_error"]
+    assert report["agent_gaps"]
+    assert report["analysis_pending"] is True

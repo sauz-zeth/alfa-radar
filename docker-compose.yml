@@ -28,15 +28,16 @@ services:
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-qwen/qwen3.6-35b-a3b}
       LLM_FAST_MODEL: ${LLM_FAST_MODEL:-google/gemma-4-26b-a4b-it}
-      LLM_AGENT_ENABLED: ${LLM_AGENT_ENABLED:-true}
+      LLM_AGENT_ENABLED: ${LLM_AGENT_ENABLED:-false}
       LLM_ML_ENABLED: ${LLM_ML_ENABLED:-false}
       INGEST_TOKEN: ${INGEST_TOKEN:-}
       # Многие хосты прокидывают HTTP(S)_PROXY в контейнеры. Внутренние имена
       # должны идти мимо прокси, иначе api/postgres недоступны из соседних сервисов.
-      NO_PROXY: localhost,127.0.0.1,::1,postgres,api,tg-ingest
-      no_proxy: localhost,127.0.0.1,::1,postgres,api,tg-ingest
-      RSS_POLL_ENABLED: ${RSS_POLL_ENABLED:-true}
+      NO_PROXY: localhost,127.0.0.1,::1,postgres,api,rsshub
+      no_proxy: localhost,127.0.0.1,::1,postgres,api,rsshub
+      RSS_POLL_ENABLED: ${RSS_POLL_ENABLED:-false}
       RSS_FEEDS: ${RSS_FEEDS:-}
+      RSSHUB_BASE_URL: ${RSSHUB_BASE_URL:-http://rsshub:1200}
       DATA_DIR: /app/data
       DEMO_LOGIN: ${DEMO_LOGIN:-demo}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-demo}
@@ -46,14 +47,16 @@ services:
       # CSV из архива хакатона; нужны только для seed.py.
       # :z — SELinux-метка для Fedora/Silverblue; на хостах без SELinux игнорируется.
       - ${BACK_DATA_DIR:-./back/data}:/app/data:ro,z
-      # Аватарки каналов, которые заливает tg-ingest. uv ставит проект editable,
-      # поэтому путь совпадает с исходниками.
+      # Source avatars; uv installs the project editable so this path matches the source tree.
       - avatars:/app/src/back/static/avatars
+      - media:/app/media
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy
+      rsshub:
+        condition: service_started
     healthcheck:
       test:
         [
@@ -66,6 +69,14 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+    restart: unless-stopped
+
+  rsshub:
+    image: diygod/rsshub:latest
+    environment:
+      CACHE_EXPIRE: ${RSSHUB_CACHE_EXPIRE:-300}
+    expose:
+      - "1200"
     restart: unless-stopped
 
   front:
@@ -83,29 +94,37 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  tg-ingest:
-    build: ./tg-ingest
-    env_file: ./tg-ingest/.env
+  ml-worker:
+    build: ./back
+    command: ["sh", "-c", "alembic upgrade head && python -m ml_pipeline.worker"]
     environment:
-      BACKEND_URL: http://api:8000
-      INGEST_TOKEN: ${INGEST_TOKEN:-}
-      NO_PROXY: localhost,127.0.0.1,::1,api
-      no_proxy: localhost,127.0.0.1,::1,api
-      TG_STATE_DIR: /state
-      TG_SESSION: /state/tg_ingest
-      JOIN_STATE: /state/joins.json
-      SETUP_HOST: 0.0.0.0
-      SETUP_PORT: "8081"
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-alfafuture}
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://changellenge.up.railway.app/v1}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      ML_WORKER_ENABLED: ${ML_WORKER_ENABLED:-false}
+      ML_WORKER_POLL_INTERVAL_SECONDS: ${ML_WORKER_POLL_INTERVAL_SECONDS:-10}
+      ML_WORKER_BATCH_SIZE: ${ML_WORKER_BATCH_SIZE:-20}
+      ML_WORKER_LEASE_SECONDS: ${ML_WORKER_LEASE_SECONDS:-300}
+      ML_WORKER_MAX_ATTEMPTS: ${ML_WORKER_MAX_ATTEMPTS:-5}
+      ML_FEED_THRESHOLD: ${ML_FEED_THRESHOLD:-30}
+      ML_KIMI_MODEL: ${ML_KIMI_MODEL:-moonshotai/kimi-k2.6}
+      ML_SCREENING_MODEL: ${ML_SCREENING_MODEL:-model service}
+      ML_ARTIFACT_ROOT: /opt/ml_artifact
+      MEDIA_ROOT: /app/media
+      PYTHONPATH: /app:/opt
+      NO_PROXY: localhost,127.0.0.1,::1,postgres
+      no_proxy: localhost,127.0.0.1,::1,postgres
     volumes:
-      # Файл сессии Telegram — фактический ключ от аккаунта, не теряйте его.
-      - ${TG_STATE_DIR_HOST:-./tg-ingest/state}:/state:z
-    ports:
-      - "${TG_SETUP_PORT:-8081}:8081"
+      - ./ml_pipeline:/opt/ml_pipeline:ro,z
+      - ./ml_artifact:/opt/ml_artifact:ro,z
+      - media:/app/media
     depends_on:
-      api:
+      postgres:
         condition: service_healthy
     restart: unless-stopped
 
 volumes:
   pgdata:
   avatars:
+  media:

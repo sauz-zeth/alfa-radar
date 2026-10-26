@@ -1,26 +1,24 @@
-from typing import Annotated
+import json
+from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, UploadFile
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from back.config import get_settings
-from back.db.models import Channel, Post, ProfileChannel
+from back.db.models import Channel, Post
 from back.db.session import get_session
 from back.schemas.common import Page
 from back.schemas.ingest import (
-    IngestAvatarOut,
-    IngestChannelList,
-    IngestChannelOut,
-    IngestChannelStats,
-    IngestChannelStatsOut,
     IngestPostOut,
     IngestPostRequest,
     IngestPostTrace,
+    IngestAvatarOut,
 )
 from back.services.avatars import MAX_AVATAR_BYTES, save_avatar
-from back.services.pipeline import ingest_from_profile
+from back.services.media import save_post_media
+from back.services.parsing import parse_post
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 
@@ -31,52 +29,6 @@ async def require_ingest_token(
     expected = get_settings().ingest_token
     if expected and x_ingest_token != expected:
         raise HTTPException(status_code=401, detail="Недействительный сервисный токен")
-
-
-@router.get(
-    "/channels", response_model=IngestChannelList, dependencies=[Depends(require_ingest_token)]
-)
-async def list_ingest_channels(
-    session: AsyncSession = Depends(get_session),
-) -> IngestChannelList:
-    subscribers = func.count(ProfileChannel.profile_id)
-    manual_subscribers = func.count(ProfileChannel.profile_id).filter(
-        ProfileChannel.source != "recommended"
-    )
-    rows = (
-        await session.execute(
-            select(
-                Channel.id,
-                Channel.name,
-                Channel.handle,
-                Channel.meta,
-                subscribers.label("subscribers"),
-                manual_subscribers.label("manual_subscribers"),
-            )
-            .outerjoin(ProfileChannel, ProfileChannel.channel_id == Channel.id)
-            .where(
-                Channel.is_active.is_(True),
-                Channel.handle.is_not(None),
-                Channel.handle != "",
-            )
-            .group_by(Channel.id, Channel.name, Channel.handle)
-            .order_by(subscribers.desc(), Channel.name)
-        )
-    ).all()
-    return IngestChannelList(
-        items=[
-            IngestChannelOut(
-                id=row.id,
-                name=row.name,
-                handle=row.handle,
-                subscribers=row.subscribers,
-                manual_subscribers=row.manual_subscribers,
-                avatar_url=(row.meta or {}).get("avatar_url"),
-                tg_subscribers=(row.meta or {}).get("tg_subscribers"),
-            )
-            for row in rows
-        ]
-    )
 
 
 @router.put(
@@ -106,39 +58,78 @@ async def upload_channel_avatar(
     return IngestAvatarOut(avatar_url=avatar_url)
 
 
-@router.put(
-    "/channels/{channel_id}/stats",
-    response_model=IngestChannelStatsOut,
-    dependencies=[Depends(require_ingest_token)],
-)
-async def update_channel_stats(
-    channel_id: str,
-    payload: IngestChannelStats,
-    session: AsyncSession = Depends(get_session),
-) -> IngestChannelStatsOut:
-    channel = await session.get(Channel, channel_id)
-    if channel is None:
-        raise HTTPException(status_code=404, detail="Канал не найден")
-    channel.meta = {**(channel.meta or {}), "tg_subscribers": payload.subscribers}
-    if payload.title and channel.kind == "custom":
-        channel.name = payload.title
-    await session.commit()
-    return IngestChannelStatsOut(tg_subscribers=payload.subscribers)
-
-
 @router.post("/posts", response_model=IngestPostOut, dependencies=[Depends(require_ingest_token)])
 async def ingest_post(
-    payload: IngestPostRequest,
+    request: Request,
     session: AsyncSession = Depends(get_session),
 ) -> IngestPostOut:
-    try:
-        post = await ingest_from_profile(
-            session, payload.model_dump(mode="json"), payload.profile_id
+    content_type = request.headers.get("content-type", "")
+    files: list[UploadFile] = []
+    if content_type.startswith("multipart/form-data"):
+        form = await request.form()
+        raw_payload: Any = next(
+            (form.get(name) for name in ("payload", "json", "data") if form.get(name)), None
         )
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail="Профиль не найден") from exc
+        for name, value in form.multi_items():
+            is_upload = hasattr(value, "filename") and hasattr(value, "read")
+            if name in {"images", "image"} and is_upload:
+                files.append(value)  # type: ignore[arg-type]
+        if raw_payload is None:
+            raw_payload = {
+                name: value
+                for name, value in form.multi_items()
+                if name not in {"images", "image"} and not hasattr(value, "filename")
+            }
+        if isinstance(raw_payload, str):
+            try:
+                raw_payload = json.loads(raw_payload)
+            except json.JSONDecodeError as exc:
+                raise HTTPException(status_code=422, detail="Некорректный JSON payload") from exc
+    else:
+        try:
+            raw_payload = await request.json()
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(status_code=422, detail="Некорректный JSON payload") from exc
+    try:
+        payload = IngestPostRequest.model_validate(raw_payload)
+        parsed = parse_post(payload.model_dump(mode="json"))
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    raw = payload.model_dump(mode="json")
+    post = Post(
+        source_name=parsed.source_name,
+        title=parsed.title,
+        text=parsed.text,
+        url=parsed.url,
+        published_at=parsed.published_at,
+        raw=raw,
+        parsed=parsed.as_dict(),
+        categories=[],
+        embedding=[],
+        decision_trace=[{"stage": "parse", **parsed.as_dict()}],
+        media=[],
+        attempt_count=0,
+        status="received",
+        stage="received",
+    )
+    session.add(post)
+    await session.flush()
+    try:
+        post.media = await save_post_media(files, parsed.source_name, post.id)
+        origins = raw.get("images")
+        if isinstance(origins, list):
+            for index, item in enumerate(post.media):
+                if index >= len(origins) or not isinstance(origins[index], dict):
+                    continue
+                metadata = origins[index]
+                for key in ("origin_url", "url", "filename", "content_type"):
+                    if metadata.get(key):
+                        item[key if key != "url" else "origin_url"] = metadata[key]
+    except Exception:  # media helper is per-file tolerant; keep text ingestion available
+        post.media = []
+    await session.commit()
+    await session.refresh(post)
     return IngestPostOut.model_validate(post)
 
 

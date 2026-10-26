@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
 from typing import Any
@@ -292,6 +294,7 @@ class NewsEvent(Base):
     mentioned_company_uids: Mapped[list[str]] = mapped_column(JSONB, default=list)
     facts: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     source_posts: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    media: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     impact_metrics: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     chain_key: Mapped[str | None] = mapped_column(String(64), index=True)
     update_label: Mapped[str | None] = mapped_column(String(128))
@@ -364,7 +367,42 @@ class EventAnalysis(Base):
         ForeignKey("news_events.id", ondelete="CASCADE"), index=True
     )
     report: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    status: Mapped[str] = mapped_column(String(16), default="weak", index=True)
+    impact: Mapped[str | None] = mapped_column(String(16))
+    related: Mapped[bool | None] = mapped_column(Boolean)
+    direct: Mapped[bool | None] = mapped_column(Boolean)
+    fact: Mapped[bool | None] = mapped_column(Boolean)
+    within_month: Mapped[bool | None] = mapped_column(Boolean)
+    why: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    card_text: Mapped[str | None] = mapped_column(Text)
+    key_facts: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    bank_position: Mapped[str | None] = mapped_column(Text)
+    independent_source_count: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class ProfileEventScore(Base):
+    __tablename__ = "profile_event_scores"
+    __table_args__ = (UniqueConstraint("profile_id", "event_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("business_profiles.id", ondelete="CASCADE"), index=True
+    )
+    event_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("news_events.id", ondelete="CASCADE"), index=True
+    )
+    status: Mapped[str] = mapped_column(String(16), default="weak", index=True)
+    importance: Mapped[int] = mapped_column(Integer, default=0)
+    related: Mapped[bool] = mapped_column(Boolean, default=False)
+    direct: Mapped[bool] = mapped_column(Boolean, default=False)
+    fact: Mapped[bool] = mapped_column(Boolean, default=False)
+    within_month: Mapped[bool] = mapped_column(Boolean, default=False)
+    why: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    independent_source_count: Mapped[int] = mapped_column(Integer, default=0)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
@@ -418,6 +456,13 @@ class Post(Base):
     status: Mapped[str] = mapped_column(String(32), default="received", index=True)
     stage: Mapped[str] = mapped_column(String(32), default="received")
     decision_trace: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    media: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    last_error: Mapped[str | None] = mapped_column(Text)
+    status_updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     news_event: Mapped[NewsEvent | None] = relationship()

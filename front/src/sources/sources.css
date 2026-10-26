@@ -9,6 +9,11 @@
   overflow-y: auto;
   background: var(--canvas);
   color: var(--text);
+  animation: page-appear 220ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sources-page { animation: none; }
 }
 
 .sources-state {

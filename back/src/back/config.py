@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,http://localhost:5173,http://localhost:8080"
 
     # LLM layer. See back/README.md, section "LLM layer".
-    llm_provider: str = "stub"  # stub | openai
+    llm_provider: str = "openai"  # stub | openai
     llm_base_url: str = "https://changellenge.up.railway.app/v1"
     llm_api_key: str = ""
     llm_model: str = "qwen/qwen3.6-35b-a3b"
@@ -36,10 +36,23 @@ class Settings(BaseSettings):
     # The agent may use the LLM; ML-ish helpers (categories, counterparties, reporting)
     # stay deterministic until explicitly enabled.
     llm_agent_enabled: bool = True
-    llm_ml_enabled: bool = False
+    llm_ml_enabled: bool = True
 
     # Optional shared secret for internal ingestion endpoints (X-Ingest-Token).
     ingest_token: str = ""
+    media_root: Path = Path("media")
+
+    # Async ML feed worker (ml_pipeline). Disabled by default; compose enables it.
+    ml_worker_enabled: bool = False
+    ml_worker_poll_interval_seconds: float = 10.0
+    ml_worker_batch_size: int = 20
+    ml_worker_lease_seconds: int = 300
+    ml_worker_max_attempts: int = 5
+    ml_feed_threshold: int = 30
+    ml_model_root: Path = Path("ml_artifact/models")
+    ml_kimi_model: str = "moonshotai/kimi-k2.6"
+    ml_screening_model: str = "model service"
+    ml_artifact_root: Path = Path("ml_artifact")
 
     # Comma-separated RSS/Atom feeds polled by scripts/ingest_rss.py.
     rss_feeds: str = ""
@@ -49,6 +62,7 @@ class Settings(BaseSettings):
     rss_poll_initial_delay_seconds: float = 20
     rss_poll_concurrency: int = 5
     rss_poll_items_limit: int = 10
+    rsshub_base_url: str = "http://rsshub:1200"
 
     data_dir: Path = Path("data")
     seed_company_limit: int = 0

@@ -1,5 +1,4 @@
 import { ApiError, useApi, useApiMutation, useApiQuery, type Channel, type SourcesState } from "../../api";
-import { formatSubscribers } from "../../sources/channelVisuals";
 import { SourceIcon } from "../../sources/SourceIcon";
 import { OnboardingLayout } from "../OnboardingLayout";
 import type { StepProps } from "./types";
@@ -21,9 +20,7 @@ export function SourcesStep({ state, onDone }: StepProps) {
     },
   });
 
-  const channels = sources.data?.channels ?? [];
-  const telegramCount = channels.filter((item) => item.source_type === "telegram").length;
-  const rssCount = channels.length - telegramCount;
+  const channels = (sources.data?.channels ?? []).filter((item) => item.source_type === "rss");
 
   return (
     <OnboardingLayout
@@ -31,7 +28,7 @@ export function SourcesStep({ state, onDone }: StepProps) {
       title="Источники"
       description={
         channels.length > 0
-          ? `Подобрали ${channels.length} источников по вашим категориям: ${telegramCount} Telegram и ${rssCount} RSS. Список можно изменить позже на вкладке «Источники».`
+          ? `Подобрали ${channels.length} RSS-лент по вашим категориям. Список можно изменить позже на вкладке «Источники».`
           : "Подбираем источники под ваш профиль…"
       }
       footer={
@@ -68,16 +65,20 @@ export function SourcesStep({ state, onDone }: StepProps) {
                   disabled={toggle.isPending}
                   onChange={() => toggle.mutate(channel)}
                 />
+                <span className="source-item__avatar" aria-hidden="true">
+                  {channel.avatar_url ? (
+                    <img src={channel.avatar_url} alt="" loading="lazy" />
+                  ) : (
+                    channel.name.slice(0, 2).toLocaleUpperCase("ru")
+                  )}
+                </span>
                 <span className="source-item__body">
                   <span className="source-item__name">
                     <SourceIcon type={channel.source_type} />
                     {channel.name}
                   </span>
                   <span className="source-item__meta">
-                    {channel.handle ?? channel.topics}
-                    {channel.tg_subscribers
-                      ? ` · ${formatSubscribers(channel.tg_subscribers)}`
-                      : ""}
+                    {channel.feed_url ?? channel.topics}
                   </span>
                 </span>
               </label>

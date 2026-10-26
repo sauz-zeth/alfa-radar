@@ -33,13 +33,15 @@ API: `http://localhost:8000`, Swagger: `http://localhost:8000/docs`.
 uv run python scripts/seed.py --reset --data-dir "/tmp/alfadata/Данные для участников"
 ```
 
-`seed_demo_tracked.py` добавляет демо-темы, цепочки событий и вопросы для `demo_full`
-(идемпотентно, можно запускать повторно).
+`seed_demo_tracked.py` добавляет демо-темы и цепочки событий для `demo_full` и
+профилей `demo1`…`demo3` (идемпотентно, можно запускать повторно). Запускайте после
+`seed_15_profiles.py`, чтобы создать профили этих трёх пользователей.
 
 ### 15 демо-профилей бизнесов
 
-`seed_15_profiles.py` разворачивает в чистой базе 15 пользователей `demo1`…`demo15`
-(пароль `demo`) с готовыми профилями: компания, цифры, категории, контрагенты.
+`seed_15_profiles.py` разворачивает три демонстрационных пользователя `demo1`…`demo3`
+(пароль `demo`) с готовыми профилями. Это не ограничивает онбординг: все 15 компаний
+по-прежнему доступны для выбора обычному зарегистрированному пользователю.
 Если рядом есть CSV датасета, скрипт берёт 15 эталонных компаний из `reference_uids.json`
 (`U_71020`, `U_42698`, ...) вместе с реальными платежами и связями. Без CSV создаёт
 15 синтетических компаний. Повторный запуск идемпотентен.
@@ -158,25 +160,24 @@ GET /api/businesses/options?search=&limit=15
 
 ### Источники
 
-- `GET /api/sources` — подписки профиля; при первом обращении подписывает на 50
-  персональных рекомендаций (25 Telegram + 25 RSS).
+- `GET /api/sources` — подписки профиля; при первом обращении подключает 50
+  персональных рекомендаций.
 - `GET /api/sources/catalog?q=` — поиск по каталогу и пользовательским каналам.
-- `POST /api/sources/channels` — добавить свой источник: `@тег`, `t.me`-ссылка или
-  URL RSS/Atom-ленты (`http://` / `https://`).
+- `POST /api/sources/channels` — добавить Telegram-канал по `@handle`/ссылке или RSS/Atom по URL.
 - `POST /api/sources/channels/{id}/subscribe`, `DELETE /api/sources/channels/{id}`,
   `POST /api/sources/channels/unsubscribe-all`, `POST /api/sources/channels/restore`.
 
-Каталог и рекомендации лежат в `core/sources.py` как сид: 93 Telegram-канала и
-100 RSS-лент. Пользовательские источники создаются в таблице `channels`
-(`kind = custom`, RSS определяется по `meta.feed_url`). Ответы `CHANNEL_OUT` содержат
-`source_type` (`telegram` / `rss`), `avatar_url`, закэшированное число подписчиков
-`tg_subscribers` и `category_ids` источника.
+Каталог и рекомендации лежат в `core/sources.py` как сид из 93 Telegram-каналов и
+100 RSS-лент.
+Пользовательские источники создаются в таблице `channels` (`kind = custom`), RSS URL
+хранится в `meta.feed_url`. Ответы `CHANNEL_OUT` содержат `source_type`, `tg_subscribers`,
+`avatar_url` и `category_ids` источника.
 
 Рекомендации считает `core/recommendations.py`: у каждого источника есть набор
 категорий, по категориям профиля и популярности выбираются 50 источников — ровно
-25 Telegram и 25 RSS, из них 10–20 общих деловых/политических, остальные отраслевые
-и профильные (налоги, ВЭД, право, отрасль). Популярность TG — подписчики, RSS —
-частота публикаций. Категории соседних отраслей расширяют отраслевую выдачу, поэтому
+25 Telegram и 25 RSS, с общими деловыми/политическими и отраслевыми
+источниками. Популярность Telegram учитывает число подписчиков, RSS — частоту публикаций.
+Категории соседних отраслей расширяют выдачу, поэтому
 например металлургу попадают металлургия, таможня, логистика и ТЭК, а не случайные
 отрасли. RSS подписок опрашивается фоновым заданием (`RSS_POLL_ENABLED`,
 `RSS_POLL_INTERVAL_SECONDS`, `RSS_POLL_ITEMS_LIMIT`, `RSS_POLL_CONCURRENCY`).
@@ -214,12 +215,12 @@ GET /api/businesses/options?search=&limit=15
 ```env
 LLM_PROVIDER=stub   # offline, без вызовов
 LLM_PROVIDER=openai # любой OpenAI-compatible gateway
-LLM_BASE_URL=https://your-gateway/v1
+LLM_BASE_URL=https://changellenge.up.railway.app/v1
 LLM_API_KEY=...
 LLM_MODEL=...
 LLM_FAST_MODEL=...
 LLM_AGENT_ENABLED=true  # LLM для разбора события
-LLM_ML_ENABLED=false    # категории/контрагенты/отчётность пока детерминированные
+LLM_ML_ENABLED=true     # категории/контрагенты/отчётность используют LLM
 ```
 
 - `base.py` — контракт `BaseLLM`, парсинг JSON, ошибки `LLMError` / `LLMBudgetExceeded`.
@@ -309,32 +310,20 @@ uv run python scripts/ingest_rss.py
 uv run python scripts/ingest_rss.py https://example.com/rss https://example.com/atom
 ```
 
-### Telegram
+Telegram-каналы поллятся через локальный RSSHub из корневого `docker-compose.yml`:
+поллер строит `RSSHUB_BASE_URL/telegram/channel/{username}` по `handle` канала
+и обрабатывает его тем же RSS-парсером.
 
-Отдельный подсервис `tg-ingest/` логинится в Telegram как обычный аккаунт (Telethon),
-периодически забирает `GET /api/ingest/channels`, подписывает твинка на каналы с
-подписчиками (`subscribers > 0`) и шлёт новые посты в этот же `POST /api/ingest/posts`
-с `X-Ingest-Token`. При первом запуске без сессии поднимается веб-настройка
-`http://<host>:8081/setup`: оператор вводит `INGEST_TOKEN`, код из Telegram и при
-необходимости пароль 2FA. Состояние (SQLite-сессия и счётчики) лежит в `TG_STATE_DIR`
-и должно быть смонтировано как volume. Подробности, Dockerfile и compose — в
-[`tg-ingest/README.md`](../tg-ingest/README.md).
+### RSS media
 
-Каталог Telegram-каналов — 93 реальных источника из
-[`docs/ТГ_каналы_для_новостной_аналитики_кейс_Альфа_Банка_1.md`](../docs/ТГ_каналы_для_новостной_аналитики_кейс_Альфа_Банка_1.md);
-ещё 100 RSS-лент — из
+Каталог из 100 RSS-лент приведён в
 [`docs/RSS_ленты_для_новостной_аналитики_кейс_Альфа_Банка.md`](../docs/RSS_ленты_для_новостной_аналитики_кейс_Альфа_Банка.md).
-Аватарки и счётчики подписчиков кэшируются подсервисом:
+Изображения источников:
 
-- `GET /api/ingest/channels` — все активные Telegram-каналы с `handle`, числом подписчиков
-  в системе и закэшированным `tg_subscribers`;
 - `PUT /api/ingest/channels/{channel_id}/avatar` — тело `image/jpeg|png|webp` до 2 МБ,
   `X-Ingest-Token`; файл сохраняется в `src/back/static/avatars`, а URL пишется в
   `channels.meta.avatar_url`;
-- `PUT /api/ingest/channels/{channel_id}/stats` — `{ "subscribers": 123 }` обновляет
-  `channels.meta.tg_subscribers`;
-- `GET /api/sources` и `/api/sources/catalog` отдают `avatar_url`, `source_type` и
-  `tg_subscribers` для фронта.
+- `GET /api/sources` и `/api/sources/catalog` отдают `avatar_url` и `source_type` для фронта.
 
 ### Ленивый разбор события
 
@@ -386,13 +375,13 @@ uv run alembic upgrade head
 
 ## Ограничения прототипа
 
-- Новости засеяны демо-набором; парсер Telegram/официальных источников не входит в этот этап.
+- Новости засеяны демо-набором; реальные RSS-ленты обрабатывает фоновый поллер.
 - Аналитика Альфа-Банка и RAG не подключены — оставлены как следующий слой.
 - Обратная связь сохраняется, но не пересчитывает персональные веса (это следующий этап).
 - Сценарии, сравнение источников и часть разбора — детерминированные заглушки вместо ML/LLM.
 - Outlook смоделирован: подключение, черновики, отправка, статусы и напоминания работают
   на демо-провайдере (состояние в `business_profiles.outlook_state`); Microsoft Graph
-  не подключён. Парсер Telegram и RAG по аналитике банка не входят в этот этап.
+  не подключён. RAG по аналитике банка не входит в этот этап.
 
 ## Отчёты
 

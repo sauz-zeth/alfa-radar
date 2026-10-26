@@ -171,6 +171,13 @@
   gap: 8px;
 }
 
+.business-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
 .business-card__uid {
   color: var(--muted);
   font-size: 11px;
@@ -450,6 +457,27 @@
   height: 18px;
   margin: 0;
   accent-color: var(--text);
+}
+
+.source-item__avatar {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--text);
+  color: var(--soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.source-item__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .source-list--onboarding {

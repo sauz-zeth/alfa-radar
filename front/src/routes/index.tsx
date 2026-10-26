@@ -4,6 +4,7 @@ export const routes: Record<string, ComponentType> = {
   "/": lazy(() => import("../pages/Home")),
   "/about": lazy(() => import("../pages/About")),
   "/profile": lazy(() => import("../pages/Profile")),
+  "/profile/reports": lazy(() => import("../profile/ReportSummaryScreen")),
   "/profile/reports/:form": lazy(() => import("../profile/ReportSummaryScreen")),
   "/sources": lazy(() => import("../sources/SourcesPage")),
   "/tracked": lazy(() => import("../tracked/TrackedScreen")),

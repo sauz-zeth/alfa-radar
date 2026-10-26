@@ -13,6 +13,7 @@ from back.core.sources import (
 )
 from back.db.models import BusinessCategory, BusinessProfile, Channel, ProfileChannel
 from back.schemas.sources import ChannelCatalogResponse, ChannelOut, SourcesState
+from back.services.avatars import get_avatar_url
 
 
 def _channel_out(channel: Channel, subscribed: bool, recommended: bool) -> ChannelOut:
@@ -26,7 +27,7 @@ def _channel_out(channel: Channel, subscribed: bool, recommended: bool) -> Chann
         kind=channel.kind,
         subscribed=subscribed,
         recommended=recommended,
-        avatar_url=meta.get("avatar_url"),
+        avatar_url=meta.get("avatar_url") or get_avatar_url(channel.id),
         feed_url=meta.get("feed_url"),
         source_type="rss" if meta.get("feed_url") else "telegram",
         tg_subscribers=meta.get("tg_subscribers"),
@@ -208,7 +209,9 @@ async def sources_state(session: AsyncSession, profile: BusinessProfile) -> Sour
     custom_count = sum(1 for row in rows if row.kind == "custom")
     catalog_total = (
         await session.execute(
-            select(func.count()).select_from(Channel).where(Channel.is_active.is_(True))
+            select(func.count())
+            .select_from(Channel)
+            .where(Channel.is_active.is_(True))
         )
     ).scalar_one()
     return SourcesState(
@@ -229,7 +232,6 @@ async def catalog(
     statement = select(Channel).where(Channel.is_active.is_(True))
     if text:
         pattern = f"%{text}%"
-        handle = parse_handle(text)
         filters = [
             Channel.id.ilike(pattern),
             Channel.name.ilike(pattern),
@@ -237,6 +239,7 @@ async def catalog(
             Channel.handle.ilike(pattern),
             Channel.meta["feed_url"].astext.ilike(pattern),
         ]
+        handle = parse_handle(text)
         if handle:
             filters.append(Channel.handle.ilike(handle))
         statement = statement.where(or_(*filters))
@@ -259,18 +262,16 @@ async def _find_channel(session: AsyncSession, query: str) -> Channel | None:
     text = (query or "").strip()
     if not text:
         return None
+    feed_url = parse_feed_url(text)
     handle = parse_handle(text)
     statement = select(Channel).where(
         or_(
-            Channel.id == text.lower(),
+            Channel.id == (rss_channel_id(feed_url) if feed_url else text.lower()),
             Channel.name.ilike(f"%{text}%"),
-            Channel.handle.ilike(f"%{text}%"),
+            Channel.handle.ilike(handle or text),
+            Channel.meta["feed_url"].astext == feed_url if feed_url else False,
         )
     )
-    if handle:
-        statement = select(Channel).where(
-            or_(Channel.id == text.lower(), Channel.handle.ilike(handle))
-        )
     return (await session.execute(statement.limit(1))).scalar_one_or_none()
 
 
@@ -295,17 +296,16 @@ async def _custom_rss_channel(session: AsyncSession, feed_url: str) -> Channel:
 async def _custom_channel(session: AsyncSession, handle: str) -> Channel:
     channel_id = "tg_" + handle.lstrip("@").lower()
     row = await session.get(Channel, channel_id)
-    if row is not None:
-        return row
-    row = Channel(
-        id=channel_id,
-        name=handle,
-        handle=handle,
-        topics="добавлен вами",
-        kind="custom",
-    )
-    session.add(row)
-    await session.flush()
+    if row is None:
+        row = Channel(
+            id=channel_id,
+            name=handle,
+            handle=handle,
+            topics="добавлен вами",
+            kind="custom",
+        )
+        session.add(row)
+        await session.flush()
     return row
 
 
@@ -314,6 +314,10 @@ async def subscribe(session: AsyncSession, profile: BusinessProfile, query: str)
     await ensure_catalog(session)
     feed_url = parse_feed_url(query)
     channel = None
+    if not feed_url:
+        channel = await session.get(Channel, query.strip().lower())
+    if channel is not None and not (channel.meta or {}).get("feed_url"):
+        channel = None
     if feed_url:
         channel = await session.get(Channel, rss_channel_id(feed_url))
         if channel is None:
@@ -326,9 +330,7 @@ async def subscribe(session: AsyncSession, profile: BusinessProfile, query: str)
         else:
             handle = parse_handle(query)
             if handle is None:
-                raise LookupError(
-                    "Не удалось распознать источник. Укажите @тег, ссылку t.me или URL RSS."
-                )
+                raise LookupError("Укажите @тег, ссылку t.me или URL RSS.")
             channel = await _custom_channel(session, handle)
     source = "custom" if channel.kind == "custom" else "catalog"
     await _add_subscription(session, profile, channel.id, source)

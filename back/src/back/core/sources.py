@@ -1125,21 +1125,9 @@ CHANNELS: tuple[ChannelSeed, ...] = (
 )
 
 RECOMMENDED_IDS: tuple[str, ...] = (
-    "rian_ru",
-    "kommersant",
-    "rbc_news",
-    "tass_agency",
-    "vedomosti",
-    "government_rus",
-    "duma_gov_ru",
-    "garantnews",
-    "consultant_plus",
-    "ekonomika_banki",
-    "ecotopor",
-    "alfa_investments",
-    "customs_rf",
-    "mcx_ru",
-    "frank_media",
+    "rian_ru", "kommersant", "rbc_news", "tass_agency", "vedomosti", "government_rus",
+    "duma_gov_ru", "garantnews", "consultant_plus", "ekonomika_banki", "ecotopor",
+    "alfa_investments", "customs_rf", "mcx_ru", "frank_media",
 )
 
 HANDLE_RE = re.compile(r"^(?:https?://)?t\.me/([A-Za-z0-9_]{3,})/?$", re.IGNORECASE)
@@ -1174,15 +1162,22 @@ def _is_public_host(host: str | None) -> bool:
 
 def parse_feed_url(value: str) -> str | None:
     text = (value or "").strip()
-    if not HTTP_RE.match(text) or parse_handle(text):
+    if not HTTP_RE.match(text):
         return None
-    if not _is_public_host(urlparse(text).hostname):
+    parsed = urlparse(text)
+    if parsed.hostname and parsed.hostname.lower() in {"t.me", "telegram.me"}:
+        return None
+    if not _is_public_host(parsed.hostname):
         return None
     return text
 
 
 def rss_channel_id(url: str) -> str:
     return "rss_" + hashlib.sha1(url.encode()).hexdigest()[:12]
+
+
+def rss_feed_urls(limit: int = 40) -> list[str]:
+    return list(dict.fromkeys(item.feed_url for item in CHANNELS if item.feed_url))[:limit]
 
 
 def find_channel(value: str) -> ChannelSeed | None:
@@ -1208,7 +1203,9 @@ def search_channels(query: str) -> list[ChannelSeed]:
     handle = parse_handle(query)
     result = []
     for item in CHANNELS:
-        haystack = " ".join((item.id, item.name, item.topics, item.handle or "")).lower()
+        haystack = " ".join(
+            (item.id, item.name, item.topics, item.handle or "", item.feed_url or "")
+        ).lower()
         if text in haystack or (handle and (item.handle or "").lower() == handle.lower()):
             result.append(item)
     return result
