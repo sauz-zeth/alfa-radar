@@ -13,7 +13,6 @@ __pycache__/
 tg-ingest/state/
 back/media/
 back/data/
-Отчеты Бизнесов/
 
 # Generated ML artifacts and downloaded models
 ml_artifact/models/
